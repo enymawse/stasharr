@@ -1,6 +1,6 @@
 {
   "name": "stasherr",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Add a StashDB scene to your local Whisparr instance with a single click using this UserScript",
   "main": "stasherr.js",
   "scripts": {
