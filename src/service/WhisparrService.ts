@@ -72,9 +72,6 @@ export default class WhisparrService {
       onload: (r: VMScriptResponseObject<any>) => {
         response = r;
       },
-      onerror: (r: VMScriptResponseObject<any>) => {
-        console.log(r);
-      },
     };
 
     if (body) {
@@ -82,13 +79,15 @@ export default class WhisparrService {
     }
 
     try {
-      const tmResponse = await GM.xmlHttpRequest(gmDetails);
+      await GM.xmlHttpRequest(gmDetails);
       if (response.status < 200 || response.status >= 300) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        console.error(
+          `WhisparrService.request error ${response.status}: ${response.statusText}`,
+        );
       }
       return response;
     } catch (error) {
-      console.error("Fetch error: ", error);
+      console.error("GM.xmlHttpRequest error: ", error);
       throw error;
     }
   }
