@@ -2,7 +2,6 @@ import { SceneStatus } from "../enums/SceneStatus";
 import { Config } from "../models/Config";
 import { ScenePayloadBuilder } from "../builder/ScenePayloadBuilder";
 import { Whisparr } from "../types/types";
-import ToastService from "./ToastService";
 
 export default class WhisparrService {
   /**
@@ -39,7 +38,7 @@ export default class WhisparrService {
    * @param {string} [method="GET"] - The HTTP method (GET, POST, etc.).
    * @param {any} [body] - Optional body for POST/PUT requests.
    * @param {object} [additionalHeaders={}] - Additional headers for the request.
-   * @returns {Promise<Response>} - The response from the API call.
+   * @returns {Promise<VMScriptResponseObject<any>>} - The response from the API call.
    * @throws {Error} - If the request fails or returns a non-OK response.
    */
   private static async request(
@@ -48,18 +47,34 @@ export default class WhisparrService {
     method: "GET" | "POST" | "HEAD" = "GET",
     body?: any,
     additionalHeaders = {},
-  ): Promise<object> {
+  ): Promise<VMScriptResponseObject<any>> {
     const uri = WhisparrService.buildApiUrl(config, endpoint);
     const headers = WhisparrService.getDefaultHeaders(
       config,
       additionalHeaders,
     );
 
+    let response: VMScriptResponseObject<any> = {
+      status: 0,
+      statusText: "",
+      readyState: 0,
+      responseHeaders: "",
+      response: undefined,
+      responseText: undefined,
+      responseXML: null,
+      finalUrl: "",
+    };
     const gmDetails: VMScriptGMXHRDetails<any> = {
       url: uri,
       headers: headers,
       method: method,
       responseType: "json",
+      onload: (r: VMScriptResponseObject<any>) => {
+        response = r;
+      },
+      onerror: (r: VMScriptResponseObject<any>) => {
+        console.log(r);
+      },
     };
 
     if (body) {
@@ -67,11 +82,11 @@ export default class WhisparrService {
     }
 
     try {
-      const tmResponse = await GM.xmlHttpRequest({ url: "http://google.com" });
-      if (tmResponse.status < 200 || tmResponse.status >= 300) {
-        throw new Error(`Error ${tmResponse.status}: ${tmResponse.statusText}`);
+      const tmResponse = await GM.xmlHttpRequest(gmDetails);
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-      return tmResponse;
+      return response;
     } catch (error) {
       console.error("Fetch error: ", error);
       throw error;
@@ -94,11 +109,11 @@ export default class WhisparrService {
    *
    * @param {Config} config - The configuration object containing API details.
    * @param {string} sceneID - The unique Stash ID of the scene to fetch.
-   * @returns {Promise<Tampermonkey.Response<any>>} - A promise that resolves with the response from the Whisparr API containing scene details.
+   * @returns {Promise<VMScriptResponseObject<any>>} - A promise that resolves with the response from the Whisparr API containing scene details.
    */ static getSceneByStashId(
     config: Config,
     sceneID: string,
-  ): Promise<Tampermonkey.Response<any>> {
+  ): Promise<VMScriptResponseObject<any>> {
     const endpoint = `movie?stashId=${encodeURIComponent(sceneID)}`;
     return WhisparrService.request(config, endpoint);
   }
@@ -108,12 +123,12 @@ export default class WhisparrService {
    *
    * @param {Config} config - The configuration object containing necessary API details.
    * @param {string} sceneID - The unique identifier of the scene to search for.
-   * @returns {Promise<Tampermonkey.Response<any>>} - A promise that resolves with the response from the Whisparr API.
+   * @returns {Promise<VMScriptResponseObject<any>>} - A promise that resolves with the response from the Whisparr API.
    */
   static searchScene(
     config: Config,
     sceneID: string,
-  ): Promise<Tampermonkey.Response<any>> {
+  ): Promise<VMScriptResponseObject<any>> {
     const endpoint = `lookup/scene?term=stash:${encodeURIComponent(sceneID)}`;
     return WhisparrService.request(config, endpoint);
   }
@@ -123,12 +138,12 @@ export default class WhisparrService {
    *
    * @param {Config} config - The configuration object containing API details.
    * @param {any} body - The payload to send in the request body.
-   * @returns {Promise<Tampermonkey.Response<any>>} - The response from the Whisparr API.
+   * @returns {Promise<VMScriptResponseObject<any>>} - The response from the Whisparr API.
    */
   static addScene(
     config: Config,
     body: any,
-  ): Promise<Tampermonkey.Response<any>> {
+  ): Promise<VMScriptResponseObject<any>> {
     const endpoint = "movie";
     return WhisparrService.request(config, endpoint, "POST", body, {
       "Content-Type": "application/json",

@@ -13,5 +13,5 @@ export default {
   license: meta.license,
   match: ["*://stashdb.org/*"],
   require: [],
-  grant: ["GM_registerMenuCommand", "GM_xmlhttpRequest"],
+  grant: ["GM_registerMenuCommand", "GM_xmlhttpRequest", "GM.xmlHttpRequest"],
 };
