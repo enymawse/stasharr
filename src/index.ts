@@ -29,5 +29,5 @@ import { Settings } from "./settings/Settings";
   observer.observe(document.body, observerConfig);
 
   // Initialize the menu
-  await GM_registerMenuCommand("Settings", settings.openSettingsModal, "s");
+  await GM_registerMenuCommand("Settings", settings.openSettingsModal);
 })();

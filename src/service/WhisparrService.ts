@@ -48,14 +48,14 @@ export default class WhisparrService {
     method: "GET" | "POST" | "HEAD" = "GET",
     body?: any,
     additionalHeaders = {},
-  ): Promise<Tampermonkey.Response<any>> {
+  ): Promise<object> {
     const uri = WhisparrService.buildApiUrl(config, endpoint);
     const headers = WhisparrService.getDefaultHeaders(
       config,
       additionalHeaders,
     );
 
-    const gmDetails: Tampermonkey.Request<any> = {
+    const gmDetails: VMScriptGMXHRDetails<any> = {
       url: uri,
       headers: headers,
       method: method,
@@ -67,7 +67,7 @@ export default class WhisparrService {
     }
 
     try {
-      const tmResponse = await GM.xmlHttpRequest(gmDetails);
+      const tmResponse = await GM.xmlHttpRequest({ url: "http://google.com" });
       if (tmResponse.status < 200 || tmResponse.status >= 300) {
         throw new Error(`Error ${tmResponse.status}: ${tmResponse.statusText}`);
       }

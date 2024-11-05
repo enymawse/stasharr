@@ -1,3 +1,5 @@
+import "@violentmonkey/types";
+
 export namespace Whisparr {
   type OriginalLanguage = {
     id: number;
