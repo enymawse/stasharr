@@ -4,7 +4,7 @@ import { Config } from "../models/Config";
 import { faPlus, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Stasharr } from "../enums/Stasharr";
 import { SceneStatus } from "../enums/SceneStatus";
-import { addTooltip, extractSceneID } from "../util/util";
+import { addTooltip, extractStashIdFromSceneCard } from "../util/util";
 import WhisparrService from "../service/WhisparrService";
 import ToastService from "../service/ToastService";
 import { StashDB } from "../enums/StashDB";
@@ -99,7 +99,7 @@ export class ScenesListController {
         Stasharr.DOMSelector.SceneCardByButtonStatus(status),
       )
       .forEach((node) => {
-        const stashId = extractSceneID(node);
+        const stashId = extractStashIdFromSceneCard(node);
         if (stashId) stashIds.push(stashId);
       });
     if (status === SceneStatus.EXISTS) {

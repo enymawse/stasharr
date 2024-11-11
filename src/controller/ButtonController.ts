@@ -7,7 +7,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Config } from "../models/Config";
 import { icon } from "@fortawesome/fontawesome-svg-core";
-import { extractSceneID } from "../util/util";
+import { extractStashIdFromSceneCard } from "../util/util";
 import WhisparrService from "../service/WhisparrService";
 import ToastService from "../service/ToastService";
 import { SceneStatus } from "../enums/SceneStatus";
@@ -25,16 +25,16 @@ export class ButtonController {
       if (!sceneCard.querySelector(Stasharr.DOMSelector.CardButton)) {
         const button = ButtonController.createCardButton();
         sceneCard.appendChild(button);
-        const sceneID = extractSceneID(sceneCard);
-        if (sceneID) {
+        const stashId = extractStashIdFromSceneCard(sceneCard);
+        if (stashId) {
           try {
             const status = await WhisparrService.handleSceneLookup(
               config,
-              sceneID,
+              stashId,
             );
             ButtonController.updateButton(button, status);
             button.addEventListener("click", () =>
-              ButtonController.handleButtonClick(config, sceneID, button),
+              ButtonController.handleButtonClick(config, stashId, button),
             );
           } catch (error) {
             ToastService.showToast(JSON.stringify(error), false);
@@ -46,7 +46,9 @@ export class ButtonController {
 
     (async () => {
       const cardHeader: HTMLElement | null =
-        document.querySelector<HTMLElement>(StashDB.DOMSelector.CardHeader);
+        document.querySelector<HTMLElement>(
+          StashDB.DOMSelector.SceneInfoCardHeader,
+        );
 
       if (
         cardHeader &&
@@ -55,7 +57,7 @@ export class ButtonController {
         const isHeader = true;
         const triggerButton = ButtonController.createHeaderButton();
         cardHeader.appendChild(triggerButton);
-        const sceneID = extractSceneID();
+        const sceneID = extractStashIdFromSceneCard();
         if (sceneID) {
           try {
             const status = await WhisparrService.handleSceneLookup(

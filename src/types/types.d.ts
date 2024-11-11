@@ -60,6 +60,15 @@ export namespace Whisparr {
     qualityProfileId: number;
   };
 
+  type PerformerPayload = {
+    tags: string[];
+    foreignId: string;
+    searchOnAdd: boolean;
+    qualityProfileId: number;
+    rootFolderPath: string;
+    monitored: boolean;
+  };
+
   type CommandPayload = {
     name: string;
     movieIds: number[];
@@ -112,11 +121,29 @@ export namespace Whisparr {
     path: string;
     relativePath: string;
   };
-  
+
   type WhisparrPerformer = {
+    fullName: string;
+    gender: string;
+    hairColor: string;
+    ethnicity: string;
+    status: string;
+    careerStart: number;
     foreignId: string;
+    images: [
+      {
+        coverType: string;
+        url: string;
+        remoteUrl: string;
+      },
+    ];
+    monitored: boolean;
+    rootFolderPath: string;
+    qualityProfile: string;
+    searchOnAdd: boolean;
+    tags: string[];
+    added: string;
     id: number;
-    // TODO
   };
 
   type WhisparrStudio = {
@@ -128,7 +155,5 @@ export namespace Whisparr {
     rootFolderPath: string;
     searchOnAdd: boolean;
     title: string;
-
   };
-
 }

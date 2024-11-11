@@ -23,6 +23,18 @@ export namespace Styles {
     `;
   }
 
+  export class AddPerformerButton {
+    static style: string = `
+      color: ${Color.PINK}
+    `;
+  }
+
+  export class AddPerformerButtonLoading {
+    static style: string = `
+      color: ${Color.GRAY}
+    `;
+  }
+
   export class HeaderButton {
     static style: string = `
         background-color: ${Color.PINK};

@@ -3,103 +3,16 @@ import { Config } from "../models/Config";
 import { CommandPayloadBuilder } from "../builder/CommandPayloadBuilder";
 import { ScenePayloadBuilder } from "../builder/ScenePayloadBuilder";
 import { Whisparr } from "../types/types";
+import ServiceBase from "./ServiceBase";
 
-export default class WhisparrService {
-  /**
-   * Constructs the full API URL for a given endpoint using the configuration.
-   *
-   * @param {Config} config - The configuration object containing domain, protocol, and API details.
-   * @param {string} endpoint - The specific API endpoint.
-   * @returns {string} - The full API URL.
-   */
-  private static buildApiUrl(config: Config, endpoint: string): string {
-    return `${config.whisparrApiUrl()}${endpoint}`;
-  }
-
-  /**
-   * Generates the default headers for the API requests, including the API key and any additional headers.
-   *
-   * @param {Config} config - The configuration object containing API details.
-   * @param {object} additionalHeaders - Optional additional headers to include.
-   * @returns {object} - The headers object for the request.
-   */
-  private static getDefaultHeaders(config: Config, additionalHeaders = {}) {
-    return {
-      "Content-Type": "application/json",
-      "X-Api-Key": config.whisparrApiKey,
-      ...additionalHeaders,
-    };
-  }
-
-  /**
-   * Sends an HTTP request to the Whisparr API with the specified method, endpoint, and body (if applicable).
-   *
-   * @param {Config} config - The configuration object with the API details.
-   * @param {string} endpoint - The API endpoint to send the request to.
-   * @param {string} [method="GET"] - The HTTP method (GET, POST, etc.).
-   * @param {any} [body] - Optional body for POST/PUT requests.
-   * @param {object} [additionalHeaders={}] - Additional headers for the request.
-   * @returns {Promise<VMScriptResponseObject<any>>} - The response from the API call.
-   * @throws {Error} - If the request fails or returns a non-OK response.
-   */
-  private static async request(
-    config: Config,
-    endpoint: string,
-    method: "GET" | "POST" | "HEAD" = "GET",
-    body?: any,
-    additionalHeaders = {},
-  ): Promise<VMScriptResponseObject<any>> {
-    const uri = WhisparrService.buildApiUrl(config, endpoint);
-    const headers = WhisparrService.getDefaultHeaders(
-      config,
-      additionalHeaders,
-    );
-
-    let response: VMScriptResponseObject<any> = {
-      status: 0,
-      statusText: "",
-      readyState: 0,
-      responseHeaders: "",
-      response: undefined,
-      responseText: undefined,
-      responseXML: null,
-      finalUrl: "",
-    };
-    const gmDetails: VMScriptGMXHRDetails<any> = {
-      url: uri,
-      headers: headers,
-      method: method,
-      responseType: "json",
-      onload: (r: VMScriptResponseObject<any>) => {
-        response = r;
-      },
-    };
-
-    if (body) {
-      gmDetails.data = JSON.stringify(body); // Convert body to JSON for POST requests
-    }
-
-    try {
-      await GM.xmlHttpRequest(gmDetails);
-      if (response.status < 200 || response.status >= 300) {
-        console.error(
-          `WhisparrService.request error ${response.status}: ${response.statusText}`,
-        );
-      }
-      return response;
-    } catch (error) {
-      console.error("GM.xmlHttpRequest error: ", error);
-      throw error;
-    }
-  }
-
+export default class WhisparrService extends ServiceBase {
   /**
    * Performs a health check on the Whisparr instance by sending a request to the health endpoint.
    *
    * @param {Config} config - The configuration object containing API details.
    * @returns {Promise<boolean>} - The response from the Whisparr API, indicating the health status of the instance.
    */ static healthCheck(config: Config): Promise<boolean> {
-    return WhisparrService.request(config, "health").then((response) => {
+    return ServiceBase.request(config, "health").then((response) => {
       return response.status >= 200 && response.status < 300;
     });
   }
@@ -115,21 +28,7 @@ export default class WhisparrService {
     sceneID: string,
   ): Promise<VMScriptResponseObject<any>> {
     const endpoint = `movie?stashId=${encodeURIComponent(sceneID)}`;
-    return WhisparrService.request(config, endpoint);
-  }
-
-  /**
-   * Retrieves performer information from Whisparr using the Stash ID.
-   *
-   * @param {Config} config - The configuration object containing API details.
-   * @param {string} sceneID - The unique Stash ID of the performer to fetch.
-   * @returns {Promise<VMScriptResponseObject<any>>} - A promise that resolves with the response from the Whisparr API containing performer details.
-   */ static getPerformerByStashId(
-    config: Config,
-    sceneID: string,
-  ): Promise<VMScriptResponseObject<any>> {
-    const endpoint = `performer?stashId=${encodeURIComponent(sceneID)}`;
-    return WhisparrService.request(config, endpoint);
+    return ServiceBase.request(config, endpoint);
   }
 
   /**
@@ -143,7 +42,7 @@ export default class WhisparrService {
     sceneID: string,
   ): Promise<VMScriptResponseObject<any>> {
     const endpoint = `studio?stashId=${encodeURIComponent(sceneID)}`;
-    return WhisparrService.request(config, endpoint);
+    return ServiceBase.request(config, endpoint);
   }
 
   /**
@@ -158,22 +57,22 @@ export default class WhisparrService {
     sceneID: string,
   ): Promise<VMScriptResponseObject<any>> {
     const endpoint = `lookup/scene?term=stash:${encodeURIComponent(sceneID)}`;
-    return WhisparrService.request(config, endpoint);
+    return ServiceBase.request(config, endpoint);
   }
 
   /**
    * Adds a scene to Whisparr by sending a POST request with the scene payload.
    *
    * @param {Config} config - The configuration object containing API details.
-   * @param {any} body - The payload to send in the request body.
+   * @param {Whisparr.MoviePayload} body - The payload to send in the request body.
    * @returns {Promise<VMScriptResponseObject<any>>} - The response from the Whisparr API.
    */
   static addScene(
     config: Config,
-    body: any,
+    body: Whisparr.MoviePayload,
   ): Promise<VMScriptResponseObject<any>> {
     const endpoint = "movie";
-    return WhisparrService.request(config, endpoint, "POST", body, {
+    return ServiceBase.request(config, endpoint, "POST", body, {
       "Content-Type": "application/json",
     });
   }
@@ -190,7 +89,7 @@ export default class WhisparrService {
     body: Whisparr.CommandPayload,
   ): Promise<VMScriptResponseObject<any>> {
     const endpoint = "command";
-    return WhisparrService.request(config, endpoint, "POST", body, {
+    return ServiceBase.request(config, endpoint, "POST", body, {
       "Content-Type": "application/json",
     });
   }
@@ -342,36 +241,6 @@ export default class WhisparrService {
   }
 
   /**
-   * Looks up a performer by its Stash ID in the Whisparr API.
-   *
-   * @param {Config} config - The configuration object with the API details.
-   * @param {string} sceneID - The unique identifier of the performer.
-   * @returns {Promise<SceneStatus>} - The status of the scene (e.g., NEW, EXISTS, DOWNLOADED).
-   * @throws {Error} - If the scene lookup fails or the API call encounters an error.
-   */
-  static async handlePerformerLookup(
-    config: Config,
-    sceneID: string,
-  ): Promise<Whisparr.WhisparrPerformer | null> {
-    try {
-      const response = await WhisparrService.getPerformerByStashId(
-        config,
-        sceneID,
-      );
-      const data = await response.response;
-
-      if (data?.length > 0) {
-        return data[0];
-      } else {
-        return null;
-      }
-    } catch (error) {
-      console.error("API Call Error:", error);
-      throw new Error("Error checking scene in Whisparr.");
-    }
-  }
-
-  /**
    * Looks up a scene by its Stash ID in the Whisparr API and determines its download status.
    *
    * @param {Config} config - The configuration object with the API details.
@@ -405,7 +274,7 @@ export default class WhisparrService {
     config: Config,
   ): Promise<Whisparr.QualityProfile[]> {
     const endpoint = "qualityProfile";
-    const response = await WhisparrService.request(
+    const response = await ServiceBase.request(
       config,
       endpoint,
       "GET",
@@ -459,7 +328,7 @@ export default class WhisparrService {
 
   static async getRootFolders(config: Config): Promise<Whisparr.RootFolder[]> {
     const endpoint = "rootFolder";
-    const response = await WhisparrService.request(
+    const response = await ServiceBase.request(
       config,
       endpoint,
       "GET",

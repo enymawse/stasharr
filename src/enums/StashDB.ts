@@ -4,8 +4,10 @@ export namespace StashDB {
   }
   export enum DOMSelector {
     SceneCard = ".SceneCard",
-    CardHeader = ".scene-info .card-header",
+    SceneInfoCardHeader = ".scene-info .card-header",
+    PerformerCardHeader = ".card-header > h3",
     StudioTitle = ".studio-title",
+    PerformerInfo = ".PerformerInfo",
     DataPage = `[${DataAttribute.DataPage}]`,
   }
   export enum Module {
