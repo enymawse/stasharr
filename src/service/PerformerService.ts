@@ -10,7 +10,8 @@ export default class PerformerService extends ServiceBase {
    *
    * @param {Config} config - The configuration object containing API details.
    * @param {string} stashId - The unique Stash ID of the performer to fetch.
-   * @returns {Promise<Whisparr.WhisparrPerformer | null>} - A promise that resolves with the Performer object or null from the Whisparr API.
+   * @returns {Promise<Whisparr.WhisparrPerformer | null>} - A promise that
+   * resolves with the Performer object or null from the Whisparr API.
    */
   static async getPerformerByStashId(
     config: Config,

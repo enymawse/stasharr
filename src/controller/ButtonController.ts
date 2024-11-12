@@ -8,7 +8,7 @@ import {
 import { Config } from "../models/Config";
 import { icon } from "@fortawesome/fontawesome-svg-core";
 import { extractStashIdFromSceneCard } from "../util/util";
-import WhisparrService from "../service/WhisparrService";
+import SceneService from "../service/SceneService";
 import ToastService from "../service/ToastService";
 import { SceneStatus } from "../enums/SceneStatus";
 import { Styles } from "../enums/Styles";
@@ -28,7 +28,7 @@ export class ButtonController {
         const stashId = extractStashIdFromSceneCard(sceneCard);
         if (stashId) {
           try {
-            const status = await WhisparrService.handleSceneLookup(
+            const status: SceneStatus = await SceneService.getSceneStatus(
               config,
               stashId,
             );
@@ -60,7 +60,7 @@ export class ButtonController {
         const sceneID = extractStashIdFromSceneCard();
         if (sceneID) {
           try {
-            const status = await WhisparrService.handleSceneLookup(
+            const status: SceneStatus = await SceneService.getSceneStatus(
               config,
               sceneID,
             );
@@ -114,9 +114,12 @@ export class ButtonController {
   ) {
     ButtonController.setLoadingState(button, isHeader);
     try {
-      const status = await WhisparrService.handleSceneLookup(config, sceneID);
+      const status: SceneStatus = await SceneService.getSceneStatus(
+        config,
+        sceneID,
+      );
       if (status === SceneStatus.NEW) {
-        const result = await WhisparrService.searchAndAddScene(config, sceneID);
+        const result = await SceneService.lookupAndAddScene(config, sceneID);
         if (result === SceneStatus.ADDED) {
           ButtonController.updateButtonForExistingScene(
             button,
@@ -133,7 +136,10 @@ export class ButtonController {
           }
         }
       } else if (status === SceneStatus.EXISTS) {
-        const result = await WhisparrService.search(config, sceneID);
+        const result = await SceneService.triggerWhisparrSearch(
+          config,
+          sceneID,
+        );
         ButtonController.updateButtonForExistingScene(button, isHeader, status);
         if (result === SceneStatus.ADDED) {
           ToastService.showToast("Searching for Scene", true);
@@ -197,7 +203,7 @@ export class ButtonController {
     );
   }
 
-  private static updateButtonForExistingScene(
+  public static updateButtonForExistingScene(
     button: HTMLButtonElement,
     isHeader: boolean,
     status: SceneStatus,

@@ -29,7 +29,19 @@ export namespace Styles {
     `;
   }
 
+  export class AddStudioButton {
+    static style: string = `
+      color: ${Color.PINK}
+    `;
+  }
+
   export class AddPerformerButtonLoading {
+    static style: string = `
+      color: ${Color.GRAY}
+    `;
+  }
+
+  export class AddStudioButtonLoading {
     static style: string = `
       color: ${Color.GRAY}
     `;

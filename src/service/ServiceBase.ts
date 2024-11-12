@@ -1,4 +1,5 @@
 import { Config } from "../models/Config";
+import { responseStatusCodeOK } from "../util/util";
 
 /**
  * Constructs the full API URL for a given endpoint using the configuration.
@@ -74,12 +75,14 @@ export default class ServiceBase {
 
     try {
       await GM.xmlHttpRequest(gmDetails);
-      if (response.status < 200 || response.status >= 300) {
-        console.error(
-          `ServiceBase.request error ${response.status}: ${response.statusText}`,
+      if (responseStatusCodeOK(response.status)) {
+        return response;
+      } else {
+        console.error(response);
+        throw new Error(
+          `HTML Response error: ${response.status}: ${response.statusText}`,
         );
       }
-      return response;
     } catch (error) {
       console.error("GM.xmlHttpRequest error: ", error);
       throw error;

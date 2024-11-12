@@ -8,17 +8,21 @@ export namespace Stasharr {
   }
   export enum ID {
     CardButton = "stasharr-button",
+    StudioAdd = "stasharr-studioadd",
     PerformerAdd = "stasharr-performeradd",
     HeaderButton = "stasharr-header-button",
     AddAllAvailable = "stasharr-addallavailable",
+    StudioMonitor = "stasharr-studiomonitor",
     PerformerMonitor = "stasharr-performermonitor",
     SearchAllExisting = "stasharr-searchallavailable",
   }
   export class DOMSelector {
     static CardButton = getSelectorFromId(ID.CardButton);
+    static StudioAdd = getSelectorFromId(ID.StudioAdd);
     static PerformerAdd = getSelectorFromId(ID.PerformerAdd);
     static HeaderButton = getSelectorFromId(ID.HeaderButton);
     static AddAllAvailable = getSelectorFromId(ID.AddAllAvailable);
+    static StudioMonitor = getSelectorFromId(ID.StudioMonitor);
     static PerformerMonitor = getSelectorFromId(ID.PerformerMonitor);
     static SearchAllExisting = getSelectorFromId(ID.SearchAllExisting);
     static SceneCardByButtonStatus = (status: SceneStatus) => {

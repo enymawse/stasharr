@@ -1,7 +1,7 @@
 import { ButtonController } from "./controller/ButtonController";
 import { PerformerController } from "./controller/PerformerController";
 import { ScenesListController } from "./controller/ScenesListController";
-import { StudioSummaryController } from "./controller/StudioSummaryController";
+import { StudioController } from "./controller/StudioController";
 import { StashDB } from "./enums/StashDB";
 import { Settings } from "./settings/Settings";
 import {
@@ -32,9 +32,9 @@ import {
             if (shouldButtonsInit(node)) {
               ButtonController.initializeButtons(settings.config);
             }
-            // if (shouldStudioInit(node)) {
-            //   StudioSummaryController.initialize(settings.config);
-            // }
+            if (shouldStudioInit(node)) {
+              StudioController.initialize(settings.config);
+            }
             if (shouldScenesListInit(node)) {
               ScenesListController.initialize(settings.config);
             }

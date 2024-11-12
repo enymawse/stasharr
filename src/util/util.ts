@@ -89,3 +89,7 @@ export function removeTooltip(element: HTMLElement): void {
 export function getSelectorFromId(id: Stasharr.ID): string {
   return `#${id}`;
 }
+
+export function responseStatusCodeOK(code: number) {
+  return code < 300 && code >= 200;
+}

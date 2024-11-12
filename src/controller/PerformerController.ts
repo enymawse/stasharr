@@ -72,7 +72,7 @@ export class PerformerController {
     button.style.cssText = Styles.AddPerformerButton.style;
     addTooltip(button, `Add ${name} to Whisparr`);
     button.addEventListener("click", () => {
-      PerformerController.addPerformer(config, button, stashId);
+      PerformerController.addPerformer(config, button, stashId, name);
     });
     return button;
   }
@@ -81,6 +81,7 @@ export class PerformerController {
     config: Config,
     addPerformerButton: HTMLButtonElement,
     stashId: string,
+    name: string,
   ): void {
     PerformerController.updateAddPerformerButtonToLoading(addPerformerButton);
     PerformerService.addPerformer(config, stashId).then((response) => {

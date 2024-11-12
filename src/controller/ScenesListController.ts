@@ -5,10 +5,11 @@ import { faPlus, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { Stasharr } from "../enums/Stasharr";
 import { SceneStatus } from "../enums/SceneStatus";
 import { addTooltip, extractStashIdFromSceneCard } from "../util/util";
-import WhisparrService from "../service/WhisparrService";
 import ToastService from "../service/ToastService";
 import { StashDB } from "../enums/StashDB";
-import { isNumber, parseInt } from "lodash";
+import { parseInt } from "lodash";
+import SceneService from "../service/SceneService";
+import { ButtonController } from "./ButtonController";
 
 export class ScenesListController {
   static initialize(config: Config) {
@@ -84,6 +85,7 @@ export class ScenesListController {
     return customDiv;
   }
 
+  // TODO: This code is a mess. Needs to be refactored for readability
   private static handleAllAvailableButtonClick(
     config: Config,
     status: SceneStatus,
@@ -94,27 +96,47 @@ export class ScenesListController {
         ?.getAttribute(StashDB.DataAttribute.DataPage) || "{Page not found}",
     );
     let stashIds: string[] = [];
-    document
-      .querySelectorAll<HTMLElement>(
-        Stasharr.DOMSelector.SceneCardByButtonStatus(status),
-      )
-      .forEach((node) => {
-        const stashId = extractStashIdFromSceneCard(node);
-        if (stashId) stashIds.push(stashId);
-      });
+    let complexObject: Map<
+      string,
+      { status: SceneStatus | null; sceneCard: HTMLElement }
+    > = new Map();
+    let sceneCards = document.querySelectorAll<HTMLElement>(
+      Stasharr.DOMSelector.SceneCardByButtonStatus(status),
+    );
+    sceneCards.forEach((node) => {
+      const stashId = extractStashIdFromSceneCard(node);
+      if (stashId) {
+        complexObject.set(stashId, { status: null, sceneCard: node });
+        stashIds.push(stashId);
+      }
+    });
     if (status === SceneStatus.EXISTS) {
-      WhisparrService.searchAll(config, stashIds).then(() => {
+      SceneService.triggerWhisparrSearchAll(config, stashIds).then(() => {
         ToastService.showToast(
           `Triggered search for all ${stashIds.length} existing scenes on page ${pageNumber + 1}.`,
           true,
         );
       });
     } else if (status === SceneStatus.NEW) {
-      WhisparrService.addAll(config, stashIds).then(() => {
+      SceneService.lookupAndAddAll(config, complexObject).then((sceneMap) => {
         ToastService.showToast(
-          `Triggered search for all ${stashIds.length} new scenes on page ${pageNumber + 1}.`,
+          `Added ${sceneMap.size} new scenes to Whisparr from page ${pageNumber + 1}.`,
           true,
         );
+        // reinit
+        sceneMap.forEach((sceneMapObject) => {
+          let button =
+            sceneMapObject.sceneCard.querySelector<HTMLButtonElement>(
+              Stasharr.DOMSelector.CardButton,
+            );
+          if (button && sceneMapObject.status) {
+            ButtonController.updateButtonForExistingScene(
+              button,
+              false,
+              sceneMapObject.status,
+            );
+          }
+        });
       });
     }
   }
