@@ -75,16 +75,4 @@ export namespace Styles {
         border-radius: 5px;
       `;
   }
-
-  export class Toast {
-    static style(isSuccess: boolean) {
-      return `
-        padding: 10px;
-        background-color: ${isSuccess ? Styles.Color.GREEN : Styles.Color.RED};
-        color: ${Color.WHITE};
-        margin: 10px;
-        border-radius: 5px;
-      `;
-    }
-  }
 }
