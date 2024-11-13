@@ -1,7 +1,11 @@
 import { icon } from "@fortawesome/fontawesome-svg-core";
 import { Styles } from "../enums/Styles";
 import { Config } from "../models/Config";
-import { faPlus, faSearch } from "@fortawesome/free-solid-svg-icons";
+import {
+  faDownload,
+  faPlus,
+  faSearch,
+} from "@fortawesome/free-solid-svg-icons";
 import { Stasharr } from "../enums/Stasharr";
 import { SceneStatus } from "../enums/SceneStatus";
 import { addTooltip, extractStashIdFromSceneCard } from "../util/util";
@@ -50,7 +54,7 @@ export class ScenesListController {
     button.type = "button";
     button.style.cssText = Styles.SearchAllAvailable.style;
     button.id = Stasharr.ID.AddAllAvailable;
-    button.innerHTML = `${icon(faPlus).html}`;
+    button.innerHTML = `${icon(faDownload).html} Add All`;
     addTooltip(button, "Add all available scenes on this page to Whisparr.");
 
     button.addEventListener("click", () => {
@@ -72,7 +76,7 @@ export class ScenesListController {
     button.type = "button";
     button.style.cssText = Styles.SearchAllExisting.style;
     button.id = Stasharr.ID.SearchAllExisting;
-    button.innerHTML = `${icon(faSearch).html}`;
+    button.innerHTML = `${icon(faSearch).html} Search All`;
     addTooltip(button, "Search all available scenes on this page in Whisparr.");
 
     button.addEventListener("click", () => {
