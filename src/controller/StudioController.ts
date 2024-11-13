@@ -1,7 +1,7 @@
 import { icon } from "@fortawesome/fontawesome-svg-core";
 import { Config } from "../models/Config";
 import WhisparrService from "../service/WhisparrService";
-import { Whisparr } from "../types/types";
+import { Whisparr } from "../types/whisparr";
 import {
   faBookmark as faBookmarkSolid,
   faExclamationTriangle,

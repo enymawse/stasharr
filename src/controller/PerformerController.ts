@@ -14,7 +14,7 @@ import {
   extractStashIdFromPath,
   removeTooltip,
 } from "../util/util";
-import { Whisparr } from "../types/types";
+import { Whisparr } from "../types/whisparr";
 import ToastService from "../service/ToastService";
 import { isNull } from "lodash";
 import PerformerService from "../service/PerformerService";

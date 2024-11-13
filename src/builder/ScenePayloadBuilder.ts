@@ -1,4 +1,4 @@
-import { Whisparr } from "../types/types";
+import { Whisparr } from "../types/whisparr";
 
 export class ScenePayloadBuilder {
   payload: Whisparr.MoviePayload;

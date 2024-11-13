@@ -1,8 +1,9 @@
 import { CommandPayloadBuilder } from "../builder/CommandPayloadBuilder";
 import { ScenePayloadBuilder } from "../builder/ScenePayloadBuilder";
-import { SceneStatus } from "../enums/SceneStatus";
+import { SceneLookupStatus, SceneStatus } from "../enums/SceneStatus";
 import { Config } from "../models/Config";
-import { Whisparr } from "../types/types";
+import { StashIdToSceneCardAndStatusMap } from "../types/stasharr";
+import { Whisparr } from "../types/whisparr";
 import ServiceBase from "./ServiceBase";
 import ToastService from "./ToastService";
 import WhisparrService from "./WhisparrService";
@@ -51,9 +52,11 @@ export default class SceneService extends ServiceBase {
   ): Promise<SceneStatus> {
     const scene = await SceneService.getSceneByStashId(config, stashId);
     if (scene) {
-      return scene.hasFile ? SceneStatus.DOWNLOADED : SceneStatus.EXISTS;
+      return scene.hasFile
+        ? SceneStatus.EXISTS_AND_HAS_FILE
+        : SceneStatus.EXISTS_AND_NO_FILE;
     } else {
-      return SceneStatus.NEW;
+      return SceneStatus.NOT_IN_WHISPARR;
     }
   }
 
@@ -93,12 +96,12 @@ export default class SceneService extends ServiceBase {
    *
    * @param {Config} config - The configuration object containing API details and user preferences.
    * @param {string} stashId - The unique identifier of the scene to search.
-   * @returns {Promise<SceneStatus>} - A promise that resolves with the status of the scene (ADDED, NOT_FOUND, or ERROR).
+   * @returns {Promise<SceneLookupStatus>} - A promise that resolves with the status of the scene (ADDED, NOT_FOUND, or ERROR).
    */
   static async triggerWhisparrSearch(
     config: Config,
     stashId: string,
-  ): Promise<SceneStatus> {
+  ): Promise<SceneLookupStatus> {
     const scene: Whisparr.WhisparrScene | null =
       await SceneService.getSceneByStashId(config, stashId);
     if (scene) {
@@ -111,11 +114,11 @@ export default class SceneService extends ServiceBase {
         payload,
       );
       if (moviesSearchCommandResponse) {
-        return SceneStatus.ADDED;
+        return SceneLookupStatus.ADDED;
       }
-      return SceneStatus.ERROR;
+      return SceneLookupStatus.ERROR;
     } else {
-      return SceneStatus.NOT_FOUND;
+      return SceneLookupStatus.NOT_FOUND;
     }
   }
 
@@ -173,53 +176,49 @@ export default class SceneService extends ServiceBase {
    * Looks up the Scene in Whisparr by its stashId and adds it to Whisparr if found.
    * @param config The configuration object containing API details and user preferences.
    * @param stashId The Scene's unique identifier.
-   * @returns {Promise<SceneStatus>} A promise that resolves with the status of the attempted
+   * @returns {Promise<SceneLookupStatus>} A promise that resolves with the status of the attempted
    * lookup and add operations.
    */
   static async lookupAndAddScene(
     config: Config,
     stashId: string,
-  ): Promise<SceneStatus> {
+  ): Promise<SceneLookupStatus> {
     let scene = await SceneService.lookupSceneByStashId(config, stashId).then(
       async (s) => {
         if (s) {
           return await SceneService.addScene(config, s);
         } else {
-          return SceneStatus.NOT_FOUND;
+          return SceneLookupStatus.NOT_FOUND;
         }
       },
     );
-    return scene ? SceneStatus.ADDED : SceneStatus.ERROR;
+    return scene ? SceneLookupStatus.ADDED : SceneLookupStatus.ERROR;
   }
 
   /**
    *
    * @param {Config} config The configuration object containing API details and user preferences.
-   * @param {Map<string, { status: SceneStatus | null; sceneCard: HTMLElement }>} complexObject A map
+   * @param {StashIdToSceneCardAndStatusMap} stashIdtoSceneCardAndStatusMap A map
    * of scene identifiers and their associated objects.
-   * @returns {Promise<Map<string, { status: SceneStatus | null; sceneCard: HTMLElement }>>} A promise
+   * @returns {Promise<StashIdToSceneCardAndStatusMap>} A promise
    * that resolves to an updated map with scene statuses.
    */
   static async lookupAndAddAll(
     config: Config,
-    complexObject: Map<
-      string,
-      { status: SceneStatus | null; sceneCard: HTMLElement }
-    >,
-  ): Promise<
-    Map<string, { status: SceneStatus | null; sceneCard: HTMLElement }>
-  > {
-    // TODO: Make this more readable. That likely will include refactoring the return type into something
-    // more readable.
-    const updatePromises = Array.from(complexObject.entries()).map(
-      async ([key, obj]) => {
-        const status = await SceneService.lookupAndAddScene(config, key);
-        obj.status = status;
-      },
-    );
+    stashIdtoSceneCardAndStatusMap: StashIdToSceneCardAndStatusMap,
+  ): Promise<StashIdToSceneCardAndStatusMap> {
+    const updatePromises = Array.from(
+      stashIdtoSceneCardAndStatusMap.entries(),
+    ).map(async ([key, obj]) => {
+      const status: SceneLookupStatus = await SceneService.lookupAndAddScene(
+        config,
+        key,
+      );
+      obj.status = SceneLookupStatus.mapToSceneStatus(status);
+    });
 
     await Promise.all(updatePromises);
 
-    return complexObject;
+    return stashIdtoSceneCardAndStatusMap;
   }
 }

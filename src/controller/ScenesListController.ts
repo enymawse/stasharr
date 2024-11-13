@@ -10,6 +10,7 @@ import { StashDB } from "../enums/StashDB";
 import { parseInt } from "lodash";
 import SceneService from "../service/SceneService";
 import { ButtonController } from "./ButtonController";
+import { StashIdToSceneCardAndStatusMap } from "../types/stasharr";
 
 export class ScenesListController {
   static initialize(config: Config) {
@@ -55,7 +56,7 @@ export class ScenesListController {
     button.addEventListener("click", () => {
       ScenesListController.handleAllAvailableButtonClick(
         config,
-        SceneStatus.NEW,
+        SceneStatus.NOT_IN_WHISPARR,
       );
     });
 
@@ -77,7 +78,7 @@ export class ScenesListController {
     button.addEventListener("click", () => {
       ScenesListController.handleAllAvailableButtonClick(
         config,
-        SceneStatus.EXISTS,
+        SceneStatus.EXISTS_AND_NO_FILE,
       );
     });
 
@@ -95,49 +96,57 @@ export class ScenesListController {
         .querySelector<HTMLElement>(StashDB.DOMSelector.DataPage)
         ?.getAttribute(StashDB.DataAttribute.DataPage) || "{Page not found}",
     );
-    let stashIds: string[] = [];
-    let complexObject: Map<
-      string,
-      { status: SceneStatus | null; sceneCard: HTMLElement }
-    > = new Map();
+    let stashIdtoSceneCardAndStatusMap: StashIdToSceneCardAndStatusMap =
+      new Map();
     let sceneCards = document.querySelectorAll<HTMLElement>(
       Stasharr.DOMSelector.SceneCardByButtonStatus(status),
     );
     sceneCards.forEach((node) => {
       const stashId = extractStashIdFromSceneCard(node);
       if (stashId) {
-        complexObject.set(stashId, { status: null, sceneCard: node });
-        stashIds.push(stashId);
+        stashIdtoSceneCardAndStatusMap.set(stashId, {
+          status: null,
+          sceneCard: node,
+        });
       }
     });
-    if (status === SceneStatus.EXISTS) {
-      SceneService.triggerWhisparrSearchAll(config, stashIds).then(() => {
+    if (status === SceneStatus.EXISTS_AND_NO_FILE) {
+      SceneService.triggerWhisparrSearchAll(
+        config,
+        Array.from(stashIdtoSceneCardAndStatusMap.keys()),
+      ).then(() => {
         ToastService.showToast(
-          `Triggered search for all ${stashIds.length} existing scenes on page ${pageNumber + 1}.`,
+          `Triggered search for all ${stashIdtoSceneCardAndStatusMap.size} existing scenes on page ${pageNumber + 1}.`,
           true,
         );
       });
-    } else if (status === SceneStatus.NEW) {
-      SceneService.lookupAndAddAll(config, complexObject).then((sceneMap) => {
-        ToastService.showToast(
-          `Added ${sceneMap.size} new scenes to Whisparr from page ${pageNumber + 1}.`,
-          true,
-        );
-        // reinit
-        sceneMap.forEach((sceneMapObject) => {
-          let button =
-            sceneMapObject.sceneCard.querySelector<HTMLButtonElement>(
-              Stasharr.DOMSelector.CardButton,
-            );
-          if (button && sceneMapObject.status) {
-            ButtonController.updateButtonForExistingScene(
-              button,
-              false,
-              sceneMapObject.status,
-            );
-          }
-        });
-      });
+    } else if (status === SceneStatus.NOT_IN_WHISPARR) {
+      SceneService.lookupAndAddAll(config, stashIdtoSceneCardAndStatusMap).then(
+        (sceneMap) => {
+          ToastService.showToast(
+            `Added ${sceneMap.size} new scenes to Whisparr from page ${pageNumber + 1}.`,
+            true,
+          );
+          ScenesListController.updateButtonsForExistingScenes(sceneMap);
+        },
+      );
     }
+  }
+
+  private static updateButtonsForExistingScenes(
+    sceneMap: StashIdToSceneCardAndStatusMap,
+  ) {
+    sceneMap.forEach((sceneMapObject) => {
+      let button = sceneMapObject.sceneCard.querySelector<HTMLButtonElement>(
+        Stasharr.DOMSelector.CardButton,
+      );
+      if (button && sceneMapObject.status) {
+        ButtonController.updateButtonForExistingScene(
+          button,
+          false,
+          sceneMapObject.status,
+        );
+      }
+    });
   }
 }

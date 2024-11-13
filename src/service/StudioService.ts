@@ -1,6 +1,6 @@
 import { StudioPayloadBuilder } from "../builder/StudioPayloadBuilder";
 import { Config } from "../models/Config";
-import { Whisparr } from "../types/types";
+import { Whisparr } from "../types/whisparr";
 import ServiceBase from "./ServiceBase";
 import ToastService from "./ToastService";
 
