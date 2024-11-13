@@ -18,7 +18,6 @@ export namespace Styles {
         border: none;
         border-radius: 10%;
         padding: 5px;
-        cursor: pointer;
         color: ${Color.WHITE};
     `;
   }
@@ -54,7 +53,6 @@ export namespace Styles {
         padding: 10px;
         border: none;
         border-radius: 5px;
-        cursor: pointer;
     `;
   }
 
@@ -65,7 +63,6 @@ export namespace Styles {
         padding: 10px;
         border: none;
         border-radius: 5px;
-        cursor: pointer;
     `;
   }
 
@@ -76,7 +73,6 @@ export namespace Styles {
         padding: 10px;
         border: none;
         border-radius: 5px;
-        cursor: pointer;
       `;
   }
 

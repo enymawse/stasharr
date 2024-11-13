@@ -1,11 +1,9 @@
-// Define SceneStatus as a regular enum
 export enum SceneStatus {
   EXISTS_AND_HAS_FILE,
   EXISTS_AND_NO_FILE,
   NOT_IN_WHISPARR,
 }
 
-// SceneLookupStatus with mapping functionality
 export class SceneLookupStatus {
   static readonly ADDED = new SceneLookupStatus(
     "ADDED",
