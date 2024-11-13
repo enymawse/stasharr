@@ -13,6 +13,7 @@ import {
   addTooltip,
   extractStashIdFromPath,
   removeTooltip,
+  responseStatusCodeOK,
 } from "../util/util";
 import { Whisparr } from "../types/whisparr";
 import ToastService from "../service/ToastService";
@@ -85,7 +86,7 @@ export class PerformerController {
   ): void {
     PerformerController.updateAddPerformerButtonToLoading(addPerformerButton);
     PerformerService.addPerformer(config, stashId).then((response) => {
-      if (response.status < 200 || response.status >= 300) {
+      if (!responseStatusCodeOK(response.status)) {
         ToastService.showToast(
           "An error occurred while adding the performer to Whisparr.",
           false,

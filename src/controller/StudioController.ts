@@ -13,6 +13,7 @@ import {
   addTooltip,
   extractStashIdFromPath,
   removeTooltip,
+  responseStatusCodeOK,
 } from "../util/util";
 import { StashDB } from "../enums/StashDB";
 import { Stasharr } from "../enums/Stasharr";
@@ -26,12 +27,10 @@ export class StudioController {
     const studioStashId = extractStashIdFromPath();
     if (config.whisparrApiKey == "" || studioStashId == null) return;
 
-    const studioTitle: HTMLElement | null = document.querySelector<HTMLElement>(
-      StashDB.DOMSelector.StudioTitle,
-    );
-
-    const studioTitleH3: HTMLElement | null | undefined =
-      studioTitle?.querySelector<HTMLElement>("h3");
+    const studioTitleH3: HTMLElement | null =
+      document.querySelector<HTMLElement>(
+        StashDB.DOMSelector.StudioTitle + " > h3",
+      );
 
     if (studioTitleH3) {
       const studioMonitorButton = document.querySelector<HTMLElement>(
@@ -45,7 +44,6 @@ export class StudioController {
                 StudioController.initMonitorButton(config, studioDetails),
               );
             } else {
-              // TODO: handle studio not added
               const studioName =
                 studioTitleH3.querySelector<HTMLSpanElement>("span")?.innerText;
               studioTitleH3.append(
@@ -87,7 +85,7 @@ export class StudioController {
   ): void {
     StudioController.updateAddStudioButtonToLoading(addStudioButton);
     StudioService.addStudio(config, stashId).then((response) => {
-      if (response.status < 200 || response.status >= 300) {
+      if (!responseStatusCodeOK(response.status)) {
         ToastService.showToast(
           "An error occurred while adding the studio to Whisparr.",
           false,
@@ -120,8 +118,6 @@ export class StudioController {
     button.type = "button";
     button.classList.add("FavoriteStar", "ps-2", "btn", "btn-link");
     StudioController.updateMonitorButton(button, studio);
-    // button.innerHTML = `${icon(studio.monitored ? faBookmarkSolid : faBookmarkReg).html}`;
-    // addTooltip(button, "Monitor Studio in Whisparr");
     button.addEventListener("click", () => {
       StudioController.toggleMonitor(config, button, studio);
     });
