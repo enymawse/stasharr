@@ -5,6 +5,7 @@ import { SceneLookupStatus, SceneStatus } from "../enums/SceneStatus";
 import { Config } from "../models/Config";
 import { StashIdToSceneCardAndStatusMap } from "../types/stasharr";
 import { Whisparr } from "../types/whisparr";
+import ExclusionListService from "./ExclusionListService";
 import ServiceBase from "./ServiceBase";
 import ToastService from "./ToastService";
 import WhisparrService from "./WhisparrService";
@@ -51,6 +52,10 @@ export default class SceneService extends ServiceBase {
     config: Config,
     stashId: string,
   ): Promise<SceneStatus> {
+    const exclusionMap = await ExclusionListService.getExclusionsMap(config);
+    if (exclusionMap.size > 0) {
+      if (exclusionMap.has(stashId)) return SceneStatus.EXCLUDED;
+    }
     const scene = await SceneService.getSceneByStashId(config, stashId);
     if (scene) {
       return scene.hasFile

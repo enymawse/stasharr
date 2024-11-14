@@ -3,6 +3,7 @@ import {
   faDownload,
   faSearch,
   faSpinner,
+  faVideoSlash,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { Config } from "../models/Config";
@@ -92,6 +93,8 @@ export class ButtonController {
       case SceneStatus.NOT_IN_WHISPARR:
         ButtonController.updateButtonForNewScene(button, isHeader, status);
         break;
+      case SceneStatus.EXCLUDED:
+        ButtonController.updateButtonForExcludedScene(button, isHeader, status);
       default:
         break;
     }
@@ -182,7 +185,17 @@ export class ButtonController {
     button: HTMLButtonElement,
     isHeader: boolean,
     status: SceneStatus,
-  ): void {}
+  ): void {
+    ButtonController.updateButtonState(
+      button,
+      faVideoSlash,
+      "Excluded",
+      Styles.Color.RED,
+      isHeader,
+      status,
+      true,
+    );
+  }
 
   public static updateButtonForExistingScene(
     button: HTMLButtonElement,
