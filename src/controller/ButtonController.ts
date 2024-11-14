@@ -8,7 +8,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Config } from "../models/Config";
 import { icon } from "@fortawesome/fontawesome-svg-core";
-import { extractStashIdFromSceneCard } from "../util/util";
+import { addTooltip, extractStashIdFromSceneCard } from "../util/util";
 import SceneService from "../service/SceneService";
 import ToastService from "../service/ToastService";
 import { SceneLookupStatus, SceneStatus } from "../enums/SceneStatus";
@@ -164,12 +164,12 @@ export class ButtonController {
     button.innerHTML = `${isHeader ? icon(faSpinner, { classes: ["fa-spin"] }).html : ""} Loading`;
   }
 
-  // Update button states
   private static updateButtonForDownloadedScene(
     button: HTMLButtonElement,
     isHeader: boolean,
     status: SceneStatus,
   ): void {
+    addTooltip(button, "Scene downloaded already.");
     ButtonController.updateButtonState(
       button,
       faCircleCheck,
@@ -186,6 +186,7 @@ export class ButtonController {
     isHeader: boolean,
     status: SceneStatus,
   ): void {
+    addTooltip(button, "This scene is on your Exclusion List.");
     ButtonController.updateButtonState(
       button,
       faVideoSlash,
@@ -202,6 +203,10 @@ export class ButtonController {
     isHeader: boolean,
     status: SceneStatus,
   ): void {
+    addTooltip(
+      button,
+      "Scene exists but no file has been downloaded. Trigger Whisparr to search for this scene.",
+    );
     ButtonController.updateButtonState(
       button,
       faSearch,
@@ -217,6 +222,7 @@ export class ButtonController {
     isHeader: boolean,
     status: SceneStatus,
   ): void {
+    addTooltip(button, "Add this scene to Whisparr.");
     ButtonController.updateButtonState(
       button,
       faDownload,
