@@ -146,10 +146,13 @@ export class StudioController {
     StudioService.updateStudio(config, studio).then((updatedStudio) => {
       StudioController.updateMonitorButton(button, updatedStudio);
       if (updatedStudio.monitored) {
-        ToastService.showToast(`Monitoring ${studio.title} in Whisparr`, true);
+        ToastService.showToast(
+          `Monitoring ${updatedStudio.title} in Whisparr`,
+          true,
+        );
       } else {
         ToastService.showToast(
-          `Unmonitoring ${studio.title} in Whisparr`,
+          `Unmonitoring ${updatedStudio.title} in Whisparr`,
           true,
         );
       }
