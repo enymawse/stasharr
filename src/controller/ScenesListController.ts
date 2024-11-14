@@ -29,7 +29,7 @@ export class ScenesListController {
       const searchAllAvailableButton = document.querySelector(
         Stasharr.DOMSelector.SearchAllExisting,
       );
-      if (sceneListCommandRow && !addAllAvailableButton) {
+      if (sceneListCommandRow) {
         if (!addAllAvailableButton) {
           sceneListCommandRow.insertBefore(
             ScenesListController.createAddAllAvaiableButton(config),
@@ -90,7 +90,6 @@ export class ScenesListController {
     return customDiv;
   }
 
-  // TODO: This code is a mess. Needs to be refactored for readability
   private static handleAllAvailableButtonClick(
     config: Config,
     status: SceneStatus,
