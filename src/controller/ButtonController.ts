@@ -27,19 +27,14 @@ export class ButtonController {
         sceneCard.appendChild(button);
         const stashId = extractStashIdFromSceneCard(sceneCard);
         if (stashId) {
-          try {
-            const status: SceneStatus = await SceneService.getSceneStatus(
-              config,
-              stashId,
-            );
-            ButtonController.updateButton(button, status);
-            button.addEventListener("click", () =>
-              ButtonController.handleButtonClick(config, stashId, button),
-            );
-          } catch (error) {
-            ToastService.showToast(JSON.stringify(error), false);
-            console.error(error);
-          }
+          const status: SceneStatus = await SceneService.getSceneStatus(
+            config,
+            stashId,
+          );
+          ButtonController.updateButton(button, status);
+          button.addEventListener("click", () =>
+            ButtonController.handleButtonClick(config, stashId, button),
+          );
         }
       }
     });
@@ -59,24 +54,19 @@ export class ButtonController {
         cardHeader.appendChild(triggerButton);
         const sceneID = extractStashIdFromSceneCard();
         if (sceneID) {
-          try {
-            const status: SceneStatus = await SceneService.getSceneStatus(
+          const status: SceneStatus = await SceneService.getSceneStatus(
+            config,
+            sceneID,
+          );
+          ButtonController.updateButton(triggerButton, status, isHeader);
+          triggerButton.addEventListener("click", () => {
+            ButtonController.handleButtonClick(
               config,
               sceneID,
+              triggerButton,
+              isHeader,
             );
-            ButtonController.updateButton(triggerButton, status, isHeader);
-            triggerButton.addEventListener("click", () => {
-              ButtonController.handleButtonClick(
-                config,
-                sceneID,
-                triggerButton,
-                isHeader,
-              );
-            });
-          } catch (error) {
-            ToastService.showToast(JSON.stringify(error), false);
-            console.log(error);
-          }
+          });
         }
       }
     })();
@@ -113,47 +103,35 @@ export class ButtonController {
     isHeader: boolean = false,
   ) {
     ButtonController.setLoadingState(button, isHeader);
-    try {
-      const status: SceneStatus = await SceneService.getSceneStatus(
-        config,
-        sceneID,
-      );
-      if (status === SceneStatus.NOT_IN_WHISPARR) {
-        const result = await SceneService.lookupAndAddScene(config, sceneID);
-        if (result === SceneLookupStatus.ADDED) {
-          ButtonController.updateButtonForExistingScene(
-            button,
-            isHeader,
-            status,
-          );
-          ToastService.showToast("Scene added successfully!", true);
-        } else {
-          ButtonController.updateButtonForNewScene(button, isHeader, status);
-          if (result === SceneLookupStatus.NOT_FOUND) {
-            ToastService.showToast("Scene not found!", false);
-          } else {
-            ToastService.showToast("Error adding Scene!", false);
-          }
-        }
-      } else if (status === SceneStatus.EXISTS_AND_NO_FILE) {
-        const result = await SceneService.triggerWhisparrSearch(
-          config,
-          sceneID,
-        );
+    const status: SceneStatus = await SceneService.getSceneStatus(
+      config,
+      sceneID,
+    );
+    if (status === SceneStatus.NOT_IN_WHISPARR) {
+      const result = await SceneService.lookupAndAddScene(config, sceneID);
+      if (result === SceneLookupStatus.ADDED) {
         ButtonController.updateButtonForExistingScene(button, isHeader, status);
-        if (result === SceneLookupStatus.ADDED) {
-          ToastService.showToast("Searching for Scene", true);
+        ToastService.showToast("Scene added successfully!", true);
+      } else {
+        ButtonController.updateButtonForNewScene(button, isHeader, status);
+        if (result === SceneLookupStatus.NOT_FOUND) {
+          ToastService.showToast("Scene not found!", false);
         } else {
-          if (result === SceneLookupStatus.NOT_FOUND) {
-            ToastService.showToast("Scene not found!", false);
-          } else {
-            ToastService.showToast("Error Searching for Scene!", false);
-          }
+          ToastService.showToast("Error adding Scene!", false);
         }
       }
-    } catch (error) {
-      ToastService.showToast(JSON.stringify(error), false);
-      console.log(JSON.stringify(error), error);
+    } else if (status === SceneStatus.EXISTS_AND_NO_FILE) {
+      const result = await SceneService.triggerWhisparrSearch(config, sceneID);
+      ButtonController.updateButtonForExistingScene(button, isHeader, status);
+      if (result === SceneLookupStatus.ADDED) {
+        ToastService.showToast("Searching for Scene", true);
+      } else {
+        if (result === SceneLookupStatus.NOT_FOUND) {
+          ToastService.showToast("Scene not found!", false);
+        } else {
+          ToastService.showToast("Error Searching for Scene!", false);
+        }
+      }
     }
   }
 
