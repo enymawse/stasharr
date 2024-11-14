@@ -14,6 +14,7 @@ import { SceneLookupStatus, SceneStatus } from "../enums/SceneStatus";
 import { Styles } from "../enums/Styles";
 import { Stasharr } from "../enums/Stasharr";
 import { StashDB } from "../enums/StashDB";
+import { SceneSearchCommandStatus } from "../enums/SceneSearchCommandStatus";
 
 export class ButtonController {
   static initializeButtons(config: Config) {
@@ -123,14 +124,10 @@ export class ButtonController {
     } else if (status === SceneStatus.EXISTS_AND_NO_FILE) {
       const result = await SceneService.triggerWhisparrSearch(config, sceneID);
       ButtonController.updateButtonForExistingScene(button, isHeader, status);
-      if (result === SceneLookupStatus.ADDED) {
+      if (result === SceneSearchCommandStatus.CREATED) {
         ToastService.showToast("Searching for Scene", true);
       } else {
-        if (result === SceneLookupStatus.NOT_FOUND) {
-          ToastService.showToast("Scene not found!", false);
-        } else {
-          ToastService.showToast("Error Searching for Scene!", false);
-        }
+        ToastService.showToast("Error Searching for Scene!", false);
       }
     }
   }
@@ -180,6 +177,12 @@ export class ButtonController {
       true,
     );
   }
+
+  public static updateButtonForExcludedScene(
+    button: HTMLButtonElement,
+    isHeader: boolean,
+    status: SceneStatus,
+  ): void {}
 
   public static updateButtonForExistingScene(
     button: HTMLButtonElement,
