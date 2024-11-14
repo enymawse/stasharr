@@ -2,6 +2,7 @@ export enum SceneStatus {
   EXISTS_AND_HAS_FILE,
   EXISTS_AND_NO_FILE,
   NOT_IN_WHISPARR,
+  EXCLUDED,
 }
 
 export class SceneLookupStatus {

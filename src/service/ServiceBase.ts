@@ -42,7 +42,7 @@ export default class ServiceBase {
   public static async request(
     config: Config,
     endpoint: string,
-    method: "GET" | "POST" | "HEAD" | "PUT" = "GET",
+    method: "GET" | "POST" | "HEAD" | "PUT" | "DELETE" = "GET",
     body?: any,
     additionalHeaders = {},
   ): Promise<VMScriptResponseObject<any>> {

@@ -1,4 +1,5 @@
 import { SceneStatus } from "../enums/SceneStatus";
+import { Whisparr } from "./whisparr";
 
 /**
  * Represents a mapping of `stashId` strings to objects containing scene-related data.
@@ -24,3 +25,5 @@ export type StashIdToSceneCardAndStatusMap = Map<
   string,
   { status: SceneStatus | null; sceneCard: HTMLElement }
 >;
+
+export type ExclusionsMap = Map<string, Whisparr.Exclusion>;

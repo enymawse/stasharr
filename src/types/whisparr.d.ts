@@ -134,6 +134,12 @@ export namespace Whisparr {
     tags: string[];
   };
 
+  type ExclusionPayload = {
+    foreignId: string;
+    movieTitle: string;
+    movieYear: number;
+  };
+
   type CommandPayload = {
     name: string;
     movieIds: number[];
@@ -220,5 +226,14 @@ export namespace Whisparr {
     rootFolderPath: string;
     searchOnAdd: boolean;
     title: string;
+  };
+
+  type ExclusionList = Exclusion[];
+
+  type Exclusion = {
+    foreignId: string;
+    movieTitle: string;
+    movieYear: number;
+    id: number;
   };
 }
