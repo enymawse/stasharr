@@ -11,6 +11,7 @@ export namespace Stasharr {
     StudioAdd = "stasharr-studioadd",
     PerformerAdd = "stasharr-performeradd",
     HeaderButton = "stasharr-header-button",
+    SettingsModal = "stasharr-settingsModal",
     AddAllAvailable = "stasharr-addallavailable",
     StudioMonitor = "stasharr-studiomonitor",
     PerformerMonitor = "stasharr-performermonitor",
@@ -19,6 +20,7 @@ export namespace Stasharr {
   export class DOMSelector {
     static CardButton = getSelectorFromId(ID.CardButton);
     static StudioAdd = getSelectorFromId(ID.StudioAdd);
+    static SettingsModal = getSelectorFromId(ID.SettingsModal);
     static PerformerAdd = getSelectorFromId(ID.PerformerAdd);
     static HeaderButton = getSelectorFromId(ID.HeaderButton);
     static AddAllAvailable = getSelectorFromId(ID.AddAllAvailable);
