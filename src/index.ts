@@ -1,5 +1,6 @@
 import { ButtonController } from "./controller/ButtonController";
 import { PerformerController } from "./controller/PerformerController";
+import { NavbarController } from "./controller/NavbarController";
 import { ScenesListController } from "./controller/ScenesListController";
 import { StudioController } from "./controller/StudioController";
 import { StashDB } from "./enums/StashDB";
@@ -18,6 +19,7 @@ import {
   ButtonController.initializeButtons(settings.config);
   // StudioSummaryController.initialize(settings.config);
   ScenesListController.initialize(settings.config);
+  const navbarController = new NavbarController(document.body);
 
   const observer = new MutationObserver((mutationsList) => {
     const path: string[] = window.location.pathname.split("/");
