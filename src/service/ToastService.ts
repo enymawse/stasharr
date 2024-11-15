@@ -45,7 +45,6 @@ export default class ToastService {
 
       toastContainer.appendChild(customToast);
       customToast.addEventListener("hidden.bs.toast", () => {
-        console.log("hidden.bs.toast fired");
         customToast.remove();
       });
       const toast = new Toast(customToast);

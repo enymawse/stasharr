@@ -5,6 +5,7 @@ import {
   faDownload,
   faPlus,
   faSearch,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { Stasharr } from "../enums/Stasharr";
 import { SceneStatus } from "../enums/SceneStatus";
@@ -59,6 +60,7 @@ export class ScenesListController {
 
     button.addEventListener("click", () => {
       ScenesListController.handleAllAvailableButtonClick(
+        button,
         config,
         SceneStatus.NOT_IN_WHISPARR,
       );
@@ -81,6 +83,7 @@ export class ScenesListController {
 
     button.addEventListener("click", () => {
       ScenesListController.handleAllAvailableButtonClick(
+        button,
         config,
         SceneStatus.EXISTS_AND_NO_FILE,
       );
@@ -91,9 +94,11 @@ export class ScenesListController {
   }
 
   private static handleAllAvailableButtonClick(
+    button: HTMLButtonElement,
     config: Config,
     status: SceneStatus,
   ): void {
+    ScenesListController.setLoadingState(button);
     let pageNumber: number = parseInt(
       document
         .querySelector<HTMLElement>(StashDB.DOMSelector.DataPage)
@@ -122,6 +127,7 @@ export class ScenesListController {
           `Triggered search for all ${stashIdtoSceneCardAndStatusMap.size} existing scenes on page ${pageNumber + 1}.`,
           true,
         );
+        ScenesListController.updateSearchAllAvailableButton(button);
       });
     } else if (status === SceneStatus.NOT_IN_WHISPARR) {
       SceneService.lookupAndAddAll(config, stashIdtoSceneCardAndStatusMap).then(
@@ -131,9 +137,34 @@ export class ScenesListController {
             true,
           );
           ScenesListController.updateButtonsForExistingScenes(sceneMap);
+          ScenesListController.updateAddAllAvailableButton(button);
         },
       );
     }
+  }
+
+  private static updateAddAllAvailableButton(button: HTMLButtonElement): void {
+    setTimeout(() => {
+      button.style.cssText = Styles.SearchAllAvailable.style;
+      button.innerHTML = `${icon(faDownload).html} Add All`;
+      button.disabled = false;
+    }, 200);
+  }
+
+  private static updateSearchAllAvailableButton(
+    button: HTMLButtonElement,
+  ): void {
+    setTimeout(() => {
+      button.style.cssText = Styles.SearchAllExisting.style;
+      button.innerHTML = `${icon(faSearch).html} Search All`;
+      button.disabled = false;
+    }, 200);
+  }
+
+  private static setLoadingState(button: HTMLButtonElement): void {
+    button.disabled = true;
+    button.style.backgroundColor = Styles.Color.GRAY;
+    button.innerHTML = `${icon(faSpinner, { classes: ["fa-spin"] }).html} Loading`;
   }
 
   private static updateButtonsForExistingScenes(
