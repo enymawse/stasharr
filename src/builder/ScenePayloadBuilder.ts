@@ -1,13 +1,13 @@
-import { Whisparr } from "../types/whisparr";
+import { Whisparr } from '../types/whisparr';
 
 export class ScenePayloadBuilder {
   payload: Whisparr.MoviePayload;
   constructor() {
     this.payload = {
-      title: "",
-      studio: "",
-      foreignId: "",
-      rootFolderPath: "",
+      title: '',
+      studio: '',
+      foreignId: '',
+      rootFolderPath: '',
       monitored: true,
       addOptions: { searchForMovie: true },
       qualityProfileId: 0,

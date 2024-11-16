@@ -1,41 +1,41 @@
-import path from "path";
-import { UserscriptPlugin } from "webpack-userscript";
-import metadata from "./metadata.js";
-import { fileURLToPath } from "url";
-import TerserPlugin from "terser-webpack-plugin";
+import path from 'path';
+import { UserscriptPlugin } from 'webpack-userscript';
+import metadata from './metadata.js';
+import { fileURLToPath } from 'url';
+import TerserPlugin from 'terser-webpack-plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const dev = process.env.NODE_ENV === "development";
+// eslint-disable-next-line no-undef
+const dev = process.env.NODE_ENV === 'development';
 
 if (dev) {
-  metadata.name += " Dev";
+  metadata.name += ' Dev';
   metadata.updateURL = undefined;
   metadata.downloadURL = undefined;
 }
 
 export default {
-  mode: dev ? "development" : "production",
-  entry: path.resolve(__dirname, "src", "index.ts"),
+  mode: dev ? 'development' : 'production',
+  entry: path.resolve(__dirname, 'src', 'index.ts'),
   output: {
-    path: path.resolve(__dirname, "dist"),
-    filename: dev ? "stasharr.dev.user.js" : "stasharr.user.js",
+    path: path.resolve(__dirname, 'dist'),
+    filename: dev ? 'stasharr.dev.user.js' : 'stasharr.user.js',
   },
-  devtool: dev ? "eval" : false,
+  devtool: dev ? 'eval' : false,
   module: {
     rules: [
       {
         test: /\.ts$/,
-        use: "ts-loader",
+        use: 'ts-loader',
         exclude: /node_modules/,
       },
       {
         test: /\.scss$/,
         use: [
-          "style-loader", // Injects CSS into the DOM
-          "css-loader", // Interprets @import and url() like import/require()
-          "sass-loader", // Loads and compiles SCSS files
+          'style-loader', // Injects CSS into the DOM
+          'css-loader', // Interprets @import and url() like import/require()
+          'sass-loader', // Loads and compiles SCSS files
         ],
       },
     ],
@@ -50,8 +50,8 @@ export default {
               mangle: false,
               compress: {
                 defaults: false,
-                ecma: "2020",
-                drop_console: ["debug"],
+                ecma: '2020',
+                drop_console: ['debug'],
               },
               format: {
                 comments: false,
@@ -63,15 +63,15 @@ export default {
         ],
       },
   resolve: {
-    extensions: [".ts", ".js"],
+    extensions: ['.ts', '.js'],
   },
   plugins: [
     new UserscriptPlugin({
       headers: metadata,
       proxyScript: dev
         ? {
-            baseUrl: "http://localhost:8080",
-            filename: "[basename].proxy.user.js",
+            baseUrl: 'http://localhost:8080',
+            filename: '[basename].proxy.user.js',
           }
         : undefined,
     }),
@@ -84,7 +84,7 @@ export default {
       writeToDisk: true,
     },
     static: {
-      directory: path.join(__dirname, "dist"),
+      directory: path.join(__dirname, 'dist'),
     },
   },
 };

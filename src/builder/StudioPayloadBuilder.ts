@@ -1,14 +1,14 @@
-import { Whisparr } from "../types/whisparr";
+import { Whisparr } from '../types/whisparr';
 
 export class StudioPayloadBuilder {
   payload: Whisparr.StudioPayload;
   constructor() {
     this.payload = {
       tags: [],
-      foreignId: "",
+      foreignId: '',
       searchOnAdd: false,
       qualityProfileId: 0,
-      rootFolderPath: "",
+      rootFolderPath: '',
       monitored: false,
     };
   }

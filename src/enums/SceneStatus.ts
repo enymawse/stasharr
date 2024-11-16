@@ -7,15 +7,15 @@ export enum SceneStatus {
 
 export class SceneLookupStatus {
   static readonly ADDED = new SceneLookupStatus(
-    "ADDED",
+    'ADDED',
     SceneStatus.EXISTS_AND_NO_FILE,
   );
   static readonly NOT_FOUND = new SceneLookupStatus(
-    "NOT_FOUND",
+    'NOT_FOUND',
     SceneStatus.NOT_IN_WHISPARR,
   );
   static readonly ERROR = new SceneLookupStatus(
-    "ERROR",
+    'ERROR',
     SceneStatus.NOT_IN_WHISPARR,
   );
 

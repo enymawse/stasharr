@@ -5,21 +5,21 @@ import {
   faSpinner,
   faVideoSlash,
   IconDefinition,
-} from "@fortawesome/free-solid-svg-icons";
-import { Config } from "../models/Config";
-import { icon } from "@fortawesome/fontawesome-svg-core";
-import { addTooltip, extractStashIdFromSceneCard } from "../util/util";
-import SceneService from "../service/SceneService";
-import ToastService from "../service/ToastService";
-import { SceneLookupStatus, SceneStatus } from "../enums/SceneStatus";
-import { Styles } from "../enums/Styles";
-import { Stasharr } from "../enums/Stasharr";
-import { StashDB } from "../enums/StashDB";
-import { SceneSearchCommandStatus } from "../enums/SceneSearchCommandStatus";
+} from '@fortawesome/free-solid-svg-icons';
+import { Config } from '../models/Config';
+import { icon } from '@fortawesome/fontawesome-svg-core';
+import { addTooltip, extractStashIdFromSceneCard } from '../util/util';
+import SceneService from '../service/SceneService';
+import ToastService from '../service/ToastService';
+import { SceneLookupStatus, SceneStatus } from '../enums/SceneStatus';
+import { Styles } from '../enums/Styles';
+import { Stasharr } from '../enums/Stasharr';
+import { StashDB } from '../enums/StashDB';
+import { SceneSearchCommandStatus } from '../enums/SceneSearchCommandStatus';
 
 export class ButtonController {
   static initializeButtons(config: Config) {
-    if (config.whisparrApiKey == "") return;
+    if (config.whisparrApiKey == '') return;
     const sceneCards = document.querySelectorAll<HTMLElement>(
       StashDB.DOMSelector.SceneCard,
     );
@@ -34,7 +34,7 @@ export class ButtonController {
             stashId,
           );
           ButtonController.updateButton(button, status);
-          button.addEventListener("click", () =>
+          button.addEventListener('click', () =>
             ButtonController.handleButtonClick(config, stashId, button),
           );
         }
@@ -61,7 +61,7 @@ export class ButtonController {
             sceneID,
           );
           ButtonController.updateButton(triggerButton, status, isHeader);
-          triggerButton.addEventListener("click", () => {
+          triggerButton.addEventListener('click', () => {
             ButtonController.handleButtonClick(
               config,
               sceneID,
@@ -95,6 +95,7 @@ export class ButtonController {
         break;
       case SceneStatus.EXCLUDED:
         ButtonController.updateButtonForExcludedScene(button, isHeader, status);
+        break;
       default:
         break;
     }
@@ -115,29 +116,29 @@ export class ButtonController {
       const result = await SceneService.lookupAndAddScene(config, sceneID);
       if (result === SceneLookupStatus.ADDED) {
         ButtonController.updateButtonForExistingScene(button, isHeader, status);
-        ToastService.showToast("Scene added successfully!", true);
+        ToastService.showToast('Scene added successfully!', true);
       } else {
         ButtonController.updateButtonForNewScene(button, isHeader, status);
         if (result === SceneLookupStatus.NOT_FOUND) {
-          ToastService.showToast("Scene not found!", false);
+          ToastService.showToast('Scene not found!', false);
         } else {
-          ToastService.showToast("Error adding Scene!", false);
+          ToastService.showToast('Error adding Scene!', false);
         }
       }
     } else if (status === SceneStatus.EXISTS_AND_NO_FILE) {
       const result = await SceneService.triggerWhisparrSearch(config, sceneID);
       ButtonController.updateButtonForExistingScene(button, isHeader, status);
       if (result === SceneSearchCommandStatus.CREATED) {
-        ToastService.showToast("Searching for Scene", true);
+        ToastService.showToast('Searching for Scene', true);
       } else {
-        ToastService.showToast("Error Searching for Scene!", false);
+        ToastService.showToast('Error Searching for Scene!', false);
       }
     }
   }
 
   private static createCardButton(): HTMLButtonElement {
-    const button = document.createElement("button");
-    button.style.cssText = Styles.CardButton.style;
+    const button = document.createElement('button');
+    button.style.cssText = Styles.CardButton;
     button.id = Stasharr.ID.CardButton;
     button.innerHTML = icon(faDownload).html[0]; // Icon only
     button.setAttribute(
@@ -148,9 +149,9 @@ export class ButtonController {
   }
 
   private static createHeaderButton(): HTMLButtonElement {
-    const button = document.createElement("button");
+    const button = document.createElement('button');
     button.id = Stasharr.ID.HeaderButton;
-    button.style.cssText = Styles.HeaderButton.style;
+    button.style.cssText = Styles.HeaderButton;
     button.innerHTML = icon(faDownload).html[0]; // Icon only
     return button;
   }
@@ -161,7 +162,7 @@ export class ButtonController {
   ): void {
     button.disabled = true;
     button.style.backgroundColor = Styles.Color.GRAY;
-    button.innerHTML = `${isHeader ? icon(faSpinner, { classes: ["fa-spin"] }).html : ""} Loading`;
+    button.innerHTML = `${isHeader ? icon(faSpinner, { classes: ['fa-spin'] }).html : ''} Loading`;
   }
 
   private static updateButtonForDownloadedScene(
@@ -169,11 +170,11 @@ export class ButtonController {
     isHeader: boolean,
     status: SceneStatus,
   ): void {
-    addTooltip(button, "Scene downloaded already.");
+    addTooltip(button, 'Scene downloaded already.');
     ButtonController.updateButtonState(
       button,
       faCircleCheck,
-      "Download Complete",
+      'Download Complete',
       Styles.Color.GREEN,
       isHeader,
       status,
@@ -186,11 +187,11 @@ export class ButtonController {
     isHeader: boolean,
     status: SceneStatus,
   ): void {
-    addTooltip(button, "This scene is on your Exclusion List.");
+    addTooltip(button, 'This scene is on your Exclusion List.');
     ButtonController.updateButtonState(
       button,
       faVideoSlash,
-      "Excluded",
+      'Excluded',
       Styles.Color.RED,
       isHeader,
       status,
@@ -205,12 +206,12 @@ export class ButtonController {
   ): void {
     addTooltip(
       button,
-      "Scene exists but no file has been downloaded. Trigger Whisparr to search for this scene.",
+      'Scene exists but no file has been downloaded. Trigger Whisparr to search for this scene.',
     );
     ButtonController.updateButtonState(
       button,
       faSearch,
-      "In Whisparr",
+      'In Whisparr',
       Styles.Color.YELLOW,
       isHeader,
       status,
@@ -222,11 +223,11 @@ export class ButtonController {
     isHeader: boolean,
     status: SceneStatus,
   ): void {
-    addTooltip(button, "Add this scene to Whisparr.");
+    addTooltip(button, 'Add this scene to Whisparr.');
     ButtonController.updateButtonState(
       button,
       faDownload,
-      "Add to Whisparr",
+      'Add to Whisparr',
       Styles.Color.PINK,
       isHeader,
       status,
@@ -237,7 +238,7 @@ export class ButtonController {
     button: HTMLButtonElement,
     iconType: IconDefinition,
     text: string,
-    backgroundColor: Styles.Color,
+    backgroundColor: string,
     isHeader: boolean,
     status: SceneStatus,
     disable: boolean = false,
@@ -248,7 +249,7 @@ export class ButtonController {
         ? Styles.Color.BLACK
         : Styles.Color.WHITE;
     button.style.backgroundColor = backgroundColor;
-    button.innerHTML = `${icon(iconType).html}${isHeader ? " " + text : ""}`;
+    button.innerHTML = `${icon(iconType).html}${isHeader ? ' ' + text : ''}`;
     button.removeAttribute(Stasharr.DataAttribute.SceneStatus);
     button.setAttribute(Stasharr.DataAttribute.SceneStatus, status.toString());
   }

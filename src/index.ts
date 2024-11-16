@@ -1,16 +1,15 @@
-import { ButtonController } from "./controller/ButtonController";
-import { PerformerController } from "./controller/PerformerController";
-import { NavbarController } from "./controller/NavbarController";
-import { ScenesListController } from "./controller/ScenesListController";
-import { StudioController } from "./controller/StudioController";
-import { StashDB } from "./enums/StashDB";
-import { Settings } from "./settings/Settings";
+import { ButtonController } from './controller/ButtonController';
+import { PerformerController } from './controller/PerformerController';
+import { NavbarController } from './controller/NavbarController';
+import { ScenesListController } from './controller/ScenesListController';
+import { StudioController } from './controller/StudioController';
+import { Settings } from './settings/Settings';
 import {
   shouldButtonsInit,
   shouldPerformerInit,
   shouldScenesListInit,
   shouldStudioInit,
-} from "./util/util";
+} from './util/util';
 
 (async function () {
   const settings = new Settings();
@@ -19,15 +18,11 @@ import {
   ButtonController.initializeButtons(settings.config);
   // StudioSummaryController.initialize(settings.config);
   ScenesListController.initialize(settings.config);
-  const navbarController = new NavbarController(document.body);
+  new NavbarController(document.body);
 
   const observer = new MutationObserver((mutationsList) => {
-    const path: string[] = window.location.pathname.split("/");
-    const module: string | null = path.length > 1 ? path[1] : null;
-    const stashId: string | null = path.length > 2 ? path[2] : null;
-
     for (const mutation of mutationsList) {
-      if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
         mutation.addedNodes.forEach((node) => {
           if (node instanceof HTMLElement) {
             observer.disconnect();
@@ -53,6 +48,6 @@ import {
   const observerConfig = { childList: true, subtree: true };
   observer.observe(document.body, observerConfig);
 
-  // Initialize the menu
-  await GM_registerMenuCommand("Settings", settings.openSettingsModal);
+  /* eslint no-undef: off */
+  await GM_registerMenuCommand('Settings', settings.openSettingsModal);
 })();

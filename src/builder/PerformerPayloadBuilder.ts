@@ -1,14 +1,14 @@
-import { Whisparr } from "../types/whisparr";
+import { Whisparr } from '../types/whisparr';
 
 export class PerformerPayloadBuilder {
   payload: Whisparr.PerformerPayload;
   constructor() {
     this.payload = {
       tags: [],
-      foreignId: "",
+      foreignId: '',
       searchOnAdd: false,
       qualityProfileId: 0,
-      rootFolderPath: "",
+      rootFolderPath: '',
       monitored: false,
     };
   }

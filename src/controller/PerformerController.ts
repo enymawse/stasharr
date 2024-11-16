@@ -1,30 +1,30 @@
-import { icon } from "@fortawesome/fontawesome-svg-core";
-import { Stasharr } from "../enums/Stasharr";
-import { StashDB } from "../enums/StashDB";
-import { Config } from "../models/Config";
+import { icon } from '@fortawesome/fontawesome-svg-core';
+import { Stasharr } from '../enums/Stasharr';
+import { StashDB } from '../enums/StashDB';
+import { Config } from '../models/Config';
 import {
   faBookmark as faBookmarkSolid,
   faExclamationTriangle,
   faPlusCircle,
   faSpinner,
-} from "@fortawesome/free-solid-svg-icons";
-import { faBookmark as faBookmarkEmpty } from "@fortawesome/free-regular-svg-icons";
+} from '@fortawesome/free-solid-svg-icons';
+import { faBookmark as faBookmarkEmpty } from '@fortawesome/free-regular-svg-icons';
 import {
   addTooltip,
   extractStashIdFromPath,
   removeTooltip,
   responseStatusCodeOK,
-} from "../util/util";
-import { Whisparr } from "../types/whisparr";
-import ToastService from "../service/ToastService";
-import { isNull } from "lodash";
-import PerformerService from "../service/PerformerService";
-import { Styles } from "../enums/Styles";
+} from '../util/util';
+import { Whisparr } from '../types/whisparr';
+import ToastService from '../service/ToastService';
+import { isNull } from 'lodash';
+import PerformerService from '../service/PerformerService';
+import { Styles } from '../enums/Styles';
 
 export class PerformerController {
   static initialize(config: Config) {
     const performerStashId = extractStashIdFromPath();
-    if (config.whisparrApiKey == "" || performerStashId == null) return;
+    if (config.whisparrApiKey == '' || performerStashId == null) return;
 
     const performerTitle = document.querySelector(
       StashDB.DOMSelector.PerformerCardHeader,
@@ -44,13 +44,13 @@ export class PerformerController {
             } else {
               const performerName =
                 performerTitle.querySelector<HTMLSpanElement>(
-                  "span",
+                  'span',
                 )?.innerText;
               performerTitle.append(
                 PerformerController.initAddPerformerButton(
                   config,
                   performerStashId,
-                  performerName || "performer",
+                  performerName || 'performer',
                 ),
               );
             }
@@ -65,14 +65,14 @@ export class PerformerController {
     stashId: string,
     name: string,
   ): HTMLButtonElement {
-    const button = document.createElement("button");
+    const button = document.createElement('button');
     button.id = Stasharr.ID.PerformerAdd;
-    button.type = "button";
-    button.classList.add("FavoriteStar", "ps-2", "btn", "btn-link");
+    button.type = 'button';
+    button.classList.add('FavoriteStar', 'ps-2', 'btn', 'btn-link');
     button.innerHTML = `${icon(faPlusCircle).html}`;
-    button.style.cssText = Styles.AddPerformerButton.style;
+    button.style.cssText = Styles.AddPerformerButton;
     addTooltip(button, `Add ${name} to Whisparr`);
-    button.addEventListener("click", () => {
+    button.addEventListener('click', () => {
       PerformerController.addPerformer(config, button, stashId, name);
     });
     return button;
@@ -88,7 +88,7 @@ export class PerformerController {
     PerformerService.addPerformer(config, stashId).then((response) => {
       if (!responseStatusCodeOK(response.status)) {
         ToastService.showToast(
-          "An error occurred while adding the performer to Whisparr.",
+          'An error occurred while adding the performer to Whisparr.',
           false,
         );
         console.error(response.response);
@@ -105,8 +105,8 @@ export class PerformerController {
   private static updateAddPerformerButtonToLoading(
     button: HTMLButtonElement,
   ): void {
-    button.innerHTML = `${icon(faSpinner, { classes: ["fa-spin"] }).html}`;
-    button.style.cssText = Styles.AddPerformerButtonLoading.style;
+    button.innerHTML = `${icon(faSpinner, { classes: ['fa-spin'] }).html}`;
+    button.style.cssText = Styles.AddPerformerButtonLoading;
     button.disabled = true;
   }
 
@@ -114,12 +114,12 @@ export class PerformerController {
     config: Config,
     performer: Whisparr.WhisparrPerformer,
   ): HTMLButtonElement {
-    const button = document.createElement("button");
+    const button = document.createElement('button');
     button.id = Stasharr.ID.PerformerMonitor;
-    button.type = "button";
-    button.classList.add("FavoriteStar", "ps-2", "btn", "btn-link");
+    button.type = 'button';
+    button.classList.add('FavoriteStar', 'ps-2', 'btn', 'btn-link');
     PerformerController.updateMonitorButton(button, performer);
-    button.addEventListener("click", () => {
+    button.addEventListener('click', () => {
       PerformerController.toggleMonitor(config, button, performer);
     });
     return button;

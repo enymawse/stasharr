@@ -1,10 +1,10 @@
-import { Whisparr } from "../types/whisparr";
+import { Whisparr } from '../types/whisparr';
 
 export class CommandPayloadBuilder {
   payload: Whisparr.CommandPayload;
   constructor() {
     this.payload = {
-      name: "",
+      name: '',
       movieIds: [],
     };
   }

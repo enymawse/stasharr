@@ -1,45 +1,44 @@
-import { Modal, Tooltip } from "bootstrap";
-import { Styles } from "../enums/Styles";
-import { BsElement } from "./BsElement";
-import { SettingKeys } from "../enums/SettingKeys";
-import WhisparrService from "../service/WhisparrService";
-import { Config } from "../models/Config";
-import { YesNo } from "../enums/YesNo";
-import { Settings } from "../settings/Settings";
-import { parseInt } from "lodash";
-import { dom } from "@fortawesome/fontawesome-svg-core";
+import { Tooltip } from 'bootstrap';
+import { Styles } from '../enums/Styles';
+import { BsElement } from './BsElement';
+import { SettingKeys } from '../enums/SettingKeys';
+import WhisparrService from '../service/WhisparrService';
+import { Config } from '../models/Config';
+import { YesNo } from '../enums/YesNo';
+import { Settings } from '../settings/Settings';
+import { parseInt } from 'lodash';
 
 export class ModalBuilder {
   private modalElement: HTMLElement;
   private modalContent: HTMLElement;
 
   constructor(modalId: string) {
-    this.modalElement = document.createElement("div");
+    this.modalElement = document.createElement('div');
     this.modalElement.id = modalId;
-    this.modalElement.classList.add("fade", "modal");
+    this.modalElement.classList.add('fade', 'modal');
 
-    const modalDialog = document.createElement("div");
-    modalDialog.classList.add("modal-dialog");
+    const modalDialog = document.createElement('div');
+    modalDialog.classList.add('modal-dialog');
 
-    this.modalContent = document.createElement("div");
-    this.modalContent.classList.add("modal-content");
+    this.modalContent = document.createElement('div');
+    this.modalContent.classList.add('modal-content');
 
     modalDialog.appendChild(this.modalContent);
     this.modalElement.appendChild(modalDialog);
   }
 
   setModalTitle(title: string): ModalBuilder {
-    const headerDiv = document.createElement("div");
-    headerDiv.classList.add("modal-header");
+    const headerDiv = document.createElement('div');
+    headerDiv.classList.add('modal-header');
 
-    const titleElement = document.createElement("h5");
-    titleElement.classList.add("modal-title");
+    const titleElement = document.createElement('h5');
+    titleElement.classList.add('modal-title');
     titleElement.innerText = title;
 
-    const closeElement = document.createElement("button");
-    closeElement.classList.add("btn-close");
-    closeElement.setAttribute("data-bs-dismiss", "modal");
-    closeElement.ariaLabel = "Close";
+    const closeElement = document.createElement('button');
+    closeElement.classList.add('btn-close');
+    closeElement.setAttribute('data-bs-dismiss', 'modal');
+    closeElement.ariaLabel = 'Close';
 
     headerDiv.appendChild(titleElement);
     headerDiv.appendChild(closeElement);
@@ -48,8 +47,8 @@ export class ModalBuilder {
   }
 
   setModalBody(bodyContent: string): ModalBuilder {
-    const bodyDiv = document.createElement("div");
-    bodyDiv.classList.add("modal-body");
+    const bodyDiv = document.createElement('div');
+    bodyDiv.classList.add('modal-body');
     bodyDiv.innerText = bodyContent;
     this.modalContent.appendChild(bodyDiv);
     return this;
@@ -60,13 +59,13 @@ export class ModalBuilder {
 
     const inputSwitch = BsElement.inputSwitch({
       id: `stasharr-${SettingKeys.Proto}`,
-      label: "HTTPS",
+      label: 'HTTPS',
       checked: config.protocol,
       tooltip:
-        "Enable if you have configured Whisparr with valid certs, otherwise leave unchecked.",
+        'Enable if you have configured Whisparr with valid certs, otherwise leave unchecked.',
     });
 
-    this.addSelectRefreshers("change", inputSwitch);
+    this.addSelectRefreshers('change', inputSwitch);
 
     bodyDiv.appendChild(inputSwitch);
     return this;
@@ -77,13 +76,13 @@ export class ModalBuilder {
     const floatingInputElement = BsElement.floatingInput({
       id: `stasharr-${SettingKeys.Domain}`,
       name: SettingKeys.Domain,
-      label: "Whisparr URL or IP address with port number",
+      label: 'Whisparr URL or IP address with port number',
       tooltip:
-        "ex. localhost:6969 or whisparr.customdomain.home or whisparr.lan:123",
+        'ex. localhost:6969 or whisparr.customdomain.home or whisparr.lan:123',
       defaultValue: config.domain,
     });
 
-    this.addSelectRefreshers("focusout", floatingInputElement);
+    this.addSelectRefreshers('focusout', floatingInputElement);
 
     bodyDiv.appendChild(floatingInputElement);
     return this;
@@ -94,13 +93,13 @@ export class ModalBuilder {
     const floatingInputElement = BsElement.floatingInput({
       id: `stasharr-${SettingKeys.ApiKey}`,
       name: SettingKeys.ApiKey,
-      label: "Whisparr API Key",
-      tooltip: "Found in Whisparr under Settings -> General",
+      label: 'Whisparr API Key',
+      tooltip: 'Found in Whisparr under Settings -> General',
       defaultValue: config.whisparrApiKey,
-      type: "password",
+      type: 'password',
     });
 
-    this.addSelectRefreshers("focusout", floatingInputElement);
+    this.addSelectRefreshers('focusout', floatingInputElement);
 
     bodyDiv.appendChild(floatingInputElement);
     return this;
@@ -115,7 +114,7 @@ export class ModalBuilder {
     });
   }
 
-  refreshQualityProfiles(): any {
+  refreshQualityProfiles(): void {
     const selectId = `stasharr-${SettingKeys.QualityProfile}`;
     const selectElement = document.getElementById(selectId);
     const rawUserSettings = Settings.domConfigValues();
@@ -130,12 +129,12 @@ export class ModalBuilder {
           whisparrApiKey: rawUserSettings.whisparrApiKey,
           domain: rawUserSettings.domain,
         }),
-        "Desired Quality Profile for adding scenes.",
+        'Desired Quality Profile for adding scenes.',
       ),
     );
   }
 
-  refreshRootFolderPaths(): any {
+  refreshRootFolderPaths(): void {
     const selectId = `stasharr-${SettingKeys.RootFolderPath}`;
     const selectElement = document.getElementById(selectId);
     const rawUserSettings = Settings.domConfigValues();
@@ -150,7 +149,7 @@ export class ModalBuilder {
           whisparrApiKey: rawUserSettings.whisparrApiKey,
           domain: rawUserSettings.domain,
         }),
-        "Desired Root Folder Path for adding scenes.",
+        'Desired Root Folder Path for adding scenes.',
       ),
     );
   }
@@ -160,7 +159,7 @@ export class ModalBuilder {
 
     const bodyDiv = this.getOrCreateBody();
 
-    const inputGroup = this.inputGroup(selectId, "Quality Profile");
+    const inputGroup = this.inputGroup(selectId, 'Quality Profile');
 
     const selectElement = BsElement.dynamicSelectWithDefault(
       selectId,
@@ -168,7 +167,7 @@ export class ModalBuilder {
       WhisparrService.getQualityProfilesForSelectMenu,
       WhisparrService.healthCheck,
       config,
-      "Desired Quality Profile for adding scenes.",
+      'Desired Quality Profile for adding scenes.',
     );
 
     inputGroup.appendChild(selectElement);
@@ -181,7 +180,7 @@ export class ModalBuilder {
 
     const bodyDiv = this.getOrCreateBody();
 
-    const inputGroup = this.inputGroup(selectId, "Root Folder Path");
+    const inputGroup = this.inputGroup(selectId, 'Root Folder Path');
 
     const selectElement = BsElement.dynamicSelectWithDefault(
       selectId,
@@ -189,7 +188,7 @@ export class ModalBuilder {
       WhisparrService.getRootFolderPathsForSelectMenu,
       WhisparrService.healthCheck,
       config,
-      "Desired Root Folder Path for adding scenes.",
+      'Desired Root Folder Path for adding scenes.',
     );
 
     inputGroup.appendChild(selectElement);
@@ -202,7 +201,7 @@ export class ModalBuilder {
 
     const bodyDiv = this.getOrCreateBody();
 
-    const inputGroup = this.inputGroup(selectId, "Search On Add");
+    const inputGroup = this.inputGroup(selectId, 'Search On Add');
 
     const selectElement = BsElement.staticSelect(
       selectId,
@@ -216,12 +215,12 @@ export class ModalBuilder {
   }
 
   private inputGroup(selectId: string, innerText: string) {
-    const inputGroup = document.createElement("div");
-    inputGroup.classList.add("input-group", "mb-3");
-    const inputGroupLabel = document.createElement("label");
+    const inputGroup = document.createElement('div');
+    inputGroup.classList.add('input-group', 'mb-3');
+    const inputGroupLabel = document.createElement('label');
     inputGroupLabel.innerText = innerText;
-    inputGroupLabel.classList.add("input-group-text");
-    inputGroupLabel.setAttribute("for", selectId);
+    inputGroupLabel.classList.add('input-group-text');
+    inputGroupLabel.setAttribute('for', selectId);
     inputGroup.appendChild(inputGroupLabel);
     return inputGroup;
   }
@@ -230,32 +229,32 @@ export class ModalBuilder {
     label: string,
     name: string,
     type:
-      | "text"
-      | "number"
-      | "email"
-      | "password"
-      | "select"
-      | "dropdown-input",
+      | 'text'
+      | 'number'
+      | 'email'
+      | 'password'
+      | 'select'
+      | 'dropdown-input',
     options?: string[], // For dropdown or select types
     placeholder?: string,
     defaultValue?: string,
     tooltip?: string,
-    handler?: { name: string; func: (this: HTMLElement, e: Event) => any },
-    style?: "floating" | "input-group",
+    handler?: { name: string; func: (this: HTMLElement, e: Event) => void },
+    style?: 'floating' | 'input-group',
   ): ModalBuilder {
     const bodyDiv = this.getOrCreateBody();
     let formGroup;
 
-    if (style === "floating") {
+    if (style === 'floating') {
       formGroup = this.createFormFloatingGroup(label, name, tooltip);
-    } else if (style === "input-group") {
+    } else if (style === 'input-group') {
       formGroup = this.createInputGroup(label, name, tooltip);
     } else {
       formGroup = this.createFormGroup(label, name, tooltip);
     }
 
     let inputElement: HTMLElement;
-    if (type === "select" && options) {
+    if (type === 'select' && options) {
       inputElement = this.createSelectElement(name, options);
     } else {
       inputElement = this.createInputElement(
@@ -283,18 +282,18 @@ export class ModalBuilder {
     name: string,
     tooltip?: string,
   ): HTMLElement {
-    const formFloat = document.createElement("div");
-    formFloat.classList.add("form-floating", "mb-3");
+    const formFloat = document.createElement('div');
+    formFloat.classList.add('form-floating', 'mb-3');
 
-    const inputFloat = document.createElement("input");
-    inputFloat.type = "text";
-    inputFloat.classList.add("form-control");
+    const inputFloat = document.createElement('input');
+    inputFloat.type = 'text';
+    inputFloat.classList.add('form-control');
     inputFloat.id = `stasharr-${name}`;
     inputFloat.name = name;
-    inputFloat.placeholder = "";
+    inputFloat.placeholder = '';
 
-    const labelFor = document.createElement("label");
-    labelFor.setAttribute("for", `stasharr-${name}`);
+    const labelFor = document.createElement('label');
+    labelFor.setAttribute('for', `stasharr-${name}`);
     labelFor.innerHTML = label;
     labelFor.style.color = Styles.Color.GRAY;
 
@@ -313,12 +312,12 @@ export class ModalBuilder {
     name: string,
     tooltip?: string,
   ): HTMLElement {
-    const formGroup = document.createElement("div");
-    formGroup.classList.add("form-group", "mb-3");
+    const formGroup = document.createElement('div');
+    formGroup.classList.add('form-group', 'mb-3');
 
-    const inputLabel = document.createElement("label");
+    const inputLabel = document.createElement('label');
     inputLabel.innerText = label;
-    inputLabel.setAttribute("for", `stasharr-${name}`);
+    inputLabel.setAttribute('for', `stasharr-${name}`);
 
     if (tooltip) {
       this.addTooltip(inputLabel, tooltip);
@@ -333,11 +332,11 @@ export class ModalBuilder {
     name: string,
     tooltip?: string,
   ): HTMLElement {
-    const inputGroup = document.createElement("div");
-    inputGroup.classList.add("input-group", "mb-3");
+    const inputGroup = document.createElement('div');
+    inputGroup.classList.add('input-group', 'mb-3');
 
-    const inputLabel = document.createElement("span");
-    inputLabel.classList.add("input-group-text");
+    const inputLabel = document.createElement('span');
+    inputLabel.classList.add('input-group-text');
     inputLabel.innerText = label;
 
     if (tooltip) {
@@ -352,13 +351,13 @@ export class ModalBuilder {
     name: string,
     options: string[],
   ): HTMLSelectElement {
-    const selectElement = document.createElement("select");
-    selectElement.classList.add("form-control");
+    const selectElement = document.createElement('select');
+    selectElement.classList.add('form-control');
     selectElement.id = `stasharr-${name}`;
     selectElement.name = name;
 
     options.forEach((option) => {
-      const optionElement = document.createElement("option");
+      const optionElement = document.createElement('option');
       optionElement.value = option;
       optionElement.innerText = option;
       selectElement.appendChild(optionElement);
@@ -373,9 +372,9 @@ export class ModalBuilder {
     placeholder?: string,
     defaultValue?: string,
   ): HTMLInputElement {
-    const inputElement = document.createElement("input");
+    const inputElement = document.createElement('input');
     inputElement.type = type;
-    inputElement.classList.add("form-control");
+    inputElement.classList.add('form-control');
     inputElement.id = `stasharr-${name}`;
     inputElement.name = name;
 
@@ -386,32 +385,32 @@ export class ModalBuilder {
   }
 
   private addTooltip(element: HTMLElement, tooltip: string): void {
-    element.setAttribute("data-bs-toggle", "tooltip");
-    element.setAttribute("title", tooltip);
+    element.setAttribute('data-bs-toggle', 'tooltip');
+    element.setAttribute('title', tooltip);
   }
 
   addCloseButton(
     label: string,
-    onClick: (this: HTMLButtonElement, ev: MouseEvent) => any,
+    onClick: (this: HTMLButtonElement, ev: MouseEvent) => void,
   ): ModalBuilder {
-    return this.addFooterButton(label, "btn-secondary", onClick);
+    return this.addFooterButton(label, 'btn-secondary', onClick);
   }
 
   addSaveButton(
     label: string,
-    onClick: (this: HTMLButtonElement, ev: MouseEvent) => any,
+    onClick: (this: HTMLButtonElement, ev: MouseEvent) => void,
   ): ModalBuilder {
-    return this.addFooterButton(label, "btn-primary", onClick);
+    return this.addFooterButton(label, 'btn-primary', onClick);
   }
 
   addFooterButton(
     label: string,
     styleClass: string,
-    onClick: (this: HTMLButtonElement, ev: MouseEvent) => any,
+    onClick: (this: HTMLButtonElement, ev: MouseEvent) => void,
   ): ModalBuilder {
     const footerDiv = this.getOrCreateFooter();
     const button = this.createButton(label, styleClass, onClick);
-    button.setAttribute("data-bs-dismiss", "modal");
+    button.setAttribute('data-bs-dismiss', 'modal');
     footerDiv.appendChild(button);
     return this;
   }
@@ -423,13 +422,13 @@ export class ModalBuilder {
   private createButton(
     label: string,
     className: string,
-    onClick: (this: HTMLButtonElement, ev: MouseEvent) => any,
+    onClick: (this: HTMLButtonElement, ev: MouseEvent) => void,
   ): HTMLButtonElement {
     const button = BsElement.button({
-      classList: ["btn", className],
+      classList: ['btn', className],
       innerText: label,
       eventListener: {
-        type: "click",
+        type: 'click',
         listener: onClick,
       },
     });
@@ -444,7 +443,7 @@ export class ModalBuilder {
   }
 
   private getOrCreateBody(): HTMLElement {
-    let bodyDiv = this.modalContent.querySelector<HTMLElement>(".modal-body");
+    let bodyDiv = this.modalContent.querySelector<HTMLElement>('.modal-body');
     if (!bodyDiv) {
       bodyDiv = BsElement.modalBody();
       this.modalContent.appendChild(bodyDiv);
@@ -454,7 +453,7 @@ export class ModalBuilder {
 
   private getOrCreateFooter(): HTMLElement {
     let footerDiv =
-      this.modalContent.querySelector<HTMLElement>(".modal-footer");
+      this.modalContent.querySelector<HTMLElement>('.modal-footer');
     if (!footerDiv) {
       footerDiv = BsElement.modalFooter();
       this.modalContent.appendChild(footerDiv);

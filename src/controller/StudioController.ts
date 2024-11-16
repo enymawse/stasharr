@@ -1,35 +1,34 @@
-import { icon } from "@fortawesome/fontawesome-svg-core";
-import { Config } from "../models/Config";
-import WhisparrService from "../service/WhisparrService";
-import { Whisparr } from "../types/whisparr";
+import { icon } from '@fortawesome/fontawesome-svg-core';
+import { Config } from '../models/Config';
+import { Whisparr } from '../types/whisparr';
 import {
   faBookmark as faBookmarkSolid,
   faExclamationTriangle,
   faPlusCircle,
   faSpinner,
-} from "@fortawesome/free-solid-svg-icons";
-import { faBookmark as faBookmarkEmpty } from "@fortawesome/free-regular-svg-icons";
+} from '@fortawesome/free-solid-svg-icons';
+import { faBookmark as faBookmarkEmpty } from '@fortawesome/free-regular-svg-icons';
 import {
   addTooltip,
   extractStashIdFromPath,
   removeTooltip,
   responseStatusCodeOK,
-} from "../util/util";
-import { StashDB } from "../enums/StashDB";
-import { Stasharr } from "../enums/Stasharr";
-import { includes, isNull } from "lodash";
-import StudioService from "../service/StudioService";
-import ToastService from "../service/ToastService";
-import { Styles } from "../enums/Styles";
+} from '../util/util';
+import { StashDB } from '../enums/StashDB';
+import { Stasharr } from '../enums/Stasharr';
+import { isNull } from 'lodash';
+import StudioService from '../service/StudioService';
+import ToastService from '../service/ToastService';
+import { Styles } from '../enums/Styles';
 
 export class StudioController {
   static initialize(config: Config) {
     const studioStashId = extractStashIdFromPath();
-    if (config.whisparrApiKey == "" || studioStashId == null) return;
+    if (config.whisparrApiKey == '' || studioStashId == null) return;
 
     const studioTitleH3: HTMLElement | null =
       document.querySelector<HTMLElement>(
-        StashDB.DOMSelector.StudioTitle + " > h3",
+        StashDB.DOMSelector.StudioTitle + ' > h3',
       );
 
     if (studioTitleH3) {
@@ -45,12 +44,12 @@ export class StudioController {
               );
             } else {
               const studioName =
-                studioTitleH3.querySelector<HTMLSpanElement>("span")?.innerText;
+                studioTitleH3.querySelector<HTMLSpanElement>('span')?.innerText;
               studioTitleH3.append(
                 StudioController.initAddStudioButton(
                   config,
                   studioStashId,
-                  studioName || "studio",
+                  studioName || 'studio',
                 ),
               );
             }
@@ -64,14 +63,14 @@ export class StudioController {
     studioStashId: string,
     name: string,
   ): string | Node {
-    const button = document.createElement("button");
+    const button = document.createElement('button');
     button.id = Stasharr.ID.StudioAdd;
-    button.type = "button";
-    button.classList.add("FavoriteStar", "ps-2", "btn", "btn-link");
+    button.type = 'button';
+    button.classList.add('FavoriteStar', 'ps-2', 'btn', 'btn-link');
     button.innerHTML = `${icon(faPlusCircle).html}`;
-    button.style.cssText = Styles.AddStudioButton.style;
+    button.style.cssText = Styles.AddStudioButton;
     addTooltip(button, `Add ${name} to Whisparr`);
-    button.addEventListener("click", () => {
+    button.addEventListener('click', () => {
       StudioController.addStudio(config, button, studioStashId, name);
     });
     return button;
@@ -87,7 +86,7 @@ export class StudioController {
     StudioService.addStudio(config, stashId).then((response) => {
       if (!responseStatusCodeOK(response.status)) {
         ToastService.showToast(
-          "An error occurred while adding the studio to Whisparr.",
+          'An error occurred while adding the studio to Whisparr.',
           false,
         );
         console.error(response.response);
@@ -104,8 +103,8 @@ export class StudioController {
   private static updateAddStudioButtonToLoading(
     button: HTMLButtonElement,
   ): void {
-    button.innerHTML = `${icon(faSpinner, { classes: ["fa-spin"] }).html}`;
-    button.style.cssText = Styles.AddStudioButtonLoading.style;
+    button.innerHTML = `${icon(faSpinner, { classes: ['fa-spin'] }).html}`;
+    button.style.cssText = Styles.AddStudioButtonLoading;
     button.disabled = true;
   }
 
@@ -113,12 +112,12 @@ export class StudioController {
     config: Config,
     studio: Whisparr.WhisparrStudio,
   ): HTMLButtonElement {
-    const button = document.createElement("button");
+    const button = document.createElement('button');
     button.id = Stasharr.ID.StudioMonitor;
-    button.type = "button";
-    button.classList.add("FavoriteStar", "ps-2", "btn", "btn-link");
+    button.type = 'button';
+    button.classList.add('FavoriteStar', 'ps-2', 'btn', 'btn-link');
     StudioController.updateMonitorButton(button, studio);
-    button.addEventListener("click", () => {
+    button.addEventListener('click', () => {
       StudioController.toggleMonitor(config, button, studio);
     });
     return button;

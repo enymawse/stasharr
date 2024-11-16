@@ -1,5 +1,5 @@
-import { SceneStatus } from "../enums/SceneStatus";
-import { Whisparr } from "./whisparr";
+import { SceneStatus } from '../enums/SceneStatus';
+import { Whisparr } from './whisparr';
 
 /**
  * Represents a mapping of `stashId` strings to objects containing scene-related data.

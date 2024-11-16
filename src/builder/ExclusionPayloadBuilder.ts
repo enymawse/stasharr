@@ -1,11 +1,11 @@
-import { Whisparr } from "../types/whisparr";
+import { Whisparr } from '../types/whisparr';
 
 export class ExclusionPayloadBuilder {
   payload: Whisparr.ExclusionPayload;
   constructor() {
     this.payload = {
-      foreignId: "",
-      movieTitle: "MovieTitle",
+      foreignId: '',
+      movieTitle: 'MovieTitle',
       movieYear: 1,
     };
   }

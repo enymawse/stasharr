@@ -1,8 +1,8 @@
-import { PerformerPayloadBuilder } from "../builder/PerformerPayloadBuilder";
-import { Config } from "../models/Config";
-import { Whisparr } from "../types/whisparr";
-import ServiceBase from "./ServiceBase";
-import ToastService from "./ToastService";
+import { PerformerPayloadBuilder } from '../builder/PerformerPayloadBuilder';
+import { Config } from '../models/Config';
+import { Whisparr } from '../types/whisparr';
+import ServiceBase from './ServiceBase';
+import ToastService from './ToastService';
 
 export default class PerformerService extends ServiceBase {
   /**
@@ -23,10 +23,10 @@ export default class PerformerService extends ServiceBase {
       response = await ServiceBase.request(config, endpoint);
     } catch (error) {
       ToastService.showToast(
-        "Error occurred while looking up the performer",
+        'Error occurred while looking up the performer',
         false,
       );
-      console.error("Error in getPerformerByStashId", error);
+      console.error('Error in getPerformerByStashId', error);
       return null;
     }
     const data = await response.response;
@@ -45,13 +45,13 @@ export default class PerformerService extends ServiceBase {
     const endpoint = `performer/${performer.id}`;
     let response;
     try {
-      response = await ServiceBase.request(config, endpoint, "PUT", performer);
+      response = await ServiceBase.request(config, endpoint, 'PUT', performer);
     } catch (e) {
       ToastService.showToast(
-        "Error occurred while updating the performer",
+        'Error occurred while updating the performer',
         false,
       );
-      console.error("Error in update", e);
+      console.error('Error in update', e);
       return performer;
     }
     const updatedPerformer = await response.response;
@@ -65,8 +65,9 @@ export default class PerformerService extends ServiceBase {
   static async addPerformer(
     config: Config,
     stashId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-undef
   ): Promise<VMScriptResponseObject<any>> {
-    const endpoint = "performer";
+    const endpoint = 'performer';
     const payload = new PerformerPayloadBuilder()
       .setForeignId(stashId)
       .setMonitored(false)
@@ -74,6 +75,6 @@ export default class PerformerService extends ServiceBase {
       .setRootFolderPath(config.rootFolderPath)
       .setSearchOnAdd(config.searchForNewMovie)
       .build();
-    return ServiceBase.request(config, endpoint, "POST", payload);
+    return ServiceBase.request(config, endpoint, 'POST', payload);
   }
 }

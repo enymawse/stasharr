@@ -1,18 +1,19 @@
-import { Tooltip } from "bootstrap";
-import { Styles } from "../enums/Styles";
-import { Config } from "../models/Config";
+import { Tooltip } from 'bootstrap';
+import { Styles } from '../enums/Styles';
+import { Config } from '../models/Config';
 
 export class BsElement {
   static modalFooter(): HTMLElement {
-    let footer = document.createElement("div");
-    footer.classList.add("modal-footer");
+    let footer = document.createElement('div');
+    footer.classList.add('modal-footer');
     return footer;
   }
   static modalBody(): HTMLElement {
-    let body = document.createElement("div");
-    body.classList.add("modal-body");
+    let body = document.createElement('div');
+    body.classList.add('modal-body');
     return body;
   }
+
   static button(options?: {
     classList?: string[];
     attributes?: { qualifiedName: string; value: string }[];
@@ -20,13 +21,14 @@ export class BsElement {
     innerText?: string;
     innerHTML?: string;
     eventListener?: {
+      // eslint-disable-next-line no-undef
       type: keyof HTMLElementEventMap;
-      listener: (this: HTMLButtonElement, ev: MouseEvent) => any;
+      listener: (this: HTMLButtonElement, ev: MouseEvent) => void;
     };
     style?: { cssText: string };
     id?: string;
   }) {
-    let button = document.createElement("button");
+    let button = document.createElement('button');
     if (options) {
       if (options.ariaLabel) button.ariaLabel = options.ariaLabel;
       if (options.classList) button.classList.add(...options.classList);
@@ -41,6 +43,7 @@ export class BsElement {
       if (options.eventListener) {
         button.addEventListener(
           options.eventListener.type,
+          // eslint-disable-next-line no-undef
           options.eventListener.listener as EventListener,
         );
       }
@@ -59,25 +62,25 @@ export class BsElement {
     type?: string;
     tooltip?: string;
   }): HTMLElement {
-    const formFloat = document.createElement("div");
-    formFloat.classList.add("form-floating", "mb-3");
+    const formFloat = document.createElement('div');
+    formFloat.classList.add('form-floating', 'mb-3');
 
-    const input = document.createElement("input");
-    input.type = options.type || "text";
-    input.classList.add("form-control");
+    const input = document.createElement('input');
+    input.type = options.type || 'text';
+    input.classList.add('form-control');
     input.id = options.id;
     input.name = options.name;
-    input.placeholder = "";
+    input.placeholder = '';
     if (options.defaultValue) input.defaultValue = options.defaultValue;
 
     if (options.tooltip) {
-      input.setAttribute("data-bs-toggle", "tooltip");
+      input.setAttribute('data-bs-toggle', 'tooltip');
       input.title = options.tooltip;
       new Tooltip(input);
     }
 
-    const label = document.createElement("label");
-    label.setAttribute("for", options.id);
+    const label = document.createElement('label');
+    label.setAttribute('for', options.id);
     label.innerText = options.label;
     label.style.color = Styles.Color.GRAY;
 
@@ -92,13 +95,13 @@ export class BsElement {
     checked?: boolean;
     tooltip?: string;
   }): HTMLElement {
-    const formSwitch = document.createElement("div");
-    formSwitch.classList.add("form-check", "form-switch", "mb-3");
+    const formSwitch = document.createElement('div');
+    formSwitch.classList.add('form-check', 'form-switch', 'mb-3');
 
-    const input = document.createElement("input");
-    input.classList.add("form-check-input");
-    input.type = "checkbox";
-    input.role = "switch";
+    const input = document.createElement('input');
+    input.classList.add('form-check-input');
+    input.type = 'checkbox';
+    input.role = 'switch';
     input.id = options.id;
 
     if (options.checked) {
@@ -106,14 +109,14 @@ export class BsElement {
     }
 
     if (options.tooltip) {
-      input.setAttribute("data-bs-toggle", "tooltip");
+      input.setAttribute('data-bs-toggle', 'tooltip');
       input.title = options.tooltip;
       new Tooltip(input);
     }
 
-    const label = document.createElement("label");
-    label.classList.add("form-check-label");
-    label.setAttribute("for", options.id);
+    const label = document.createElement('label');
+    label.classList.add('form-check-label');
+    label.setAttribute('for', options.id);
     label.innerText = options.label;
 
     formSwitch.appendChild(input);
@@ -129,33 +132,33 @@ export class BsElement {
     config: Config,
     tooltip?: string,
   ): HTMLSelectElement {
-    const select = document.createElement("select");
+    const select = document.createElement('select');
     select.id = selectId;
-    select.classList.add("form-select");
+    select.classList.add('form-select');
     select.disabled = true;
 
     if (tooltip) {
-      select.setAttribute("data-bs-toggle", "tooltip");
+      select.setAttribute('data-bs-toggle', 'tooltip');
       select.title = tooltip;
       new Tooltip(select);
     }
 
-    const defaultOption = document.createElement("option");
-    defaultOption.textContent = "Loading options...";
+    const defaultOption = document.createElement('option');
+    defaultOption.textContent = 'Loading options...';
     select.appendChild(defaultOption);
 
-    if (config.whisparrApiKey != "") {
+    if (config.whisparrApiKey != '') {
       isValidSettings(config)
         .then((isValid) => {
           if (isValid) {
             select.disabled = false;
-            defaultOption.textContent = "Choose an option";
+            defaultOption.textContent = 'Choose an option';
 
             fetchOptions(config)
               .then((options) => {
                 options.forEach((option) => {
-                  const optionElement = document.createElement("option");
-                  optionElement.value = option.id + "";
+                  const optionElement = document.createElement('option');
+                  optionElement.value = option.id + '';
                   optionElement.textContent = option.name;
 
                   if (defaultValue === option.id) {
@@ -165,19 +168,19 @@ export class BsElement {
                 });
               })
               .catch((reason) => {
-                console.error("Failed to load options:", reason);
-                defaultOption.textContent = "Error loading options";
+                console.error('Failed to load options:', reason);
+                defaultOption.textContent = 'Error loading options';
               });
           } else {
-            defaultOption.textContent = "Invalid settings";
+            defaultOption.textContent = 'Invalid settings';
           }
         })
         .catch((reason) => {
-          console.log("Settings invalid:", reason);
-          defaultOption.textContent = "Invalid settings";
+          console.log('Settings invalid:', reason);
+          defaultOption.textContent = 'Invalid settings';
         });
     } else {
-      defaultOption.textContent = "Configure Domain and API Key";
+      defaultOption.textContent = 'Configure Domain and API Key';
     }
 
     return select;
@@ -187,11 +190,11 @@ export class BsElement {
     defaultValue: string,
     selectOptions: string[],
   ) {
-    const select = document.createElement("select");
+    const select = document.createElement('select');
     select.id = selectId;
-    select.classList.add("form-select");
+    select.classList.add('form-select');
     selectOptions.forEach((option) => {
-      const optionElement = document.createElement("option");
+      const optionElement = document.createElement('option');
       if (defaultValue === option) {
         optionElement.selected = true;
       }

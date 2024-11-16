@@ -1,5 +1,6 @@
-import "@violentmonkey/types";
+import '@violentmonkey/types';
 
+/** eslint-disable @typescript-eslint/no-unused-vars */
 export namespace Whisparr {
   type OriginalLanguage = {
     id: number;
@@ -37,8 +38,8 @@ export namespace Whisparr {
     genres: string[];
     tags: string[];
     added: string;
-    ratings: Record<string, any>;
-    credits: any[];
+    ratings: Record<string, unknown>;
+    credits: unknown[];
     itemType: string;
   };
 
@@ -165,7 +166,7 @@ export namespace Whisparr {
     name: string;
   };
 
-  type FormatItem = {};
+  type FormatItem = unknown;
 
   type QualityProfile = {
     name: string;

@@ -1,8 +1,8 @@
-import { StudioPayloadBuilder } from "../builder/StudioPayloadBuilder";
-import { Config } from "../models/Config";
-import { Whisparr } from "../types/whisparr";
-import ServiceBase from "./ServiceBase";
-import ToastService from "./ToastService";
+import { StudioPayloadBuilder } from '../builder/StudioPayloadBuilder';
+import { Config } from '../models/Config';
+import { Whisparr } from '../types/whisparr';
+import ServiceBase from './ServiceBase';
+import ToastService from './ToastService';
 
 export default class StudioService extends ServiceBase {
   /**
@@ -22,10 +22,10 @@ export default class StudioService extends ServiceBase {
       response = await ServiceBase.request(config, endpoint);
     } catch (e) {
       ToastService.showToast(
-        "Error occurred while looking up the studio",
+        'Error occurred while looking up the studio',
         false,
       );
-      console.error("Error in getStudioByStashId", e);
+      console.error('Error in getStudioByStashId', e);
       return null;
     }
     const data = await response.response;
@@ -43,10 +43,10 @@ export default class StudioService extends ServiceBase {
     const endpoint = `studio/${studio.id}`;
     let response;
     try {
-      response = await ServiceBase.request(config, endpoint, "PUT", studio);
+      response = await ServiceBase.request(config, endpoint, 'PUT', studio);
     } catch (e) {
-      ToastService.showToast("Error occurred while updating the studio", false);
-      console.error("Error in update", e);
+      ToastService.showToast('Error occurred while updating the studio', false);
+      console.error('Error in update', e);
       return studio;
     }
     const updatedStudio = await response.response;
@@ -60,8 +60,9 @@ export default class StudioService extends ServiceBase {
   static async addStudio(
     config: Config,
     stashId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-undef
   ): Promise<VMScriptResponseObject<any>> {
-    const endpoint = "studio";
+    const endpoint = 'studio';
     const payload = new StudioPayloadBuilder()
       .setForeignId(stashId)
       .setMonitored(false)
@@ -69,6 +70,6 @@ export default class StudioService extends ServiceBase {
       .setRootFolderPath(config.rootFolderPath)
       .setSearchOnAdd(config.searchForNewMovie)
       .build();
-    return ServiceBase.request(config, endpoint, "POST", payload);
+    return ServiceBase.request(config, endpoint, 'POST', payload);
   }
 }

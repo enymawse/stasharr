@@ -1,27 +1,26 @@
-import { icon } from "@fortawesome/fontawesome-svg-core";
-import { Styles } from "../enums/Styles";
-import { Config } from "../models/Config";
+import { icon } from '@fortawesome/fontawesome-svg-core';
+import { Styles } from '../enums/Styles';
+import { Config } from '../models/Config';
 import {
   faDownload,
-  faPlus,
   faSearch,
   faSpinner,
-} from "@fortawesome/free-solid-svg-icons";
-import { Stasharr } from "../enums/Stasharr";
-import { SceneStatus } from "../enums/SceneStatus";
-import { addTooltip, extractStashIdFromSceneCard } from "../util/util";
-import ToastService from "../service/ToastService";
-import { StashDB } from "../enums/StashDB";
-import { parseInt } from "lodash";
-import SceneService from "../service/SceneService";
-import { ButtonController } from "./ButtonController";
-import { StashIdToSceneCardAndStatusMap } from "../types/stasharr";
+} from '@fortawesome/free-solid-svg-icons';
+import { Stasharr } from '../enums/Stasharr';
+import { SceneStatus } from '../enums/SceneStatus';
+import { addTooltip, extractStashIdFromSceneCard } from '../util/util';
+import ToastService from '../service/ToastService';
+import { StashDB } from '../enums/StashDB';
+import { parseInt } from 'lodash';
+import SceneService from '../service/SceneService';
+import { ButtonController } from './ButtonController';
+import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
 
 export class ScenesListController {
   static initialize(config: Config) {
     if (config.whisparrApiKey) {
       const sceneListCommandRow = document.querySelector<HTMLDivElement>(
-        ".scenes-list > div.flex-wrap",
+        '.scenes-list > div.flex-wrap',
       );
       const addAllAvailableButton = document.querySelector(
         Stasharr.DOMSelector.AddAllAvailable,
@@ -48,17 +47,17 @@ export class ScenesListController {
   }
 
   private static createAddAllAvaiableButton(config: Config): HTMLDivElement {
-    const customDiv = document.createElement("div");
-    customDiv.classList.add("ms-3", "mb-2");
+    const customDiv = document.createElement('div');
+    customDiv.classList.add('ms-3', 'mb-2');
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.style.cssText = Styles.SearchAllAvailable.style;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.style.cssText = Styles.SearchAllAvailable;
     button.id = Stasharr.ID.AddAllAvailable;
     button.innerHTML = `${icon(faDownload).html} Add All`;
-    addTooltip(button, "Add all available scenes on this page to Whisparr.");
+    addTooltip(button, 'Add all available scenes on this page to Whisparr.');
 
-    button.addEventListener("click", () => {
+    button.addEventListener('click', () => {
       ScenesListController.handleAllAvailableButtonClick(
         button,
         config,
@@ -71,17 +70,17 @@ export class ScenesListController {
   }
 
   private static createSearchAllExistingButton(config: Config): HTMLDivElement {
-    const customDiv = document.createElement("div");
-    customDiv.classList.add("ms-3", "mb-2");
+    const customDiv = document.createElement('div');
+    customDiv.classList.add('ms-3', 'mb-2');
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.style.cssText = Styles.SearchAllExisting.style;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.style.cssText = Styles.SearchAllExisting;
     button.id = Stasharr.ID.SearchAllExisting;
     button.innerHTML = `${icon(faSearch).html} Search All`;
-    addTooltip(button, "Search all available scenes on this page in Whisparr.");
+    addTooltip(button, 'Search all available scenes on this page in Whisparr.');
 
-    button.addEventListener("click", () => {
+    button.addEventListener('click', () => {
       ScenesListController.handleAllAvailableButtonClick(
         button,
         config,
@@ -102,7 +101,7 @@ export class ScenesListController {
     let pageNumber: number = parseInt(
       document
         .querySelector<HTMLElement>(StashDB.DOMSelector.DataPage)
-        ?.getAttribute(StashDB.DataAttribute.DataPage) || "{Page not found}",
+        ?.getAttribute(StashDB.DataAttribute.DataPage) || '{Page not found}',
     );
     let stashIdtoSceneCardAndStatusMap: StashIdToSceneCardAndStatusMap =
       new Map();
@@ -145,7 +144,7 @@ export class ScenesListController {
 
   private static updateAddAllAvailableButton(button: HTMLButtonElement): void {
     setTimeout(() => {
-      button.style.cssText = Styles.SearchAllAvailable.style;
+      button.style.cssText = Styles.SearchAllAvailable;
       button.innerHTML = `${icon(faDownload).html} Add All`;
       button.disabled = false;
     }, 200);
@@ -155,7 +154,7 @@ export class ScenesListController {
     button: HTMLButtonElement,
   ): void {
     setTimeout(() => {
-      button.style.cssText = Styles.SearchAllExisting.style;
+      button.style.cssText = Styles.SearchAllExisting;
       button.innerHTML = `${icon(faSearch).html} Search All`;
       button.disabled = false;
     }, 200);
@@ -164,7 +163,7 @@ export class ScenesListController {
   private static setLoadingState(button: HTMLButtonElement): void {
     button.disabled = true;
     button.style.backgroundColor = Styles.Color.GRAY;
-    button.innerHTML = `${icon(faSpinner, { classes: ["fa-spin"] }).html} Loading`;
+    button.innerHTML = `${icon(faSpinner, { classes: ['fa-spin'] }).html} Loading`;
   }
 
   private static updateButtonsForExistingScenes(

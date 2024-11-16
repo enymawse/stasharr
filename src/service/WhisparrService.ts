@@ -1,10 +1,7 @@
-import { SceneStatus } from "../enums/SceneStatus";
-import { Config } from "../models/Config";
-import { CommandPayloadBuilder } from "../builder/CommandPayloadBuilder";
-import { ScenePayloadBuilder } from "../builder/ScenePayloadBuilder";
-import { Whisparr } from "../types/whisparr";
-import ServiceBase from "./ServiceBase";
-import ToastService from "./ToastService";
+import { Config } from '../models/Config';
+import { Whisparr } from '../types/whisparr';
+import ServiceBase from './ServiceBase';
+import ToastService from './ToastService';
 
 export default class WhisparrService extends ServiceBase {
   /**
@@ -13,7 +10,7 @@ export default class WhisparrService extends ServiceBase {
    * @param {Config} config - The configuration object containing API details.
    * @returns {Promise<boolean>} - The response from the Whisparr API, indicating the health status of the instance.
    */ static healthCheck(config: Config): Promise<boolean> {
-    return ServiceBase.request(config, "health").then((response) => {
+    return ServiceBase.request(config, 'health').then((response) => {
       return response.status >= 200 && response.status < 300;
     });
   }
@@ -29,16 +26,16 @@ export default class WhisparrService extends ServiceBase {
     config: Config,
     body: Whisparr.CommandPayload,
   ): Promise<Whisparr.WhisparrCommandResponse | null> {
-    const endpoint = "command";
+    const endpoint = 'command';
     let response;
     try {
-      response = await ServiceBase.request(config, endpoint, "POST", body);
+      response = await ServiceBase.request(config, endpoint, 'POST', body);
     } catch (e) {
       ToastService.showToast(
         `Error occurred while executing ${body.name} command`,
         false,
       );
-      console.error("Error in command", e);
+      console.error('Error in command', e);
       return null;
     }
     const data = await response.response;
@@ -52,14 +49,14 @@ export default class WhisparrService extends ServiceBase {
   static async getQualityProfiles(
     config: Config,
   ): Promise<Whisparr.QualityProfile[]> {
-    const endpoint = "qualityProfile";
+    const endpoint = 'qualityProfile';
     const response = await ServiceBase.request(
       config,
       endpoint,
-      "GET",
+      'GET',
       undefined,
       {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     )
       .then((response) => response.response)
@@ -106,14 +103,14 @@ export default class WhisparrService extends ServiceBase {
   }
 
   static async getRootFolders(config: Config): Promise<Whisparr.RootFolder[]> {
-    const endpoint = "rootFolder";
+    const endpoint = 'rootFolder';
     const response = await ServiceBase.request(
       config,
       endpoint,
-      "GET",
+      'GET',
       undefined,
       {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     )
       .then((response) => response.response)

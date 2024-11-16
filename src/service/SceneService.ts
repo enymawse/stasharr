@@ -1,14 +1,14 @@
-import { CommandPayloadBuilder } from "../builder/CommandPayloadBuilder";
-import { ScenePayloadBuilder } from "../builder/ScenePayloadBuilder";
-import { SceneSearchCommandStatus } from "../enums/SceneSearchCommandStatus";
-import { SceneLookupStatus, SceneStatus } from "../enums/SceneStatus";
-import { Config } from "../models/Config";
-import { StashIdToSceneCardAndStatusMap } from "../types/stasharr";
-import { Whisparr } from "../types/whisparr";
-import ExclusionListService from "./ExclusionListService";
-import ServiceBase from "./ServiceBase";
-import ToastService from "./ToastService";
-import WhisparrService from "./WhisparrService";
+import { CommandPayloadBuilder } from '../builder/CommandPayloadBuilder';
+import { ScenePayloadBuilder } from '../builder/ScenePayloadBuilder';
+import { SceneSearchCommandStatus } from '../enums/SceneSearchCommandStatus';
+import { SceneLookupStatus, SceneStatus } from '../enums/SceneStatus';
+import { Config } from '../models/Config';
+import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
+import { Whisparr } from '../types/whisparr';
+import ExclusionListService from './ExclusionListService';
+import ServiceBase from './ServiceBase';
+import ToastService from './ToastService';
+import WhisparrService from './WhisparrService';
 
 export default class SceneService extends ServiceBase {
   /**
@@ -28,10 +28,10 @@ export default class SceneService extends ServiceBase {
       response = await ServiceBase.request(config, endpoint);
     } catch (e) {
       ToastService.showToast(
-        "Error occurred while looking up the scene",
+        'Error occurred while looking up the scene',
         false,
       );
-      console.error("Error in getSceneByStashId", e);
+      console.error('Error in getSceneByStashId', e);
       return null;
     }
     const data = await response.response;
@@ -84,10 +84,10 @@ export default class SceneService extends ServiceBase {
       response = await ServiceBase.request(config, endpoint);
     } catch (e) {
       ToastService.showToast(
-        "Error occurred while looking up the scene",
+        'Error occurred while looking up the scene',
         false,
       );
-      console.error("Error in lookupSceneByStashId", e);
+      console.error('Error in lookupSceneByStashId', e);
       return null;
     }
     const data = (await response.response) as Whisparr.LookupSceneResponse[];
@@ -112,7 +112,7 @@ export default class SceneService extends ServiceBase {
       await SceneService.getSceneByStashId(config, stashId);
     if (scene) {
       let payload = new CommandPayloadBuilder()
-        .setName("MoviesSearch")
+        .setName('MoviesSearch')
         .setMovieIds([scene.id])
         .build();
       const moviesSearchCommandResponse = await WhisparrService.command(
@@ -151,7 +151,7 @@ export default class SceneService extends ServiceBase {
     config: Config,
     scene: Whisparr.WhisparrScene,
   ): Promise<Whisparr.WhisparrScene | null> {
-    const endpoint = "movie";
+    const endpoint = 'movie';
     const payload = new ScenePayloadBuilder()
       .setForeignId(scene.foreignId)
       .setMonitored(true)
@@ -162,10 +162,10 @@ export default class SceneService extends ServiceBase {
       .build();
     let response;
     try {
-      response = await ServiceBase.request(config, endpoint, "POST", payload);
+      response = await ServiceBase.request(config, endpoint, 'POST', payload);
     } catch (e) {
-      ToastService.showToast("Error occurred while adding the scene.", false);
-      console.error("Error adding scene", e);
+      ToastService.showToast('Error occurred while adding the scene.', false);
+      console.error('Error adding scene', e);
       return null;
     }
     const data = await response.response;
