@@ -14,9 +14,7 @@ import {
 (async function () {
   const settings = new Settings();
 
-  // Initialize on initial load
   ButtonController.initializeButtons(settings.config);
-  // StudioSummaryController.initialize(settings.config);
   ScenesListController.initialize(settings.config);
   new NavbarController(document.body);
 

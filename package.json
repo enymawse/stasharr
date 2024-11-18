@@ -25,6 +25,8 @@
   },
   "type": "module",
   "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/preset-typescript": "^7.26.0",
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
     "@commitlint/cz-commitlint": "^19.5.0",
@@ -38,6 +40,8 @@
     "@typescript-eslint/eslint-plugin": "^8.14.0",
     "@typescript-eslint/parser": "^8.14.0",
     "@violentmonkey/types": "^0.2.0",
+    "babel-loader": "^9.2.1",
+    "babel-preset-solid": "^1.9.3",
     "bootstrap": "^5.3.3",
     "commitizen": "^4.3.1",
     "css-loader": "^7.1.2",
@@ -50,8 +54,9 @@
     "lint-staged": "^15.2.10",
     "lodash": "^4.17.21",
     "prettier": "3.3.3",
-    "sass": "^1.80.2",
-    "sass-loader": "^16.0.2",
+    "sass": "^1.81.0",
+    "sass-loader": "^16.0.3",
+    "solid-js": "^1.9.3",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.10",
     "ts-loader": "^9.5.1",
@@ -67,5 +72,11 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "babel": {
+    "presets": [
+      "solid"
+    ],
+    "plugins": []
   }
 }

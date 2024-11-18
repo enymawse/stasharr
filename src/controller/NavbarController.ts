@@ -1,4 +1,5 @@
-import { Stasharr } from '../enums/Stasharr';
+import { render } from 'solid-js/web';
+import NavbarLink from '../components/NavbarLink';
 
 export class NavbarController {
   private observer: MutationObserver = new MutationObserver((mutationList) => {
@@ -12,7 +13,7 @@ export class NavbarController {
             if (node.querySelector('nav.navbar > .navbar-nav')) {
               const navbar = document.querySelector('nav.navbar > .navbar-nav');
               if (navbar) {
-                navbar.appendChild(this.createSettingsModalLink());
+                render(NavbarLink, navbar);
                 this.observer.disconnect();
                 return;
               }
@@ -22,16 +23,6 @@ export class NavbarController {
       }
     }
   });
-
-  private createSettingsModalLink(): HTMLElement {
-    let aLink = document.createElement('a');
-    aLink.classList.add('nav-link');
-    aLink.href = '#';
-    aLink.innerText = 'Stasharr';
-    aLink.setAttribute('data-bs-toggle', 'modal');
-    aLink.setAttribute('data-bs-target', Stasharr.DOMSelector.SettingsModal);
-    return aLink;
-  }
 
   constructor(body: HTMLElement) {
     this.observer.observe(body, { childList: true, subtree: true });
