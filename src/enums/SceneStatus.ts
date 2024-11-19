@@ -1,9 +1,11 @@
-export enum SceneStatus {
-  EXISTS_AND_HAS_FILE,
-  EXISTS_AND_NO_FILE,
-  NOT_IN_WHISPARR,
-  EXCLUDED,
-}
+export const SceneStatus = {
+  EXISTS_AND_HAS_FILE: 0,
+  EXISTS_AND_NO_FILE: 1,
+  NOT_IN_WHISPARR: 2,
+  EXCLUDED: 3,
+} as const;
+
+export type SceneStatusType = (typeof SceneStatus)[keyof typeof SceneStatus];
 
 export class SceneLookupStatus {
   static readonly ADDED = new SceneLookupStatus(
@@ -21,10 +23,10 @@ export class SceneLookupStatus {
 
   private constructor(
     public readonly name: string,
-    public readonly mappedStatus: SceneStatus,
+    public readonly mappedStatus: SceneStatusType,
   ) {}
 
-  static mapToSceneStatus(status: SceneLookupStatus): SceneStatus {
+  static mapToSceneStatus(status: SceneLookupStatus): SceneStatusType {
     return status.mappedStatus;
   }
 }

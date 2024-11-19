@@ -10,6 +10,6 @@ $colors: (
 
 :root {
   @each $key, $value in $colors {
-    --stasharr-color-#{$key}: #{$value};
+    --stasharr-color-#{"#{$key}"}: #{$value};
   }
 }

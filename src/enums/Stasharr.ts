@@ -1,4 +1,4 @@
-import { SceneStatus } from './SceneStatus';
+import { SceneStatusType } from './SceneStatus';
 import { StashDB } from './StashDB';
 import { getSelectorFromId } from '../util/util';
 
@@ -27,7 +27,7 @@ export const Stasharr = {
     StudioMonitor: getSelectorFromId('stasharr-studiomonitor'),
     PerformerMonitor: getSelectorFromId('stasharr-performermonitor'),
     SearchAllExisting: getSelectorFromId('stasharr-searchallavailable'),
-    SceneCardByButtonStatus: (status: SceneStatus) =>
+    SceneCardByButtonStatus: (status: SceneStatusType) =>
       `${StashDB.DOMSelector.SceneCard}:has([${Stasharr.DataAttribute.SceneStatus}='${status}'])`,
   },
 };

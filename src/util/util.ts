@@ -1,4 +1,4 @@
-import { SceneStatus } from '../enums/SceneStatus';
+import { SceneStatus, SceneStatusType } from '../enums/SceneStatus';
 import { StashDB } from '../enums/StashDB';
 import { Tooltip } from 'bootstrap';
 import { Styles } from '../enums/Styles';
@@ -9,6 +9,11 @@ import {
   faVideoSlash,
   IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
+import { Config } from '../models/Config';
+import SceneService from '../service/SceneService';
+import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
+import { render } from 'solid-js/web';
+import SceneButton from '../components/SceneButton';
 
 export function extractStashIdFromSceneCard(sceneCard?: HTMLElement) {
   if (sceneCard) {
@@ -101,7 +106,7 @@ export function responseStatusCodeOK(code: number) {
 }
 
 export function stateByStatus(
-  initialStatus: SceneStatus,
+  initialStatus: SceneStatusType,
 ): [boolean, string, IconDefinition] {
   let state = { disabled: false, color: Styles.Color.PINK, icon: faDownload };
   switch (initialStatus) {
@@ -128,3 +133,24 @@ export function stateByStatus(
   }
   return [state.disabled, state.color, state.icon];
 }
+
+export const fetchSceneStatus = async (p: {
+  config: Config;
+  stashId: string;
+}) => {
+  const response = await SceneService.getSceneStatus(p.config, p.stashId);
+  return response;
+};
+
+export const rehydrateSceneCards = async (
+  config: Config,
+  sceneMap: StashIdToSceneCardAndStatusMap,
+) => {
+  sceneMap.forEach((sceneMapItem, stashId) => {
+    sceneMapItem.sceneCard.querySelector('.stasharr-card-button')?.remove();
+    render(
+      () => SceneButton({ config: config, stashId: stashId, header: false }),
+      sceneMapItem.sceneCard,
+    );
+  });
+};

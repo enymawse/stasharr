@@ -1,7 +1,11 @@
 import { CommandPayloadBuilder } from '../builder/CommandPayloadBuilder';
 import { ScenePayloadBuilder } from '../builder/ScenePayloadBuilder';
 import { SceneSearchCommandStatus } from '../enums/SceneSearchCommandStatus';
-import { SceneLookupStatus, SceneStatus } from '../enums/SceneStatus';
+import {
+  SceneLookupStatus,
+  SceneStatus,
+  SceneStatusType,
+} from '../enums/SceneStatus';
 import { Config } from '../models/Config';
 import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
 import { Whisparr } from '../types/whisparr';
@@ -51,7 +55,7 @@ export default class SceneService extends ServiceBase {
   static async getSceneStatus(
     config: Config,
     stashId: string,
-  ): Promise<SceneStatus> {
+  ): Promise<SceneStatusType> {
     const exclusionMap = await ExclusionListService.getExclusionsMap(config);
     if (exclusionMap.size > 0) {
       if (exclusionMap.has(stashId)) return SceneStatus.EXCLUDED;

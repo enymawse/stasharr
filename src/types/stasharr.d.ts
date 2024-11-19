@@ -1,4 +1,4 @@
-import { SceneStatus } from '../enums/SceneStatus';
+import { SceneStatus, SceneStatusType } from '../enums/SceneStatus';
 import { Whisparr } from './whisparr';
 
 /**
@@ -23,7 +23,7 @@ import { Whisparr } from './whisparr';
  */
 export type StashIdToSceneCardAndStatusMap = Map<
   string,
-  { status: SceneStatus | null; sceneCard: HTMLElement }
+  { status: SceneStatusType | null; sceneCard: HTMLElement }
 >;
 
 export type ExclusionsMap = Map<string, Whisparr.Exclusion>;
