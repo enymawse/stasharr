@@ -16,6 +16,8 @@ import { Styles } from '../enums/Styles';
 import { Stasharr } from '../enums/Stasharr';
 import { StashDB } from '../enums/StashDB';
 import { SceneSearchCommandStatus } from '../enums/SceneSearchCommandStatus';
+import { render } from 'solid-js/web';
+import CardHeader from '../components/CardHeader';
 
 export class ButtonController {
   static initializeButtons(config: Config) {
@@ -53,22 +55,26 @@ export class ButtonController {
       ) {
         const isHeader = true;
         const triggerButton = ButtonController.createHeaderButton();
-        cardHeader.appendChild(triggerButton);
+        // cardHeader.appendChild(triggerButton);
         const sceneID = extractStashIdFromSceneCard();
         if (sceneID) {
-          const status: SceneStatus = await SceneService.getSceneStatus(
-            config,
-            sceneID,
+          render(
+            () => CardHeader({ config: config, stashId: sceneID }),
+            cardHeader,
           );
-          ButtonController.updateButton(triggerButton, status, isHeader);
-          triggerButton.addEventListener('click', () => {
-            ButtonController.handleButtonClick(
-              config,
-              sceneID,
-              triggerButton,
-              isHeader,
-            );
-          });
+          // const status: SceneStatus = await SceneService.getSceneStatus(
+          //   config,
+          //   sceneID,
+          // );
+          // ButtonController.updateButton(triggerButton, status, isHeader);
+          // triggerButton.addEventListener('click', () => {
+          //   ButtonController.handleButtonClick(
+          //     config,
+          //     sceneID,
+          //     triggerButton,
+          //     isHeader,
+          //   );
+          // });
         }
       }
     })();

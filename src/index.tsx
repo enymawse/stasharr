@@ -11,6 +11,8 @@ import {
   shouldStudioInit,
 } from './util/util';
 
+import './styles/main.scss';
+
 (async function () {
   const settings = new Settings();
 

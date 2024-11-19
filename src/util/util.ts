@@ -1,5 +1,14 @@
+import { SceneStatus } from '../enums/SceneStatus';
 import { StashDB } from '../enums/StashDB';
 import { Tooltip } from 'bootstrap';
+import { Styles } from '../enums/Styles';
+import {
+  faCircleCheck,
+  faDownload,
+  faSearch,
+  faVideoSlash,
+  IconDefinition,
+} from '@fortawesome/free-solid-svg-icons';
 
 export function extractStashIdFromSceneCard(sceneCard?: HTMLElement) {
   if (sceneCard) {
@@ -89,4 +98,33 @@ export function getSelectorFromId(id: string): string {
 
 export function responseStatusCodeOK(code: number) {
   return code < 300 && code >= 200;
+}
+
+export function stateByStatus(
+  initialStatus: SceneStatus,
+): [boolean, string, IconDefinition] {
+  let state = { disabled: false, color: Styles.Color.PINK, icon: faDownload };
+  switch (initialStatus) {
+    case SceneStatus.NOT_IN_WHISPARR:
+      state.color = Styles.Color.PINK;
+      state.icon = faDownload;
+      break;
+    case SceneStatus.EXCLUDED:
+      state.color = Styles.Color.RED;
+      state.icon = faVideoSlash;
+      state.disabled = true;
+      break;
+    case SceneStatus.EXISTS_AND_HAS_FILE:
+      state.color = Styles.Color.GREEN;
+      state.icon = faCircleCheck;
+      state.disabled = true;
+      break;
+    case SceneStatus.EXISTS_AND_NO_FILE:
+      state.color = Styles.Color.YELLOW;
+      state.icon = faSearch;
+      break;
+    default:
+      break;
+  }
+  return [state.disabled, state.color, state.icon];
 }

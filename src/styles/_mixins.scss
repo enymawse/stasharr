@@ -1,0 +1,11 @@
+@use 'sass:map';
+@use 'variables';
+
+@function color($key) {
+  @return map.get(variables.$colors, $key);
+}
+
+@mixin button-variant($bg-color, $text-color) {
+  background-color: var(#{$bg-color});
+  color: var(#{$text-color});
+}
