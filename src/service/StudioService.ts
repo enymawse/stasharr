@@ -1,6 +1,7 @@
 import { StudioPayloadBuilder } from '../builder/StudioPayloadBuilder';
 import { Config } from '../models/Config';
 import { Whisparr } from '../types/whisparr';
+import { responseStatusCodeOK } from '../util/util';
 import ServiceBase from './ServiceBase';
 import ToastService from './ToastService';
 
@@ -60,8 +61,7 @@ export default class StudioService extends ServiceBase {
   static async addStudio(
     config: Config,
     stashId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-undef
-  ): Promise<VMScriptResponseObject<any>> {
+  ): Promise<Whisparr.WhisparrStudio> {
     const endpoint = 'studio';
     const payload = new StudioPayloadBuilder()
       .setForeignId(stashId)
@@ -70,6 +70,16 @@ export default class StudioService extends ServiceBase {
       .setRootFolderPath(config.rootFolderPath)
       .setSearchOnAdd(config.searchForNewMovie)
       .build();
-    return ServiceBase.request(config, endpoint, 'POST', payload);
+    const response = await ServiceBase.request(
+      config,
+      endpoint,
+      'POST',
+      payload,
+    );
+    if (responseStatusCodeOK(response.status)) {
+      return response.response as Whisparr.WhisparrStudio;
+    } else {
+      throw Error('API Error adding studio: ' + stashId);
+    }
   }
 }

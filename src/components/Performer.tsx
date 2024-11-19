@@ -1,6 +1,5 @@
-import { createMemo, createResource, Match, Switch } from 'solid-js';
+import { createResource, Match, Switch } from 'solid-js';
 import { Config } from '../models/Config';
-import SceneService from '../service/SceneService';
 import PerformerService from '../service/PerformerService';
 import { Stasharr } from '../enums/Stasharr';
 import { icon } from '@fortawesome/fontawesome-svg-core';
