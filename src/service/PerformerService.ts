@@ -1,6 +1,7 @@
 import { PerformerPayloadBuilder } from '../builder/PerformerPayloadBuilder';
 import { Config } from '../models/Config';
 import { Whisparr } from '../types/whisparr';
+import { responseStatusCodeOK } from '../util/util';
 import ServiceBase from './ServiceBase';
 import ToastService from './ToastService';
 
@@ -65,8 +66,7 @@ export default class PerformerService extends ServiceBase {
   static async addPerformer(
     config: Config,
     stashId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-undef
-  ): Promise<VMScriptResponseObject<any>> {
+  ): Promise<Whisparr.WhisparrPerformer> {
     const endpoint = 'performer';
     const payload = new PerformerPayloadBuilder()
       .setForeignId(stashId)
@@ -75,6 +75,16 @@ export default class PerformerService extends ServiceBase {
       .setRootFolderPath(config.rootFolderPath)
       .setSearchOnAdd(config.searchForNewMovie)
       .build();
-    return ServiceBase.request(config, endpoint, 'POST', payload);
+    const response = await ServiceBase.request(
+      config,
+      endpoint,
+      'POST',
+      payload,
+    );
+    if (responseStatusCodeOK(response.status)) {
+      return response.response as Whisparr.WhisparrPerformer;
+    } else {
+      throw Error('API Error adding performer: ' + stashId);
+    }
   }
 }
