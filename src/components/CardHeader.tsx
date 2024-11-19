@@ -1,6 +1,6 @@
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { Stasharr } from '../enums/Stasharr';
-import { SceneStatus } from '../enums/SceneStatus';
+import { SceneLookupStatus, SceneStatus } from '../enums/SceneStatus';
 import { Config } from '../models/Config';
 import SceneService from '../service/SceneService';
 import {
@@ -11,12 +11,17 @@ import {
   faVideoSlash,
 } from '@fortawesome/free-solid-svg-icons';
 import { createResource, Match, Show, Switch } from 'solid-js';
+import ToastService from '../service/ToastService';
+import { SceneSearchCommandStatus } from '../enums/SceneSearchCommandStatus';
 
 function CardHeader(props: { config: Config; stashId: string }) {
-  const [sceneStatus] = createResource(props, async (p) => {
-    const response = await SceneService.getSceneStatus(p.config, p.stashId);
-    return response;
-  });
+  const [sceneStatus, { refetch: refetchStatus }] = createResource(
+    props,
+    async (p) => {
+      const response = await SceneService.getSceneStatus(p.config, p.stashId);
+      return response;
+    },
+  );
 
   const getButtonDetails = () => {
     let iconToUse = faDownload;
@@ -59,8 +64,39 @@ function CardHeader(props: { config: Config; stashId: string }) {
     }
   };
 
-  const clickHandler = () => {
-    console.log('clicked');
+  const clickHandler = async () => {
+    if (sceneStatus() === SceneStatus.NOT_IN_WHISPARR) {
+      const result = await SceneService.lookupAndAddScene(
+        props.config,
+        props.stashId,
+      );
+      console.log(result);
+
+      switch (result) {
+        case SceneLookupStatus.ADDED:
+          ToastService.showToast('Scene added successfully!', true);
+          break;
+        case SceneLookupStatus.NOT_FOUND:
+          ToastService.showToast('Scene not found!', false);
+          break;
+        case SceneLookupStatus.ERROR:
+          ToastService.showToast('Error adding Scene!', false);
+      }
+      refetchStatus();
+    } else if (sceneStatus() === SceneStatus.EXISTS_AND_NO_FILE) {
+      const result = await SceneService.triggerWhisparrSearch(
+        props.config,
+        props.stashId,
+      );
+      switch (result) {
+        case SceneSearchCommandStatus.CREATED:
+          ToastService.showToast('Searching for Scene', true);
+          break;
+        default:
+          ToastService.showToast('Error Searching for Scene!', false);
+          break;
+      }
+    }
   };
 
   return (
