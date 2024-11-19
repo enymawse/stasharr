@@ -5,10 +5,16 @@ import { faSearch, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { parseInt } from 'lodash';
 import { StashDB } from '../enums/StashDB';
 import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
-import { extractStashIdFromSceneCard, rehydrateSceneCards } from '../util/util';
+import {
+  extractStashIdFromSceneCard,
+  rehydrateSceneCards,
+  tooltips,
+} from '../util/util';
 import { SceneStatus, SceneStatusType } from '../enums/SceneStatus';
 import SceneService from '../service/SceneService';
 import ToastService from '../service/ToastService';
+import { createEffect } from 'solid-js';
+import { Tooltip } from 'bootstrap';
 
 type BulkActionButtonProps = {
   config: Config;
@@ -99,6 +105,10 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
 
   const details = getButtonDetails();
 
+  createEffect(() => {
+    tooltips();
+  });
+
   return (
     <div class="ms-3 mb-2">
       <button
@@ -106,6 +116,12 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
         class={details.className}
         id={details.id}
         onclick={clickHandler}
+        data-bs-toggle="tooltip"
+        data-bs-title={
+          actionType === 'search'
+            ? 'Search all available scenes on this page in Whisparr.'
+            : 'Add all available scenes on this page to Whisparr.'
+        }
       >
         <span innerHTML={icon(details.icon).html[0]}></span>{' '}
         {actionType === 'search' ? 'Search All' : 'Add All'}

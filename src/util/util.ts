@@ -154,3 +154,14 @@ export const rehydrateSceneCards = async (
     );
   });
 };
+
+export function tooltips() {
+  const tooltipTriggerList = document.querySelectorAll(
+    '[data-bs-toggle="tooltip"]',
+  );
+  tooltipTriggerList.forEach((tooltipTriggerEl) => {
+    const tooltip = Tooltip.getInstance(tooltipTriggerEl);
+    if (tooltip) tooltip.dispose();
+    new Tooltip(tooltipTriggerEl);
+  });
+}

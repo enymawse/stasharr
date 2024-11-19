@@ -1,10 +1,19 @@
 import { icon } from '@fortawesome/fontawesome-svg-core';
-import { createMemo, createResource, Match, Suspense, Switch } from 'solid-js';
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  Match,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { Config } from '../models/Config';
 import { Stasharr } from '../enums/Stasharr';
 import { getButtonDetails, clickHandler } from '../util/button';
-import { fetchSceneStatus } from '../util/util';
+import { fetchSceneStatus, tooltips } from '../util/util';
 import LoadingButton from './LoadingButton';
+import { Tooltip } from 'bootstrap';
+import _ from 'lodash';
 
 function SceneButton(props: {
   config: Config;
@@ -19,6 +28,12 @@ function SceneButton(props: {
   const buttonDetails = createMemo(() =>
     getButtonDetails(sceneStatus(), props.header),
   );
+
+  createEffect(() => {
+    if (sceneStatus()) {
+      tooltips();
+    }
+  });
 
   return (
     <>
@@ -35,6 +50,8 @@ function SceneButton(props: {
                 props.header ? Stasharr.ID.HeaderButton : Stasharr.ID.CardButton
               }
               data-stasharr-scenestatus={sceneStatus()}
+              data-bs-toggle="tooltip"
+              data-bs-title={buttonDetails().tooltip}
               onClick={() =>
                 clickHandler(
                   sceneStatus(),

@@ -1,4 +1,4 @@
-import { createResource, Match, Switch } from 'solid-js';
+import { createEffect, createResource, Match, Switch } from 'solid-js';
 import { Config } from '../models/Config';
 import StudioService from '../service/StudioService';
 import { Stasharr } from '../enums/Stasharr';
@@ -6,6 +6,7 @@ import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faBookmark, faCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { faBookmark as faBookmarkEmpty } from '@fortawesome/free-regular-svg-icons';
 import { Whisparr } from '../types/whisparr';
+import { tooltips } from '../util/util';
 
 function Studio(props: { config: Config; stashId: string }) {
   const [studioDetails, { refetch }] = createResource(
@@ -30,6 +31,10 @@ function Studio(props: { config: Config; stashId: string }) {
     refetch();
   };
 
+  createEffect(() => {
+    if (studioDetails()) tooltips();
+  });
+
   return (
     <>
       <Switch>
@@ -49,6 +54,8 @@ function Studio(props: { config: Config; stashId: string }) {
             type="button"
             id={Stasharr.ID.StudioMonitor}
             onclick={() => toggleMonitor(studioDetails()!)}
+            data-bs-toggle="tooltip"
+            data-bs-title={`${studioDetails()?.monitored ? 'Unmonitor' : 'Monitor'} ${studioDetails()?.title} in Whisparr`}
           >
             <span
               innerHTML={

@@ -22,28 +22,34 @@ export const getButtonDetails = (
   let buttonText = 'Add to Whisparr';
   let buttonClass = header ? 'stasharr-button' : 'stasharr-card-button';
   let disabled = false;
+  let tooltipText = '';
   switch (sceneStatus) {
     case SceneStatus.EXISTS_AND_HAS_FILE:
       iconToUse = faCircleCheck;
       buttonText = 'Already Downloaded';
       buttonClass += ` ${buttonClass}-downloaded`;
       disabled = true;
+      tooltipText = 'Scene downloaded already.';
       break;
     case SceneStatus.EXISTS_AND_NO_FILE:
       iconToUse = faSearch;
       buttonText = 'In Whisparr';
       buttonClass += ` ${buttonClass}-searchable`;
+      tooltipText =
+        'Scene exists but no file has been downloaded. Trigger Whisparr to search for this scene.';
       break;
     case SceneStatus.NOT_IN_WHISPARR:
       iconToUse = faDownload;
       buttonText = 'Add to Whisparr';
       buttonClass += ` ${buttonClass}-add`;
+      tooltipText = 'Add this scene to Whisparr.';
       break;
     case SceneStatus.EXCLUDED:
       iconToUse = faVideoSlash;
       buttonText = 'Excluded';
       buttonClass += ` ${buttonClass}-excluded`;
       disabled = true;
+      tooltipText = 'This scene is on your Exclusion List.';
       break;
   }
   return {
@@ -51,6 +57,7 @@ export const getButtonDetails = (
     text: buttonText,
     class: buttonClass,
     disabled: disabled,
+    tooltip: tooltipText,
   };
 };
 
