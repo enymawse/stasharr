@@ -15,6 +15,10 @@ import SceneService from '../service/SceneService';
 import ToastService from '../service/ToastService';
 import { createEffect } from 'solid-js';
 import { Tooltip } from 'bootstrap';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from 'solid-fontawesome';
+
+library.add(faSearch, faDownload);
 
 type BulkActionButtonProps = {
   config: Config;
@@ -25,7 +29,7 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
   const getButtonDetails = () => {
     if (actionType === 'search') {
       return {
-        icon: faSearch,
+        icon: 'fa-solid fa-search',
         className: 'stasharr-button stasharr-button-searchable',
         id: Stasharr.ID.SearchAllExisting,
         sceneStatus: SceneStatus.EXISTS_AND_NO_FILE,
@@ -34,7 +38,7 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
       };
     }
     return {
-      icon: faDownload,
+      icon: 'fa-solid fa-download',
       className: 'stasharr-button stasharr-button-add',
       id: Stasharr.ID.AddAllAvailable,
       sceneStatus: SceneStatus.NOT_IN_WHISPARR,
@@ -123,8 +127,8 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
             : 'Add all available scenes on this page to Whisparr.'
         }
       >
-        <span innerHTML={icon(details.icon).html[0]}></span>{' '}
-        {actionType === 'search' ? 'Search All' : 'Add All'}
+        <FontAwesomeIcon icon={details.icon} />
+        {actionType === 'search' ? ' Search All' : ' Add All'}
       </button>
     </div>
   );

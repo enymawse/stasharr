@@ -18,7 +18,7 @@ import './styles/main.scss';
 
   ButtonController.initializeButtons(settings.config);
   ScenesListController.initialize(settings.config);
-  new NavbarController(document.body);
+  new NavbarController(settings.config, document.body);
 
   const observer = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {

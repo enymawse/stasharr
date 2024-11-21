@@ -97,10 +97,6 @@ export function removeTooltip(element: HTMLElement): void {
   if (existingTooltipInstance) existingTooltipInstance.dispose();
 }
 
-export function getSelectorFromId(id: string): string {
-  return `#${id}`;
-}
-
 export function responseStatusCodeOK(code: number) {
   return code < 300 && code >= 200;
 }
@@ -164,4 +160,15 @@ export function tooltips() {
     if (tooltip) tooltip.dispose();
     new Tooltip(tooltipTriggerEl);
   });
+}
+
+export function cleanTooltipOnMount(selector: string): void {
+  const tooltipTrigger = document.querySelector(selector);
+  if (tooltipTrigger) {
+    const tt = Tooltip.getInstance(tooltipTrigger);
+    if (tt) {
+      tt.dispose();
+      new Tooltip(tooltipTrigger);
+    }
+  }
 }

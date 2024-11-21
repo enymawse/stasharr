@@ -2,11 +2,14 @@ import { createEffect, createResource, Match, Switch } from 'solid-js';
 import { Config } from '../models/Config';
 import StudioService from '../service/StudioService';
 import { Stasharr } from '../enums/Stasharr';
-import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faBookmark, faCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { faBookmark as faBookmarkEmpty } from '@fortawesome/free-regular-svg-icons';
 import { Whisparr } from '../types/whisparr';
 import { tooltips } from '../util/util';
+import { FontAwesomeIcon } from 'solid-fontawesome';
+import { library } from '@fortawesome/fontawesome-svg-core';
+
+library.add(faCirclePlus, faBookmark, faBookmarkEmpty);
 
 function Studio(props: { config: Config; stashId: string }) {
   const [studioDetails, { refetch }] = createResource(
@@ -45,7 +48,7 @@ function Studio(props: { config: Config; stashId: string }) {
             id={Stasharr.ID.StudioAdd}
             onclick={addStudio}
           >
-            <span innerHTML={icon(faCirclePlus).html[0]}></span>
+            <FontAwesomeIcon icon="fa-solid fa-circle-plus" />
           </button>
         </Match>
         <Match when={studioDetails()}>
@@ -57,12 +60,13 @@ function Studio(props: { config: Config; stashId: string }) {
             data-bs-toggle="tooltip"
             data-bs-title={`${studioDetails()?.monitored ? 'Unmonitor' : 'Monitor'} ${studioDetails()?.title} in Whisparr`}
           >
-            <span
-              innerHTML={
-                icon(studioDetails()?.monitored ? faBookmark : faBookmarkEmpty)
-                  .html[0]
+            <FontAwesomeIcon
+              icon={
+                studioDetails()?.monitored
+                  ? 'fa-solid fa-bookmark'
+                  : 'fa-regular fa-bookmark'
               }
-            ></span>
+            />
           </button>
         </Match>
       </Switch>

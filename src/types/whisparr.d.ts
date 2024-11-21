@@ -237,4 +237,37 @@ export namespace Whisparr {
     movieYear: number;
     id: number;
   };
+
+  type SystemStatus = {
+    appName: string;
+    instanceName: string;
+    version: string;
+    buildTime: string;
+    isDebug: boolean;
+    isProduction: boolean;
+    isAdmin: boolean;
+    isUserInteractive: boolean;
+    startupPath: string;
+    appData: string;
+    osName: string;
+    osVersion: string;
+    isNetCore: boolean;
+    isLinux: boolean;
+    isOsx: boolean;
+    isWindows: boolean;
+    isDocker: boolean;
+    mode: string;
+    branch: string;
+    databaseType: string;
+    databaseVersion: string;
+    authentication: string;
+    migrationVersion: number;
+    urlBase: string;
+    runtimeVersion: string;
+    runtimeName: string;
+    startTime: string;
+    packageVersion: string;
+    packageAuthor: string;
+    packageUpdateMechanism: string;
+  };
 }

@@ -41,7 +41,17 @@ export default {
         },
       },
       {
-        test: /\.scss$/,
+        test: /\.jsx?$/,
+        include: /node_modules\/solid-fontawesome/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['babel-preset-solid'],
+          },
+        },
+      },
+      {
+        test: /\.(css|scss)$/,
         use: ['style-loader', 'css-loader', 'sass-loader'],
       },
     ],

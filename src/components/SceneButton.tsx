@@ -14,6 +14,16 @@ import { fetchSceneStatus, tooltips } from '../util/util';
 import LoadingButton from './LoadingButton';
 import { Tooltip } from 'bootstrap';
 import _ from 'lodash';
+import { FontAwesomeIcon } from 'solid-fontawesome';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import {
+  faCircleCheck,
+  faDownload,
+  faSearch,
+  faVideoSlash,
+} from '@fortawesome/free-solid-svg-icons';
+
+library.add(faDownload, faCircleCheck, faSearch, faVideoSlash);
 
 function SceneButton(props: {
   config: Config;
@@ -61,7 +71,7 @@ function SceneButton(props: {
                 )
               }
             >
-              <span innerHTML={icon(buttonDetails().icon).html[0]}></span>
+              <FontAwesomeIcon icon={buttonDetails().icon} />
               {props.header ? ' ' + buttonDetails().text : ''}
             </button>
           </Match>

@@ -2,12 +2,14 @@ import { createEffect, createResource, Match, Switch } from 'solid-js';
 import { Config } from '../models/Config';
 import PerformerService from '../service/PerformerService';
 import { Stasharr } from '../enums/Stasharr';
-import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faBookmark, faCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { faBookmark as faBookmarkEmpty } from '@fortawesome/free-regular-svg-icons';
 import { Whisparr } from '../types/whisparr';
-import { Tooltip } from 'bootstrap';
 import { tooltips } from '../util/util';
+import { FontAwesomeIcon } from 'solid-fontawesome';
+import { library } from '@fortawesome/fontawesome-svg-core';
+
+library.add(faCirclePlus, faBookmark, faBookmarkEmpty);
 
 function Performer(props: { config: Config; stashId: string }) {
   const [performerDetails, { refetch }] = createResource(
@@ -46,7 +48,7 @@ function Performer(props: { config: Config; stashId: string }) {
             id={Stasharr.ID.PerformerAdd}
             onclick={addPerformer}
           >
-            <span innerHTML={icon(faCirclePlus).html[0]}></span>
+            <FontAwesomeIcon icon="fa-solid fa-circle-plus" />
           </button>
         </Match>
         <Match when={performerDetails()}>
@@ -58,13 +60,13 @@ function Performer(props: { config: Config; stashId: string }) {
             data-bs-toggle="tooltip"
             data-bs-title={`${performerDetails()?.monitored ? 'Unmonitor' : 'Monitor'} ${performerDetails()?.fullName} in Whisparr`}
           >
-            <span
-              innerHTML={
-                icon(
-                  performerDetails()?.monitored ? faBookmark : faBookmarkEmpty,
-                ).html[0]
+            <FontAwesomeIcon
+              icon={
+                performerDetails()?.monitored
+                  ? 'fa-solid fa-bookmark'
+                  : 'fa-regular fa-bookmark'
               }
-            ></span>
+            />
           </button>
         </Match>
       </Switch>

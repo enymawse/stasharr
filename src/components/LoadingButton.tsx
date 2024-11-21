@@ -1,6 +1,10 @@
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { Stasharr } from '../enums/Stasharr';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from 'solid-fontawesome';
+
+library.add(faSpinner);
 
 function LoadingButton(props: { header: boolean }) {
   return (
@@ -12,10 +16,8 @@ function LoadingButton(props: { header: boolean }) {
       disabled
       id={props.header ? Stasharr.ID.HeaderButton : Stasharr.ID.CardButton}
     >
-      <span
-        innerHTML={icon(faSpinner, { classes: ['fa-spin'] }).html[0]}
-      ></span>
-      {props.header ? ' ' + 'Loading' : ''}
+      <FontAwesomeIcon icon="fa-spin fa-spinner" />
+      {props.header ? ' Loading' : ''}
     </button>
   );
 }

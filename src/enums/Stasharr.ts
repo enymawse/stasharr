@@ -1,32 +1,66 @@
 import { SceneStatusType } from './SceneStatus';
 import { StashDB } from './StashDB';
-import { getSelectorFromId } from '../util/util';
+
+const stasharrPrefix = 'stasharr';
+const attrPrefix = 'data';
+const sceneStatus = `${attrPrefix}-${stasharrPrefix}-scenestatus`;
+const cardButton = `${stasharrPrefix}-button`;
+const studioadd = `${stasharrPrefix}-studioadd`;
+const performeradd = `${stasharrPrefix}-performeradd`;
+const headerButton = `${stasharrPrefix}-header-button`;
+const settingsModal = `${stasharrPrefix}-settingsModal`;
+const addallavailable = `${stasharrPrefix}-addallavailable`;
+const studiomonitor = `${stasharrPrefix}-studiomonitor`;
+const performermonitor = `${stasharrPrefix}-performermonitor`;
+const searchallavailable = `${stasharrPrefix}-searchallavailable`;
+const protocol = `${stasharrPrefix}-protocol`;
+const domain = `${stasharrPrefix}-domain`;
+const whisparrApiKey = `${stasharrPrefix}-whisparrApiKey`;
+const qualityProfile = `${stasharrPrefix}-qualityProfile`;
+const rootFolderPath = `${stasharrPrefix}-rootFolderPath`;
+const searchOnAdd = `${stasharrPrefix}-searchOnAdd`;
 
 export const Stasharr = {
   DataAttribute: {
-    SceneStatus: 'data-stasharr-scenestatus',
+    SceneStatus: sceneStatus,
   },
   ID: {
-    CardButton: 'stasharr-button',
-    StudioAdd: 'stasharr-studioadd',
-    PerformerAdd: 'stasharr-performeradd',
-    HeaderButton: 'stasharr-header-button',
-    SettingsModal: 'stasharr-settingsModal',
-    AddAllAvailable: 'stasharr-addallavailable',
-    StudioMonitor: 'stasharr-studiomonitor',
-    PerformerMonitor: 'stasharr-performermonitor',
-    SearchAllExisting: 'stasharr-searchallavailable',
+    CardButton: cardButton,
+    StudioAdd: studioadd,
+    PerformerAdd: performeradd,
+    HeaderButton: headerButton,
+    SettingsModal: settingsModal,
+    AddAllAvailable: addallavailable,
+    StudioMonitor: studiomonitor,
+    PerformerMonitor: performermonitor,
+    SearchAllExisting: searchallavailable,
+    Modal: {
+      Protocol: protocol,
+      Domain: domain,
+      ApiKey: whisparrApiKey,
+      QualityProfile: qualityProfile,
+      RootFolderPath: rootFolderPath,
+      SearchOnAdd: searchOnAdd,
+    },
   },
   DOMSelector: {
-    CardButton: getSelectorFromId('stasharr-button'),
-    StudioAdd: getSelectorFromId('stasharr-studioadd'),
-    SettingsModal: getSelectorFromId('stasharr-settingsModal'),
-    PerformerAdd: getSelectorFromId('stasharr-performeradd'),
-    HeaderButton: getSelectorFromId('stasharr-header-button'),
-    AddAllAvailable: getSelectorFromId('stasharr-addallavailable'),
-    StudioMonitor: getSelectorFromId('stasharr-studiomonitor'),
-    PerformerMonitor: getSelectorFromId('stasharr-performermonitor'),
-    SearchAllExisting: getSelectorFromId('stasharr-searchallavailable'),
+    CardButton: `#${cardButton}`,
+    StudioAdd: `#${studioadd}`,
+    SettingsModal: `#${settingsModal}`,
+    PerformerAdd: `#${performeradd}`,
+    HeaderButton: `#${headerButton}`,
+    AddAllAvailable: `#${addallavailable}`,
+    StudioMonitor: `#${studiomonitor}`,
+    PerformerMonitor: `#${performermonitor}`,
+    SearchAllExisting: `#${searchallavailable}`,
+    Modal: {
+      Protocol: `#${protocol}`,
+      Domain: `#${domain}`,
+      ApiKey: `#${whisparrApiKey}`,
+      QualityProfile: `#${qualityProfile}`,
+      RootFolderPath: `#${rootFolderPath}`,
+      SearchOnAdd: `#${searchOnAdd}`,
+    },
     SceneCardByButtonStatus: (status: SceneStatusType) =>
       `${StashDB.DOMSelector.SceneCard}:has([${Stasharr.DataAttribute.SceneStatus}='${status}'])`,
   },

@@ -1,5 +1,6 @@
 import { Config } from '../models/Config';
 import { Whisparr } from '../types/whisparr';
+import { responseStatusCodeOK } from '../util/util';
 import ServiceBase from './ServiceBase';
 import ToastService from './ToastService';
 
@@ -10,9 +11,23 @@ export default class WhisparrService extends ServiceBase {
    * @param {Config} config - The configuration object containing API details.
    * @returns {Promise<boolean>} - The response from the Whisparr API, indicating the health status of the instance.
    */ static healthCheck(config: Config): Promise<boolean> {
-    return ServiceBase.request(config, 'health').then((response) => {
-      return response.status >= 200 && response.status < 300;
-    });
+    return ServiceBase.request(config, 'health')
+      .then((response) => {
+        return responseStatusCodeOK(response.status);
+      })
+      .catch(() => {
+        return false;
+      });
+  }
+
+  static systemStatus(config: Config): Promise<Whisparr.SystemStatus | null> {
+    return ServiceBase.request(config, 'system/status')
+      .then((response) => {
+        return response.response;
+      })
+      .catch(() => {
+        return null;
+      });
   }
 
   /**
@@ -64,6 +79,20 @@ export default class WhisparrService extends ServiceBase {
         return json as Whisparr.QualityProfile[];
       });
     return response;
+  }
+
+  static async qualityProfiles(
+    config: Config,
+  ): Promise<null | Whisparr.QualityProfile[]> {
+    const endpoint = 'qualityProfile';
+    let response;
+    try {
+      response = await ServiceBase.request(config, endpoint, 'GET', undefined);
+    } catch (e) {
+      console.error('Error getting Quality Profiles: ', e);
+      return null;
+    }
+    return response.response as Whisparr.QualityProfile[];
   }
 
   static async getQualityProfilesForSelectMenu(
@@ -118,5 +147,19 @@ export default class WhisparrService extends ServiceBase {
         return json as Whisparr.RootFolder[];
       });
     return response;
+  }
+
+  static async rootFolderPaths(
+    config: Config,
+  ): Promise<null | Whisparr.RootFolder[]> {
+    const endpoint = 'rootFolder';
+    let response;
+    try {
+      response = await ServiceBase.request(config, endpoint, 'GET', undefined);
+    } catch (e) {
+      console.error('Error getting Root Folder Paths: ', e);
+      return null;
+    }
+    return response.response as Whisparr.RootFolder[];
   }
 }

@@ -1,30 +1,21 @@
 import { render } from 'solid-js/web';
-import NavbarLink from '../components/NavbarLink';
+import SettingsModal from '../components/SettingsModal';
+import { Config } from '../models/Config';
 
 export class NavbarController {
-  private observer: MutationObserver = new MutationObserver((mutationList) => {
-    for (const mutationRecord of mutationList) {
-      if (
-        mutationRecord.type === 'childList' &&
-        mutationRecord.addedNodes.length > 0
-      ) {
-        mutationRecord.addedNodes.forEach((node) => {
-          if (node instanceof HTMLElement) {
-            if (node.querySelector('nav.navbar > .navbar-nav')) {
-              const navbar = document.querySelector('nav.navbar > .navbar-nav');
-              if (navbar) {
-                render(NavbarLink, navbar);
-                this.observer.disconnect();
-                return;
-              }
-            }
-          }
-        });
-      }
+  private observer: MutationObserver = new MutationObserver(() => {
+    const navbar = document.querySelector('nav.navbar > .navbar-nav');
+    if (navbar) {
+      render(() => SettingsModal({ config: this.config }), navbar);
+      this.observer.disconnect();
+      return;
     }
   });
 
-  constructor(body: HTMLElement) {
-    this.observer.observe(body, { childList: true, subtree: true });
+  constructor(
+    private config: Config,
+    private body: HTMLElement,
+  ) {
+    this.observer.observe(this.body, { childList: true, subtree: true });
   }
 }

@@ -1,0 +1,11 @@
+div.form-floating > label {
+  color: var(--stasharr-color-black);
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem; /* Adjust as needed */
+  transform: translateY(-50%);
+  z-index: 10;
+}
