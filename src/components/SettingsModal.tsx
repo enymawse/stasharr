@@ -1,11 +1,4 @@
-import {
-  createEffect,
-  createMemo,
-  createResource,
-  createSignal,
-  ErrorBoundary,
-  Show,
-} from 'solid-js';
+import { createMemo, createResource, createSignal, Show } from 'solid-js';
 import { Modal, Button, Alert } from 'solid-bootstrap';
 import ProtocolSwitch from './ProtocolSwitch';
 import DomainInput from './DomainInput';
@@ -17,11 +10,18 @@ import { SettingsContext, useSettings } from '../contexts/useSettings';
 import QualityProfileSelect from './QualityProfile';
 import { parseInt } from 'lodash';
 import RootFolderPathSelect from './RootFolderPath';
+import SearchOnAddSelect from './SearchOnAdd';
 
 function SettingsModal(props: { config: Config }) {
   const [show, setShow] = createSignal(false);
   const handleOpen = () => setShow(true);
   const handleClose = () => setShow(false);
+
+  const handleSave = () => {
+    store.save();
+    setShow(false);
+    window.location.reload();
+  };
 
   const [store, setStore] = createStore(props.config);
 
@@ -31,7 +31,7 @@ function SettingsModal(props: { config: Config }) {
     whisparrApiKey: store.whisparrApiKey,
   }));
 
-  const [systemStatus, { refetch: refetchSystemStatus }] = createResource(
+  const [systemStatus] = createResource(
     storeSubset,
     async ({ protocol, domain, whisparrApiKey }) => {
       return await WhisparrService.systemStatus(
@@ -97,6 +97,7 @@ function SettingsModal(props: { config: Config }) {
           <Show when={systemStatus()}>
             <QualityProfileSelect qualityProfiles={qualityProfiles()} />
             <RootFolderPathSelect rootFolderPaths={rootFolderPaths()} />
+            <SearchOnAddSelect />
           </Show>
         </Modal.Body>
         <Modal.Footer>
@@ -106,7 +107,7 @@ function SettingsModal(props: { config: Config }) {
           <Button
             variant="primary"
             disabled={!store.valid()}
-            onClick={handleClose}
+            onClick={handleSave}
           >
             Save Changes
           </Button>
