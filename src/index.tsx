@@ -15,9 +15,8 @@ import './styles/main.scss';
 
 (async function () {
   const settings = new Settings();
+  const observerConfig = { childList: true, subtree: true };
 
-  ButtonController.initializeButtons(settings.config);
-  ScenesListController.initialize(settings.config);
   new NavbarController(settings.config, document.body);
 
   const observer = new MutationObserver((mutationsList) => {
@@ -44,10 +43,5 @@ import './styles/main.scss';
       }
     }
   });
-
-  const observerConfig = { childList: true, subtree: true };
   observer.observe(document.body, observerConfig);
-
-  /* eslint no-undef: off */
-  await GM_registerMenuCommand('Settings', settings.openSettingsModal);
 })();
