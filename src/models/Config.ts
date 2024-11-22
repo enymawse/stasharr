@@ -8,6 +8,7 @@ export class Config {
   rootFolderPath: string = '';
   rootFolderPathId: number = 1;
   searchForNewMovie: boolean = true;
+  stashDomain: string = 'http://localhost:9999';
 
   whisparrApiUrl(): string {
     return `${this.protocol ? 'https' : 'http'}://${this.domain}/api/v3/`;

@@ -19,6 +19,7 @@ const whisparrApiKey = `${stasharrPrefix}-whisparrApiKey`;
 const qualityProfile = `${stasharrPrefix}-qualityProfile`;
 const rootFolderPath = `${stasharrPrefix}-rootFolderPath`;
 const searchOnAdd = `${stasharrPrefix}-searchOnAdd`;
+const stashDomain = `${stasharrPrefix}-stashDomain`;
 
 export const Stasharr = {
   DataAttribute: {
@@ -41,6 +42,7 @@ export const Stasharr = {
       QualityProfile: qualityProfile,
       RootFolderPath: rootFolderPath,
       SearchOnAdd: searchOnAdd,
+      StashDomain: stashDomain,
     },
   },
   DOMSelector: {
@@ -60,6 +62,7 @@ export const Stasharr = {
       QualityProfile: `#${qualityProfile}`,
       RootFolderPath: `#${rootFolderPath}`,
       SearchOnAdd: `#${searchOnAdd}`,
+      StashDomain: `#${stashDomain}`,
     },
     SceneCardByButtonStatus: (status: SceneStatusType) =>
       `${StashDB.DOMSelector.SceneCard}:has([${Stasharr.DataAttribute.SceneStatus}='${status}'])`,

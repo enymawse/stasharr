@@ -6,7 +6,6 @@ const ProtocolSwitch = () => {
 
   const handleProtocolChange = (value: boolean) => {
     setStore('protocol', value);
-    console.log('New Protocol Value: ', store.protocol);
   };
 
   return (

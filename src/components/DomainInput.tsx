@@ -6,7 +6,6 @@ const DomainInput = () => {
 
   const handleDomainChange = (value: string) => {
     setStore('domain', value);
-    console.log('New Domain Value: ', store.domain);
   };
 
   return (

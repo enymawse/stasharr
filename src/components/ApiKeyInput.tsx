@@ -12,7 +12,6 @@ const WhisparrApiKeyInput = () => {
 
   const handleApiKeyChange = (value: string) => {
     setStore('whisparrApiKey', value);
-    console.log('New API Key: ', store.whisparrApiKey);
   };
 
   const toggleKeyVisibility = () => {
