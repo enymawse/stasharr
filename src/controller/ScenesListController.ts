@@ -2,10 +2,20 @@ import { Config } from '../models/Config';
 import { Stasharr } from '../enums/Stasharr';
 import { render } from 'solid-js/web';
 import BulkActionButton from '../components/BulkActionButton';
+import { BaseController } from './BaseController';
+import { SceneListMutationHandler } from '../mutation-handlers/SceneListMutationHandler';
 
-export class ScenesListController {
-  static initialize(config: Config) {
-    if (config.whisparrApiKey) {
+export class ScenesListController extends BaseController {
+  constructor(private _config: Config) {
+    super(new SceneListMutationHandler());
+  }
+
+  shouldReinit(node: HTMLElement): boolean {
+    return node.matches('.row');
+  }
+
+  initialize() {
+    if (this._config.whisparrApiKey) {
       const sceneListCommandRow = document.querySelector<HTMLDivElement>(
         '.scenes-list > div.flex-wrap',
       );
@@ -19,13 +29,14 @@ export class ScenesListController {
       if (sceneListCommandRow) {
         if (!addAllAvailableButton) {
           render(
-            () => BulkActionButton({ config: config, actionType: 'add' }),
+            () => BulkActionButton({ config: this._config, actionType: 'add' }),
             sceneListCommandRow,
           );
         }
         if (!searchAllAvailableButton) {
           render(
-            () => BulkActionButton({ config: config, actionType: 'search' }),
+            () =>
+              BulkActionButton({ config: this._config, actionType: 'search' }),
             sceneListCommandRow,
           );
         }

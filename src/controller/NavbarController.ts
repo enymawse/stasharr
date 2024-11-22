@@ -1,21 +1,33 @@
 import { render } from 'solid-js/web';
 import SettingsModal from '../components/SettingsModal';
 import { Config } from '../models/Config';
+import { BaseController } from './BaseController';
+import { StashDB } from '../enums/StashDB';
+import { DefaultMutationHandler } from '../mutation-handlers/DefaultMutationHandler';
 
-export class NavbarController {
-  private observer: MutationObserver = new MutationObserver(() => {
-    const navbar = document.querySelector('nav.navbar > .navbar-nav');
+export class NavbarController extends BaseController {
+  constructor(private _config: Config) {
+    super(new DefaultMutationHandler());
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  shouldReinit(node: HTMLElement): boolean {
+    let b = true;
+    document
+      .querySelectorAll<HTMLAnchorElement>('.nav-link')
+      .forEach((link) => {
+        if (link.text === 'Stasharr') {
+          b = false;
+          return;
+        }
+      });
+    return b;
+  }
+
+  initialize(): void {
+    const navbar = document.querySelector(StashDB.DOMSelector.Navbar);
     if (navbar) {
-      render(() => SettingsModal({ config: this.config }), navbar);
-      this.observer.disconnect();
-      return;
+      render(() => SettingsModal({ config: this._config }), navbar);
     }
-  });
-
-  constructor(
-    private config: Config,
-    private body: HTMLElement,
-  ) {
-    this.observer.observe(this.body, { childList: true, subtree: true });
   }
 }

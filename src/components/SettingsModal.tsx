@@ -1,4 +1,10 @@
-import { createMemo, createResource, createSignal, Show } from 'solid-js';
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  Show,
+} from 'solid-js';
 import { Modal, Button, Alert } from 'solid-bootstrap';
 import ProtocolSwitch from './ProtocolSwitch';
 import DomainInput from './DomainInput';
@@ -11,6 +17,7 @@ import QualityProfileSelect from './QualityProfile';
 import { parseInt } from 'lodash';
 import RootFolderPathSelect from './RootFolderPath';
 import SearchOnAddSelect from './SearchOnAdd';
+import { Stasharr } from '../enums/Stasharr';
 
 function SettingsModal(props: { config: Config }) {
   const [show, setShow] = createSignal(false);
@@ -34,9 +41,7 @@ function SettingsModal(props: { config: Config }) {
   const [systemStatus] = createResource(
     storeSubset,
     async ({ protocol, domain, whisparrApiKey }) => {
-      return await WhisparrService.systemStatus(
-        new Config({ protocol, domain, whisparrApiKey }),
-      );
+      return await WhisparrService.systemStatus(store);
     },
   );
 
@@ -44,9 +49,7 @@ function SettingsModal(props: { config: Config }) {
     storeSubset,
     async ({ protocol, domain, whisparrApiKey }) => {
       if (!domain || !whisparrApiKey) return [];
-      const response = await WhisparrService.qualityProfiles(
-        new Config({ protocol, domain, whisparrApiKey }),
-      );
+      const response = await WhisparrService.qualityProfiles(store);
       return response || [];
     },
   );
@@ -55,9 +58,7 @@ function SettingsModal(props: { config: Config }) {
     storeSubset,
     async ({ protocol, domain, whisparrApiKey }) => {
       if (!domain || !whisparrApiKey) return [];
-      const response = await WhisparrService.rootFolderPaths(
-        new Config({ protocol, domain, whisparrApiKey }),
-      );
+      const response = await WhisparrService.rootFolderPaths(store);
       return response || [];
     },
   );
@@ -71,12 +72,16 @@ function SettingsModal(props: { config: Config }) {
     }
   });
 
+  createEffect(() => {
+    GM_registerMenuCommand('Settings', handleOpen);
+  });
+
   return (
     <SettingsContext.Provider value={{ store, setStore }}>
       <a class="nav-link" data-bs-toggle="modal" onclick={handleOpen} href="#">
         Stasharr
       </a>
-      <Modal show={show()} onHide={handleClose}>
+      <Modal show={show()} onHide={handleClose} id={Stasharr.ID.SettingsModal}>
         <Modal.Header closeButton>
           <Modal.Title>Stasharr Settings</Modal.Title>
         </Modal.Header>

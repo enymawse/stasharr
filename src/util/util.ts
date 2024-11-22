@@ -15,6 +15,8 @@ import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
 import { render } from 'solid-js/web';
 import SceneButton from '../components/SceneButton';
 
+export const ObserverConfig = { childList: true, subtree: true };
+
 export function extractStashIdFromSceneCard(sceneCard?: HTMLElement) {
   if (sceneCard) {
     const sceneUrl = sceneCard.querySelector('a')?.href;
@@ -160,15 +162,4 @@ export function tooltips() {
     if (tooltip) tooltip.dispose();
     new Tooltip(tooltipTriggerEl);
   });
-}
-
-export function cleanTooltipOnMount(selector: string): void {
-  const tooltipTrigger = document.querySelector(selector);
-  if (tooltipTrigger) {
-    const tt = Tooltip.getInstance(tooltipTrigger);
-    if (tt) {
-      tt.dispose();
-      new Tooltip(tooltipTrigger);
-    }
-  }
 }

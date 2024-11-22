@@ -8,7 +8,8 @@ export const StashDB = {
     PerformerCardHeader: '.card-header > h3',
     StudioTitle: '.studio-title',
     PerformerInfo: '.PerformerInfo',
-    DataPage: `[${'data-page'}]`, // Example using dynamic reference
+    DataPage: `[${'data-page'}]`,
+    Navbar: 'nav.navbar > .navbar-nav',
   },
   Module: {
     Performers: 'performers',

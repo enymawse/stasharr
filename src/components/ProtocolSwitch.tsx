@@ -1,5 +1,3 @@
-import { Context, onMount, useContext } from 'solid-js';
-import { cleanTooltipOnMount } from '../util/util';
 import { Stasharr } from '../enums/Stasharr';
 import { useSettings } from '../contexts/useSettings';
 

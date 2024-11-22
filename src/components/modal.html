@@ -1,0 +1,116 @@
+<div
+  id="stasharr-settingsModal"
+  class="fade modal show"
+  aria-modal="true"
+  role="dialog"
+  style="display: block"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">stasharr Settings</h5>
+        <button
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-check form-switch mb-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="stasharr-protocol"
+            data-bs-toggle="tooltip"
+            aria-label="Enable if you have configured Whisparr with valid certs, otherwise leave unchecked."
+            data-bs-original-title="Enable if you have configured Whisparr with valid certs, otherwise leave unchecked."
+          /><label class="form-check-label" for="stasharr-protocol"
+            >HTTPS</label
+          >
+        </div>
+        <div class="form-floating mb-3">
+          <input
+            type="text"
+            class="form-control"
+            id="stasharr-domain"
+            name="domain"
+            placeholder=""
+            value="whisparr.home"
+            data-bs-toggle="tooltip"
+            aria-label="ex. localhost:6969 or whisparr.customdomain.home or whisparr.lan:123"
+            data-bs-original-title="ex. localhost:6969 or whisparr.customdomain.home or whisparr.lan:123"
+          /><label for="stasharr-domain" style="color: rgb(204, 204, 204)"
+            >Whisparr URL or IP address with port number</label
+          >
+        </div>
+        <div class="form-floating mb-3">
+          <input
+            type="password"
+            class="form-control"
+            id="stasharr-whisparrApiKey"
+            name="whisparrApiKey"
+            placeholder=""
+            value="31542700b3d041a4a708441c7f55e348"
+            data-bs-toggle="tooltip"
+            aria-label="Found in Whisparr under Settings -> General"
+            data-bs-original-title="Found in Whisparr under Settings -> General"
+          /><label
+            for="stasharr-whisparrApiKey"
+            style="color: rgb(204, 204, 204)"
+            >Whisparr API Key</label
+          >
+        </div>
+        <div class="input-group mb-3">
+          <label class="input-group-text" for="stasharr-qualityProfile"
+            >Quality Profile</label
+          ><select
+            id="stasharr-qualityProfile"
+            class="form-select"
+            data-bs-toggle="tooltip"
+            aria-label="Desired Quality Profile for adding scenes."
+            data-bs-original-title="Desired Quality Profile for adding scenes."
+          >
+            <option>Choose an option</option>
+            <option value="1">Any</option>
+            <option value="2">SD</option>
+            <option value="3">HD-720p</option>
+            <option value="4">HD-1080p</option>
+            <option value="5">Ultra-HD</option>
+            <option value="6">HD - 720p/1080p</option>
+            <option value="7">VR</option>
+            <option value="8">Prefer 1080p (incl 4k)</option>
+          </select>
+        </div>
+        <div class="input-group mb-3">
+          <label class="input-group-text" for="stasharr-rootFolderPath"
+            >Root Folder Path</label
+          ><select
+            id="stasharr-rootFolderPath"
+            class="form-select"
+            data-bs-toggle="tooltip"
+            aria-label="Desired Root Folder Path for adding scenes."
+            data-bs-original-title="Desired Root Folder Path for adding scenes."
+          >
+            <option>Choose an option</option>
+            <option value="1">/data/media/videos</option>
+          </select>
+        </div>
+        <div class="input-group mb-3">
+          <label class="input-group-text" for="stasharr-searchForNewMovie"
+            >Search On Add</label
+          ><select id="stasharr-searchForNewMovie" class="form-select">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button
+        ><button class="btn btn-primary" data-bs-dismiss="modal">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

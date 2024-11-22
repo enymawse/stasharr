@@ -2,6 +2,7 @@ import { For } from 'solid-js';
 import { useSettings } from '../contexts/useSettings';
 import { Form } from 'solid-bootstrap';
 import { Whisparr } from '../types/whisparr';
+import { Stasharr } from '../enums/Stasharr';
 
 const QualityProfileSelect = (props: {
   qualityProfiles: Whisparr.QualityProfile[] | undefined;
@@ -19,6 +20,7 @@ const QualityProfileSelect = (props: {
         aria-label="Quality Profile select"
         onChange={(e) => handleQualityProfileChange(parseInt(e.target.value))}
         value={store.qualityProfile}
+        id={Stasharr.ID.Modal.QualityProfile}
       >
         <option>Select the Quality Profile...</option>
         <For each={props.qualityProfiles}>

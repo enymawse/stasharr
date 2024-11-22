@@ -3,45 +3,15 @@ import { PerformerController } from './controller/PerformerController';
 import { NavbarController } from './controller/NavbarController';
 import { ScenesListController } from './controller/ScenesListController';
 import { StudioController } from './controller/StudioController';
-import { Settings } from './settings/Settings';
-import {
-  shouldButtonsInit,
-  shouldPerformerInit,
-  shouldScenesListInit,
-  shouldStudioInit,
-} from './util/util';
 
 import './styles/main.scss';
+import { Config } from './models/Config';
 
 (async function () {
-  const settings = new Settings();
-  const observerConfig = { childList: true, subtree: true };
-
-  new NavbarController(settings.config, document.body);
-
-  const observer = new MutationObserver((mutationsList) => {
-    for (const mutation of mutationsList) {
-      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        mutation.addedNodes.forEach((node) => {
-          if (node instanceof HTMLElement) {
-            observer.disconnect();
-            if (shouldButtonsInit(node)) {
-              ButtonController.initializeButtons(settings.config);
-            }
-            if (shouldStudioInit(node)) {
-              StudioController.initialize(settings.config);
-            }
-            if (shouldScenesListInit(node)) {
-              ScenesListController.initialize(settings.config);
-            }
-            if (shouldPerformerInit(node)) {
-              PerformerController.initialize(settings.config);
-            }
-            observer.observe(document.body, observerConfig);
-          }
-        });
-      }
-    }
-  });
-  observer.observe(document.body, observerConfig);
+  const config = new Config().load();
+  new NavbarController(config);
+  new PerformerController(config);
+  new StudioController(config);
+  new ScenesListController(config);
+  new ButtonController(config);
 })();
