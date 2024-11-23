@@ -63,16 +63,10 @@ export default {
         minimizer: [
           new TerserPlugin({
             terserOptions: {
-              mangle: false,
               compress: {
-                defaults: false,
+                defaults: true,
                 ecma: '2020',
                 drop_console: ['debug'],
-              },
-              format: {
-                comments: false,
-                indent_level: 2,
-                beautify: true,
               },
             },
           }),
