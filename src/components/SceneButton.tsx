@@ -1,4 +1,3 @@
-import { icon } from '@fortawesome/fontawesome-svg-core';
 import {
   createEffect,
   createMemo,
@@ -12,8 +11,6 @@ import { Stasharr } from '../enums/Stasharr';
 import { getButtonDetails, clickHandler } from '../util/button';
 import { fetchSceneStatus, tooltips } from '../util/util';
 import LoadingButton from './LoadingButton';
-import { Tooltip } from 'bootstrap';
-import _ from 'lodash';
 import { FontAwesomeIcon } from 'solid-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -56,9 +53,7 @@ function SceneButton(props: {
             <button
               class={buttonDetails().class}
               disabled={buttonDetails().disabled}
-              id={
-                props.header ? Stasharr.ID.HeaderButton : Stasharr.ID.CardButton
-              }
+              id={props.header ? Stasharr.ID.HeaderButton : undefined}
               data-stasharr-scenestatus={sceneStatus()}
               data-bs-toggle="tooltip"
               data-bs-title={buttonDetails().tooltip}

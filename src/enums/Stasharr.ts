@@ -4,7 +4,7 @@ import { StashDB } from './StashDB';
 const stasharrPrefix = 'stasharr';
 const attrPrefix = 'data';
 const sceneStatus = `${attrPrefix}-${stasharrPrefix}-scenestatus`;
-const cardButton = `${stasharrPrefix}-button`;
+const cardButton = `${stasharrPrefix}-card-button`;
 const studioadd = `${stasharrPrefix}-studioadd`;
 const performeradd = `${stasharrPrefix}-performeradd`;
 const headerButton = `${stasharrPrefix}-header-button`;
@@ -26,7 +26,6 @@ export const Stasharr = {
     SceneStatus: sceneStatus,
   },
   ID: {
-    CardButton: cardButton,
     StudioAdd: studioadd,
     PerformerAdd: performeradd,
     HeaderButton: headerButton,
@@ -46,7 +45,7 @@ export const Stasharr = {
     },
   },
   DOMSelector: {
-    CardButton: `#${cardButton}`,
+    CardButton: `.${cardButton}`,
     StudioAdd: `#${studioadd}`,
     SettingsModal: `#${settingsModal}`,
     PerformerAdd: `#${performeradd}`,

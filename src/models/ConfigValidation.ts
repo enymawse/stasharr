@@ -26,4 +26,5 @@ export const ConfigValidation = z.object({
     required_error: 'Search for new movie must be true or false.',
     invalid_type_error: 'Search for new movie must be a boolean.',
   }),
+  stashDomain: z.string().url().nullable(),
 });

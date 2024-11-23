@@ -1,9 +1,9 @@
 import { Config } from '../models/Config';
 import { Stasharr } from '../enums/Stasharr';
 import { render } from 'solid-js/web';
-import BulkActionButton from '../components/BulkActionButton';
 import { BaseController } from './BaseController';
 import { SceneListMutationHandler } from '../mutation-handlers/SceneListMutationHandler';
+import SceneList from '../components/SceneList';
 
 export class ScenesListController extends BaseController {
   constructor(private _config: Config) {
@@ -16,9 +16,8 @@ export class ScenesListController extends BaseController {
 
   initialize() {
     if (this._config.whisparrApiKey) {
-      const sceneListCommandRow = document.querySelector<HTMLDivElement>(
-        '.scenes-list > div.flex-wrap',
-      );
+      const sceneListCommandRow =
+        document.querySelector<HTMLDivElement>('.scenes-list');
       const addAllAvailableButton = document.querySelector(
         Stasharr.DOMSelector.AddAllAvailable,
       );
@@ -26,19 +25,16 @@ export class ScenesListController extends BaseController {
       const searchAllAvailableButton = document.querySelector(
         Stasharr.DOMSelector.SearchAllExisting,
       );
+
+      const placeholder = document.createElement('div');
+
       if (sceneListCommandRow) {
-        if (!addAllAvailableButton) {
-          render(
-            () => BulkActionButton({ config: this._config, actionType: 'add' }),
-            sceneListCommandRow,
-          );
-        }
-        if (!searchAllAvailableButton) {
-          render(
-            () =>
-              BulkActionButton({ config: this._config, actionType: 'search' }),
-            sceneListCommandRow,
-          );
+        sceneListCommandRow.insertBefore(
+          placeholder,
+          sceneListCommandRow.firstChild,
+        );
+        if (!addAllAvailableButton && !searchAllAvailableButton) {
+          render(() => SceneList({ config: this._config }), placeholder);
         }
       }
     }

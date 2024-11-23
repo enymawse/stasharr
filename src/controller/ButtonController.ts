@@ -13,18 +13,8 @@ export class ButtonController extends BaseController {
   }
 
   shouldReinit(node: HTMLElement): boolean {
-    if (
-      node.matches(
-        StashDB.DOMSelector.SceneCard +
-          ', ' +
-          StashDB.DOMSelector.SceneInfoCardHeader,
-      ) ||
-      node.querySelector(
-        StashDB.DOMSelector.SceneCard +
-          ', ' +
-          StashDB.DOMSelector.SceneInfoCardHeader,
-      )
-    ) {
+    const selector = `${StashDB.DOMSelector.SceneCard}, ${StashDB.DOMSelector.SceneInfoCardHeader}`;
+    if (node.matches(selector) || node.querySelector(selector)) {
       return true;
     }
     return false;
@@ -56,7 +46,10 @@ export class ButtonController extends BaseController {
       StashDB.DOMSelector.SceneInfoCardHeader,
     );
 
-    if (cardHeader && !document.querySelector(`#${Stasharr.ID.HeaderButton}`)) {
+    if (
+      cardHeader &&
+      !document.querySelector(Stasharr.DOMSelector.HeaderButton)
+    ) {
       const stashId = extractStashIdFromSceneCard();
       if (stashId) {
         render(

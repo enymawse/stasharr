@@ -1,6 +1,4 @@
-import { icon } from '@fortawesome/fontawesome-svg-core';
 import { Stasharr } from '../enums/Stasharr';
-import { Config } from '../models/Config';
 import { faSearch, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { parseInt } from 'lodash';
 import { StashDB } from '../enums/StashDB';
@@ -14,20 +12,17 @@ import { SceneStatus, SceneStatusType } from '../enums/SceneStatus';
 import SceneService from '../service/SceneService';
 import ToastService from '../service/ToastService';
 import { createEffect } from 'solid-js';
-import { Tooltip } from 'bootstrap';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from 'solid-fontawesome';
+import { useSettings } from '../contexts/useSettings';
 
 library.add(faSearch, faDownload);
 
-type BulkActionButtonProps = {
-  config: Config;
-  actionType: 'search' | 'add';
-};
+const BulkActionButton = (props: { actionType: 'search' | 'add' }) => {
+  const { store, setStore } = useSettings();
 
-function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
   const getButtonDetails = () => {
-    if (actionType === 'search') {
+    if (props.actionType === 'search') {
       return {
         icon: 'fa-solid fa-search',
         className: 'stasharr-button stasharr-button-searchable',
@@ -64,13 +59,10 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
     sceneCards.forEach((node) => {
       const stashId = extractStashIdFromSceneCard(node);
       if (stashId) {
-        const sceneStatusNumber =
-          parseInt(
-            node
-              .querySelector('.stasharr-card-button')
-              ?.getAttribute(Stasharr.DataAttribute.SceneStatus) || '',
-            10,
-          ) || -1;
+        const sceneStatusRaw = node
+          .querySelector(Stasharr.DOMSelector.CardButton)
+          ?.getAttribute(Stasharr.DataAttribute.SceneStatus);
+        const sceneStatusNumber = parseInt(sceneStatusRaw || '-1', 10);
 
         if (sceneStatusNumber > -1) {
           stashIdtoSceneCardAndStatusMap.set(stashId, {
@@ -81,9 +73,9 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
       }
     });
 
-    if (actionType === 'search' && details.searchAction) {
+    if (props.actionType === 'search' && details.searchAction) {
       await details.searchAction(
-        config,
+        store,
         Array.from(stashIdtoSceneCardAndStatusMap.keys()),
       );
       ToastService.showToast(
@@ -94,7 +86,7 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
       );
     } else if (details.addAction) {
       const sceneMap = await details.addAction(
-        config,
+        store,
         stashIdtoSceneCardAndStatusMap,
       );
       ToastService.showToast(
@@ -103,7 +95,7 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
         }.`,
         true,
       );
-      rehydrateSceneCards(config, sceneMap);
+      rehydrateSceneCards(store, sceneMap);
     }
   };
 
@@ -122,16 +114,16 @@ function BulkActionButton({ config, actionType }: BulkActionButtonProps) {
         onclick={clickHandler}
         data-bs-toggle="tooltip"
         data-bs-title={
-          actionType === 'search'
+          props.actionType === 'search'
             ? 'Search all available scenes on this page in Whisparr.'
             : 'Add all available scenes on this page to Whisparr.'
         }
       >
         <FontAwesomeIcon icon={details.icon} />
-        {actionType === 'search' ? ' Search All' : ' Add All'}
+        {props.actionType === 'search' ? ' Search All' : ' Add All'}
       </button>
     </div>
   );
-}
+};
 
 export default BulkActionButton;

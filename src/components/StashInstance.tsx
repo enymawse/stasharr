@@ -5,11 +5,10 @@ const StashInstance = () => {
   const { store, setStore } = useSettings();
 
   const handleChange = (value: string) => {
-    setStore('stashDomain', value);
-    console.log('New Stash Domain Value: ', store.stashDomain);
+    setStore('stashDomain', value === '' ? null : value);
   };
 
-  const tooltip =
+  const title =
     'ex. http://localhost:9999 or https://stash.customdomain.home or http://whisparr.lan:123';
 
   return (
@@ -20,8 +19,8 @@ const StashInstance = () => {
         name="domain"
         placeholder=""
         data-bs-toggle="tooltip"
-        aria-label={tooltip}
-        data-bs-title={tooltip}
+        aria-label={title}
+        data-bs-title={title}
         type="text"
         value={store.stashDomain}
         onChange={(e) => handleChange(e.target.value)}
