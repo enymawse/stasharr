@@ -7,7 +7,7 @@
     "build": "NODE_ENV=production webpack --config webpack.config.js --mode production",
     "prepare": "husky",
     "dev": "NODE_ENV=development webpack serve --config webpack.config.js",
-    "lint": "eslint .",
+    "lint": "eslint . --fix",
     "preversion": "",
     "version": "npm run build",
     "postversion": "git push && git push --tags",
