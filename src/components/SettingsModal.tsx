@@ -12,7 +12,7 @@ import WhisparrApiKeyInput from './ApiKeyInput';
 import { createStore } from 'solid-js/store';
 import { Config } from '../models/Config';
 import WhisparrService from '../service/WhisparrService';
-import { SettingsContext, useSettings } from '../contexts/useSettings';
+import { SettingsContext } from '../contexts/useSettings';
 import QualityProfileSelect from './QualityProfile';
 import { parseInt } from 'lodash';
 import RootFolderPathSelect from './RootFolderPath';
@@ -33,36 +33,21 @@ function SettingsModal(props: { config: Config }) {
 
   const [store, setStore] = createStore(props.config);
 
-  const storeSubset = createMemo(() => ({
-    protocol: store.protocol,
-    domain: store.domain,
-    whisparrApiKey: store.whisparrApiKey,
-  }));
+  const [systemStatus] = createResource(store, async (s) => {
+    return await WhisparrService.systemStatus(s);
+  });
 
-  const [systemStatus] = createResource(
-    storeSubset,
-    async ({ protocol, domain, whisparrApiKey }) => {
-      return await WhisparrService.systemStatus(store);
-    },
-  );
+  const [qualityProfiles] = createResource(store, async (s) => {
+    if (!s.domain || !s.whisparrApiKey) return [];
+    const response = await WhisparrService.qualityProfiles(s);
+    return response || [];
+  });
 
-  const [qualityProfiles] = createResource(
-    storeSubset,
-    async ({ protocol, domain, whisparrApiKey }) => {
-      if (!domain || !whisparrApiKey) return [];
-      const response = await WhisparrService.qualityProfiles(store);
-      return response || [];
-    },
-  );
-
-  const [rootFolderPaths] = createResource(
-    storeSubset,
-    async ({ protocol, domain, whisparrApiKey }) => {
-      if (!domain || !whisparrApiKey) return [];
-      const response = await WhisparrService.rootFolderPaths(store);
-      return response || [];
-    },
-  );
+  const [rootFolderPaths] = createResource(store, async (s) => {
+    if (!s.domain || !s.whisparrApiKey) return [];
+    const response = await WhisparrService.rootFolderPaths(s);
+    return response || [];
+  });
 
   const version = createMemo(() => {
     const status = systemStatus();
@@ -74,6 +59,7 @@ function SettingsModal(props: { config: Config }) {
   });
 
   createEffect(() => {
+    // eslint-disable-next-line no-undef
     GM_registerMenuCommand('Settings', handleOpen);
   });
 

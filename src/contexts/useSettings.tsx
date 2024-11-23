@@ -3,7 +3,7 @@ import { Config } from '../models/Config';
 
 export type SettingsContextType = {
   store: Config;
-  setStore: (key: keyof Config, value: any) => void;
+  setStore: (key: keyof Config, value: unknown) => void;
 };
 
 export const SettingsContext = createContext<SettingsContextType>();

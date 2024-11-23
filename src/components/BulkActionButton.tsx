@@ -19,7 +19,7 @@ import { useSettings } from '../contexts/useSettings';
 library.add(faSearch, faDownload);
 
 const BulkActionButton = (props: { actionType: 'search' | 'add' }) => {
-  const { store, setStore } = useSettings();
+  const { store } = useSettings();
 
   const getButtonDetails = () => {
     if (props.actionType === 'search') {
