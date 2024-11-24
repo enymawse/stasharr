@@ -1,0 +1,16 @@
+{
+  "labelsSynonyms": {
+    "bug": ["error", "need fix", "not working"],
+    "enhancement": ["upgrade", "feature"],
+    "question": ["help", "how can i"]
+  },
+  "labelsNotAllowed": [
+    "documentation",
+    "duplicate",
+    "good first issue",
+    "help wanted",
+    "invalid"
+  ],
+  "defaultLabels": ["triage"],
+  "ignoreComments": true
+}
