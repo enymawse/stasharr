@@ -52,6 +52,7 @@ export namespace Whisparr {
   type WhisparrScene = {
     title: string;
     sortTitle: string;
+    sizeOnDisk: number;
     status: string;
     overview: string;
     releaseDate: string;

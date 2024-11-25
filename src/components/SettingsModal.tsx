@@ -91,7 +91,6 @@ function SettingsModal(props: { config: Config }) {
             <RootFolderPathSelect rootFolderPaths={rootFolderPaths()} />
             <SearchOnAddSelect />
           </Show>
-          <StashInstance />
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>

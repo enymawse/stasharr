@@ -47,10 +47,22 @@
 // Specific styles for card buttons
 .stasharr-card-button {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 5px;
+  right: 5px;
   border-radius: 10%; // Overrides default radius
   padding: 5px; // Overrides default padding
+}
+
+.whisparr-card-button,
+a:hover.whisparr-card-button {
+  border: none;
+  position: absolute;
+  cursor: pointer;
+  top: 5px;
+  left: 5px;
+  border-radius: 10%;
+  padding: 5px;
+  @include mixins.button-variant(--stasharr-color-gray, --stasharr-color-black);
 }
 
 .stasharr-studio-add,

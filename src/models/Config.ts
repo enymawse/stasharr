@@ -10,6 +10,10 @@ export class Config {
   searchForNewMovie: boolean = true;
   stashDomain: string = 'http://localhost:9999';
 
+  whisparrUrl(): string {
+    return `${this.protocol ? 'https' : 'http'}://${this.domain}`;
+  }
+
   whisparrApiUrl(): string {
     return `${this.protocol ? 'https' : 'http'}://${this.domain}/api/v3/`;
   }

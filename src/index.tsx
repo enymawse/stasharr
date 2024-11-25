@@ -6,6 +6,7 @@ import { StudioController } from './controller/StudioController';
 
 import './styles/main.scss';
 import { Config } from './models/Config';
+import { DetailsController } from './controller/scene/DetailsController';
 
 (async function () {
   const config = new Config().load();
@@ -14,4 +15,5 @@ import { Config } from './models/Config';
   new StudioController(config);
   new ScenesListController(config);
   new ButtonController(config);
+  new DetailsController(config);
 })();

@@ -6,6 +6,7 @@ import { render } from 'solid-js/web';
 import SceneButton from '../components/SceneButton';
 import { BaseController } from './BaseController';
 import { ButtonMutationHandler } from '../mutation-handlers/ButtonMutationHandler';
+import WhisparrCardButton from '../components/scene/WhisparrCardButton';
 
 export class ButtonController extends BaseController {
   constructor(private _config: Config) {
@@ -26,15 +27,25 @@ export class ButtonController extends BaseController {
       StashDB.DOMSelector.SceneCard,
     );
     sceneCards.forEach(async (sceneCard) => {
-      if (!sceneCard.querySelector(Stasharr.DOMSelector.CardButton)) {
-        const stashId = extractStashIdFromSceneCard(sceneCard);
-        if (stashId) {
+      const stashId = extractStashIdFromSceneCard(sceneCard);
+      if (stashId) {
+        if (!sceneCard.querySelector(Stasharr.DOMSelector.CardButton)) {
           render(
             () =>
               SceneButton({
                 config: this._config,
                 stashId: stashId,
                 header: false,
+              }),
+            sceneCard,
+          );
+        }
+        if (!sceneCard.querySelector(Stasharr.DOMSelector.WhisparrCardButton)) {
+          render(
+            () =>
+              WhisparrCardButton({
+                config: this._config,
+                stashId: stashId,
               }),
             sceneCard,
           );

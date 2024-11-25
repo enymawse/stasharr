@@ -5,6 +5,7 @@ export const StashDB = {
   DOMSelector: {
     SceneCard: '.SceneCard',
     SceneInfoCardHeader: '.scene-info .card-header',
+    SceneInfoCardHeaderFloatEnd: '.scene-info .card-header .float-end',
     PerformerCardHeader: '.card-header > h3',
     StudioTitle: '.studio-title',
     PerformerInfo: '.PerformerInfo',

@@ -20,12 +20,15 @@ const qualityProfile = `${stasharrPrefix}-qualityProfile`;
 const rootFolderPath = `${stasharrPrefix}-rootFolderPath`;
 const searchOnAdd = `${stasharrPrefix}-searchOnAdd`;
 const stashDomain = `${stasharrPrefix}-stashDomain`;
+const headerDetails = `${stasharrPrefix}-headerDetails`;
+const whisparrCardButton = `whisparr-card-button`;
 
 export const Stasharr = {
   DataAttribute: {
     SceneStatus: sceneStatus,
   },
   ID: {
+    HeaderDetails: headerDetails,
     StudioAdd: studioadd,
     PerformerAdd: performeradd,
     HeaderButton: headerButton,
@@ -45,6 +48,8 @@ export const Stasharr = {
     },
   },
   DOMSelector: {
+    WhisparrCardButton: `.${whisparrCardButton}`,
+    HeaderDetails: `#${headerDetails}`,
     CardButton: `.${cardButton}`,
     StudioAdd: `#${studioadd}`,
     SettingsModal: `#${settingsModal}`,
