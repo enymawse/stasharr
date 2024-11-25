@@ -35,7 +35,8 @@ Before using the script, you need to configure a few parameters:
 2. **Open the userscript extension** in your browser:
 3. **Click Settings** under the stasharr script and fill in your details:
 
-![image](https://github.com/user-attachments/assets/9550da22-3e63-4edf-9a21-4d70b35147e7)
+![image](https://github.com/user-attachments/assets/5556ae1a-39b9-43cd-922b-00cf39a219f9)
+
 
 
 4. When you've input a valid domain and API key, the userscript extension will prompt to allow access to your Whisparr domain AND the Quality Profile and Root Folder Path dropdowns will populate with additional settings.
