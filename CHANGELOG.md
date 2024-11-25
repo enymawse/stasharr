@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/enymawse/stasharr/compare/v2.3.4...v2.4.0) (2024-11-25)
+
+
+### Features
+
+* **scene:** adds functionality to each Scene Card and the indivdual … ([#44](https://github.com/enymawse/stasharr/issues/44)) ([fba550b](https://github.com/enymawse/stasharr/commit/fba550b21c31aabeeda997ce477a8fd83a34dbbc))
+
 ## [2.3.4](https://github.com/enymawse/stasharr/compare/v2.3.3...v2.3.4) (2024-11-17)
 
 
