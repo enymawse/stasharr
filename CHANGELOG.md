@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.1](https://github.com/enymawse/stasharr/compare/v2.4.0...v2.4.1) (2024-12-02)
+
+
+### Bug Fixes
+
+* fix settings and whisparr ddos when browsing pages with scene cards ([#47](https://github.com/enymawse/stasharr/issues/47)) ([e8ae67d](https://github.com/enymawse/stasharr/commit/e8ae67d02bb156b5c87c6a002834a0e7309da833))
+
 ## [2.4.0](https://github.com/enymawse/stasharr/compare/v2.3.4...v2.4.0) (2024-11-25)
 
 
