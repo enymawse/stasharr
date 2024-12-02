@@ -29,11 +29,11 @@ export class ScenesListController extends BaseController {
       const placeholder = document.createElement('div');
 
       if (sceneListCommandRow) {
-        sceneListCommandRow.insertBefore(
-          placeholder,
-          sceneListCommandRow.firstChild,
-        );
         if (!addAllAvailableButton && !searchAllAvailableButton) {
+          sceneListCommandRow.insertBefore(
+            placeholder,
+            sceneListCommandRow.firstChild,
+          );
           render(() => SceneList({ config: this._config }), placeholder);
         }
       }

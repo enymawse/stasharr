@@ -68,6 +68,8 @@ export const Stasharr = {
       SearchOnAdd: `#${searchOnAdd}`,
       StashDomain: `#${stashDomain}`,
     },
+    SceneCardWithNoStatus: () =>
+      `${StashDB.DOMSelector.SceneCard}:not([${Stasharr.DataAttribute.SceneStatus}])`,
     SceneCardByButtonStatus: (status: SceneStatusType) =>
       `${StashDB.DOMSelector.SceneCard}:has([${Stasharr.DataAttribute.SceneStatus}='${status}'])`,
   },

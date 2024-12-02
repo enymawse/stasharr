@@ -32,17 +32,21 @@ function SettingsModal(props: { config: Config }) {
 
   const [store, setStore] = createStore(props.config);
 
-  const [systemStatus] = createResource(store, async (s) => {
+  const reactiveStore = createMemo(
+    () => new Config(store.protocol, store.domain, store.whisparrApiKey),
+  );
+
+  const [systemStatus] = createResource(reactiveStore, async (s) => {
     return await WhisparrService.systemStatus(s);
   });
 
-  const [qualityProfiles] = createResource(store, async (s) => {
+  const [qualityProfiles] = createResource(reactiveStore, async (s) => {
     if (!s.domain || !s.whisparrApiKey) return [];
     const response = await WhisparrService.qualityProfiles(s);
     return response || [];
   });
 
-  const [rootFolderPaths] = createResource(store, async (s) => {
+  const [rootFolderPaths] = createResource(reactiveStore, async (s) => {
     if (!s.domain || !s.whisparrApiKey) return [];
     const response = await WhisparrService.rootFolderPaths(s);
     return response || [];

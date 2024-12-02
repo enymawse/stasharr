@@ -1,4 +1,4 @@
-import { ButtonController } from './controller/ButtonController';
+import { CardController } from './controller/CardController';
 import { PerformerController } from './controller/PerformerController';
 import { NavbarController } from './controller/NavbarController';
 import { ScenesListController } from './controller/ScenesListController';
@@ -14,6 +14,6 @@ import { DetailsController } from './controller/scene/DetailsController';
   new PerformerController(config);
   new StudioController(config);
   new ScenesListController(config);
-  new ButtonController(config);
+  new CardController(config);
   new DetailsController(config);
 })();

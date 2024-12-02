@@ -14,6 +14,7 @@ import SceneService from '../service/SceneService';
 import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
 import { render } from 'solid-js/web';
 import SceneButton from '../components/SceneButton';
+import WhisparrService from '../service/WhisparrService';
 
 export const ObserverConfig = { childList: true, subtree: true };
 
@@ -162,4 +163,9 @@ export function tooltips() {
     if (tooltip) tooltip.dispose();
     new Tooltip(tooltipTriggerEl);
   });
+}
+
+export async function getSystemStatus(config: Config) {
+  const status = await WhisparrService.systemStatus(config);
+  return status;
 }

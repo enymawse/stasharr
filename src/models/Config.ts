@@ -6,9 +6,14 @@ export class Config {
   whisparrApiKey: string = '';
   qualityProfile: number = 1;
   rootFolderPath: string = '';
-  rootFolderPathId: number = 1;
   searchForNewMovie: boolean = true;
   stashDomain: string = 'http://localhost:9999';
+
+  constructor(protocol?: boolean, domain?: string, whisparrApiKey?: string) {
+    if (protocol) this.protocol = protocol;
+    if (domain) this.domain = domain;
+    if (whisparrApiKey) this.whisparrApiKey = whisparrApiKey;
+  }
 
   whisparrUrl(): string {
     return `${this.protocol ? 'https' : 'http'}://${this.domain}`;

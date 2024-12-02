@@ -8,9 +8,7 @@ export class MutationObserverFactory {
     controller: Controller,
   ): MutationObserver {
     const obs = new MutationObserver((mutationList, observer) => {
-      observer.disconnect();
-      handler.handle(mutationList, controller);
-      observer.observe(document.body, ObserverConfig);
+      handler.handle(observer, mutationList, controller);
     });
     obs.observe(document.body, ObserverConfig);
     return obs;

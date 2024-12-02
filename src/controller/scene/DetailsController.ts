@@ -4,14 +4,13 @@ import { StashDB } from '../../enums/StashDB';
 import { Config } from '../../models/Config';
 import { DetailsMutationHandler } from '../../mutation-handlers/scene/DetailsMutationHandler';
 import { BaseController } from '../BaseController';
-import Details from '../../components/scene/Details';
+import Details from '../../components/scene/header/Details';
 import { extractStashIdFromPath } from '../../util/util';
+import SceneButton from '../../components/SceneButton';
 
 export class DetailsController extends BaseController {
   initialize(): void {
-    const details = document.querySelector<HTMLDivElement>(
-      Stasharr.DOMSelector.HeaderDetails,
-    );
+    const details = document.querySelector(Stasharr.DOMSelector.HeaderDetails);
     const floatEnd = document.querySelector(
       StashDB.DOMSelector.SceneInfoCardHeaderFloatEnd,
     );
@@ -22,11 +21,29 @@ export class DetailsController extends BaseController {
         floatEnd,
       );
     }
+    const headerButton = document.querySelector(
+      Stasharr.DOMSelector.HeaderButton,
+    );
+    const cardHeader: HTMLElement | null = document.querySelector<HTMLElement>(
+      StashDB.DOMSelector.SceneInfoCardHeader,
+    );
+    if (headerButton === null && stashId !== null && cardHeader !== null) {
+      render(
+        () =>
+          SceneButton({ config: this._config, stashId: stashId, header: true }),
+        cardHeader,
+      );
+    }
   }
-  shouldReinit(node: HTMLElement): boolean {
+  shouldReinit(): boolean {
+    const details = document.querySelector(Stasharr.DOMSelector.HeaderDetails);
+    const headerButton = document.querySelector(
+      Stasharr.DOMSelector.HeaderButton,
+    );
     if (
-      node.matches(StashDB.DOMSelector.SceneInfoCardHeader) ||
-      node.querySelector(StashDB.DOMSelector.SceneInfoCardHeader)
+      document.querySelector(StashDB.DOMSelector.SceneInfoCardHeader) &&
+      details === null &&
+      headerButton === null
     ) {
       return true;
     }

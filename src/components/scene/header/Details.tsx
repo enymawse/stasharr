@@ -1,12 +1,12 @@
 import { createResource, Show } from 'solid-js';
-import { Stasharr } from '../../enums/Stasharr';
-import { Config } from '../../models/Config';
-import SceneService from '../../service/SceneService';
 import { FontAwesomeIcon } from 'solid-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
 import { filesize } from 'filesize';
-import WhisparrService from '../../service/WhisparrService';
+import { Stasharr } from '../../../enums/Stasharr';
+import SceneService from '../../../service/SceneService';
+import WhisparrService from '../../../service/WhisparrService';
+import { Config } from '../../../models/Config';
 
 library.add(faArrowUpRightFromSquare);
 
