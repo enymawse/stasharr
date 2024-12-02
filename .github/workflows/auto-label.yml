@@ -2,6 +2,10 @@ name: Labeling new issue
 on:
   issues:
     types: ['opened']
+
+permissions:
+  issues: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
