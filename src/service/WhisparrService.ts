@@ -61,26 +61,6 @@ export default class WhisparrService extends ServiceBase {
     }
   }
 
-  static async getQualityProfiles(
-    config: Config,
-  ): Promise<Whisparr.QualityProfile[]> {
-    const endpoint = 'qualityProfile';
-    const response = await ServiceBase.request(
-      config,
-      endpoint,
-      'GET',
-      undefined,
-      {
-        'Content-Type': 'application/json',
-      },
-    )
-      .then((response) => response.response)
-      .then((json) => {
-        return json as Whisparr.QualityProfile[];
-      });
-    return response;
-  }
-
   static async qualityProfiles(
     config: Config,
   ): Promise<null | Whisparr.QualityProfile[]> {
@@ -95,60 +75,6 @@ export default class WhisparrService extends ServiceBase {
     return response.response as Whisparr.QualityProfile[];
   }
 
-  static async getQualityProfilesForSelectMenu(
-    config: Config,
-  ): Promise<{ id: number; name: string }[]> {
-    let options: { id: number; name: string }[] = [];
-    await WhisparrService.getQualityProfiles(config).then(
-      (response: Whisparr.QualityProfile[]) => {
-        response.forEach((qualityProfile) => {
-          options.push({
-            id: qualityProfile.id,
-            name: qualityProfile.name,
-          });
-        });
-      },
-    );
-    return options;
-  }
-
-  static async getRootFolderPathsForSelectMenu(
-    config: Config,
-  ): Promise<{ id: number; name: string }[]> {
-    let options: { id: number; name: string }[] = [];
-
-    await WhisparrService.getRootFolders(config).then(
-      (response: Whisparr.RootFolder[]) => {
-        response.forEach((rootFolder) => {
-          options.push({
-            id: rootFolder.id,
-            name: rootFolder.path,
-          });
-        });
-      },
-    );
-
-    return options;
-  }
-
-  static async getRootFolders(config: Config): Promise<Whisparr.RootFolder[]> {
-    const endpoint = 'rootFolder';
-    const response = await ServiceBase.request(
-      config,
-      endpoint,
-      'GET',
-      undefined,
-      {
-        'Content-Type': 'application/json',
-      },
-    )
-      .then((response) => response.response)
-      .then((json) => {
-        return json as Whisparr.RootFolder[];
-      });
-    return response;
-  }
-
   static async rootFolderPaths(
     config: Config,
   ): Promise<null | Whisparr.RootFolder[]> {
@@ -161,5 +87,17 @@ export default class WhisparrService extends ServiceBase {
       return null;
     }
     return response.response as Whisparr.RootFolder[];
+  }
+
+  static async tags(config: Config): Promise<Whisparr.Tag[] | null> {
+    const endpoint = 'tag';
+    let response;
+    try {
+      response = await ServiceBase.request(config, endpoint, 'GET', undefined);
+    } catch (e) {
+      console.log('Error getting Tags: ', e);
+      return null;
+    }
+    return response.response as Whisparr.Tag[];
   }
 }

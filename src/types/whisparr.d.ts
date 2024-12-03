@@ -36,7 +36,7 @@ export namespace Whisparr {
     titleSlug: string;
     folder: string;
     genres: string[];
-    tags: string[];
+    tags: Tag[];
     added: string;
     ratings: Record<string, unknown>;
     credits: unknown[];
@@ -70,7 +70,7 @@ export namespace Whisparr {
     titleSlug: string;
     rootFolderPath: string;
     genres: string[];
-    tags: string[];
+    tags: Tag[];
     added: string;
     foreignId: string;
     movie: Movie;
@@ -116,10 +116,11 @@ export namespace Whisparr {
       searchForMovie: boolean;
     };
     qualityProfileId: number;
+    tags: number[];
   };
 
   type PerformerPayload = {
-    tags: string[];
+    tags: number[];
     foreignId: string;
     searchOnAdd: boolean;
     qualityProfileId: number;
@@ -133,7 +134,7 @@ export namespace Whisparr {
     qualityProfileId: number;
     rootFolderPath: string;
     monitored: boolean;
-    tags: string[];
+    tags: number[];
   };
 
   type ExclusionPayload = {
@@ -214,7 +215,7 @@ export namespace Whisparr {
     rootFolderPath: string;
     qualityProfile: string;
     searchOnAdd: boolean;
-    tags: string[];
+    tags: Tag[];
     added: string;
     id: number;
   };
@@ -270,5 +271,10 @@ export namespace Whisparr {
     packageVersion: string;
     packageAuthor: string;
     packageUpdateMechanism: string;
+  };
+
+  type Tag = {
+    label: string;
+    id: number;
   };
 }

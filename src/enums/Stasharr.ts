@@ -20,6 +20,7 @@ const qualityProfile = `${stasharrPrefix}-qualityProfile`;
 const rootFolderPath = `${stasharrPrefix}-rootFolderPath`;
 const searchOnAdd = `${stasharrPrefix}-searchOnAdd`;
 const stashDomain = `${stasharrPrefix}-stashDomain`;
+const tags = `${stasharrPrefix}-tags`;
 const headerDetails = `${stasharrPrefix}-headerDetails`;
 const whisparrCardButton = `whisparr-card-button`;
 
@@ -45,6 +46,7 @@ export const Stasharr = {
       RootFolderPath: rootFolderPath,
       SearchOnAdd: searchOnAdd,
       StashDomain: stashDomain,
+      Tags: tags,
     },
   },
   DOMSelector: {

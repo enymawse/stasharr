@@ -8,6 +8,7 @@ export class Config {
   rootFolderPath: string = '';
   searchForNewMovie: boolean = true;
   stashDomain: string = 'http://localhost:9999';
+  tags: number[] = [];
 
   constructor(protocol?: boolean, domain?: string, whisparrApiKey?: string) {
     if (protocol) this.protocol = protocol;

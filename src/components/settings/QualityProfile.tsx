@@ -1,8 +1,8 @@
 import { For } from 'solid-js';
-import { useSettings } from '../contexts/useSettings';
+import { useSettings } from '../../contexts/useSettings';
 import { Form } from 'solid-bootstrap';
-import { Whisparr } from '../types/whisparr';
-import { Stasharr } from '../enums/Stasharr';
+import { Whisparr } from '../../types/whisparr';
+import { Stasharr } from '../../enums/Stasharr';
 
 const QualityProfileSelect = (props: {
   qualityProfiles: Whisparr.QualityProfile[] | undefined;

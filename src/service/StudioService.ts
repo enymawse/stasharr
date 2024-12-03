@@ -69,6 +69,7 @@ export default class StudioService extends ServiceBase {
       .setQualityProfileId(config.qualityProfile)
       .setRootFolderPath(config.rootFolderPath)
       .setSearchOnAdd(config.searchForNewMovie)
+      .setTags(config.tags)
       .build();
     const response = await ServiceBase.request(
       config,

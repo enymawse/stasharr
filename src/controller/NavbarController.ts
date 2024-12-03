@@ -1,5 +1,5 @@
 import { render } from 'solid-js/web';
-import SettingsModal from '../components/SettingsModal';
+import SettingsModal from '../components/settings/SettingsModal';
 import { Config } from '../models/Config';
 import { BaseController } from './BaseController';
 import { StashDB } from '../enums/StashDB';

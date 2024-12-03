@@ -163,6 +163,7 @@ export default class SceneService extends ServiceBase {
       .setQualityProfileId(config.qualityProfile)
       .setRootFolderPath(config.rootFolderPath)
       .setSearchForMovie(config.searchForNewMovie)
+      .setTags(config.tags)
       .build();
     let response;
     try {

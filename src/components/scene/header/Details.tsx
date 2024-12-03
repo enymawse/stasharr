@@ -21,7 +21,7 @@ const Details = (props: { config: Config; stashId: string }) => {
   const [qualityProfiles] = createResource(
     props,
     async (p: { config: Config }) => {
-      return WhisparrService.getQualityProfiles(p.config);
+      return WhisparrService.qualityProfiles(p.config);
     },
   );
 

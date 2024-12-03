@@ -1,5 +1,5 @@
-import { Stasharr } from '../enums/Stasharr';
-import { useSettings } from '../contexts/useSettings';
+import { Stasharr } from '../../enums/Stasharr';
+import { useSettings } from '../../contexts/useSettings';
 
 const ProtocolSwitch = () => {
   const { store, setStore } = useSettings();

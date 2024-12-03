@@ -13,7 +13,7 @@ export class StudioPayloadBuilder {
     };
   }
 
-  setTags(tags: string[]) {
+  setTags(tags: number[]) {
     this.payload.tags = tags;
     return this;
   }

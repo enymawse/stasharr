@@ -1,5 +1,5 @@
-import { useSettings } from '../contexts/useSettings';
-import { Stasharr } from '../enums/Stasharr';
+import { useSettings } from '../../contexts/useSettings';
+import { Stasharr } from '../../enums/Stasharr';
 
 const StashInstance = () => {
   const { store, setStore } = useSettings();

@@ -11,7 +11,13 @@ export class ScenePayloadBuilder {
       monitored: true,
       addOptions: { searchForMovie: true },
       qualityProfileId: 0,
+      tags: [],
     };
+  }
+
+  setTags(tags: number[]) {
+    this.payload.tags = tags;
+    return this;
   }
 
   setTitle(title: string) {

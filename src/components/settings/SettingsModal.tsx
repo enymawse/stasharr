@@ -8,16 +8,17 @@ import {
 import { Modal, Button, Alert } from 'solid-bootstrap';
 import ProtocolSwitch from './ProtocolSwitch';
 import DomainInput from './DomainInput';
-import WhisparrApiKeyInput from './ApiKeyInput';
+import WhisparrApiKeyInput from '../ApiKeyInput';
 import { createStore } from 'solid-js/store';
-import { Config } from '../models/Config';
-import WhisparrService from '../service/WhisparrService';
-import { SettingsContext } from '../contexts/useSettings';
+import { Config } from '../../models/Config';
+import WhisparrService from '../../service/WhisparrService';
+import { SettingsContext } from '../../contexts/useSettings';
 import QualityProfileSelect from './QualityProfile';
 import { parseInt } from 'lodash';
 import RootFolderPathSelect from './RootFolderPath';
 import SearchOnAddSelect from './SearchOnAdd';
-import { Stasharr } from '../enums/Stasharr';
+import { Stasharr } from '../../enums/Stasharr';
+import Tags from './Tags';
 
 function SettingsModal(props: { config: Config }) {
   const [show, setShow] = createSignal(false);
@@ -93,6 +94,7 @@ function SettingsModal(props: { config: Config }) {
             <QualityProfileSelect qualityProfiles={qualityProfiles()} />
             <RootFolderPathSelect rootFolderPaths={rootFolderPaths()} />
             <SearchOnAddSelect />
+            <Tags />
           </Show>
         </Modal.Body>
         <Modal.Footer>

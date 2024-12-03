@@ -1,4 +1,4 @@
-import { Stasharr } from '../enums/Stasharr';
+import { Stasharr } from '../../enums/Stasharr';
 
 const NavbarLink = () => (
   <a
