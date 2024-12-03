@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/enymawse/stasharr/compare/v2.4.1...v2.5.0) (2024-12-03)
+
+
+### Features
+
+* **tags:** enable tags to be set in the stasharr settings ([#52](https://github.com/enymawse/stasharr/issues/52)) ([ca8e446](https://github.com/enymawse/stasharr/commit/ca8e446dd3df9fe5f92b462f312f90e5ad743964)), closes [#49](https://github.com/enymawse/stasharr/issues/49)
+
 ## [2.4.1](https://github.com/enymawse/stasharr/compare/v2.4.0...v2.4.1) (2024-12-02)
 
 
