@@ -3,10 +3,6 @@ on:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: write
-
 name: release-please
 
 jobs:
@@ -31,7 +27,7 @@ jobs:
         uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE_STASHARR }}
           release-type: node
 
       - name: Upload Release Artifact
