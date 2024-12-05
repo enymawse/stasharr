@@ -28,3 +28,9 @@ export const ConfigValidation = z.object({
   }),
   stashDomain: z.string().url().nullable(),
 });
+
+export const BasicConfigValidation = z.object({
+  protocol: z.boolean(),
+  domain: z.string().min(1),
+  whisparrApiKey: z.string().min(1),
+});

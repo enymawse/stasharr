@@ -1,16 +1,16 @@
 import { Form } from 'solid-bootstrap';
-import { useSettings } from '../../contexts/useSettings';
-import { Stasharr } from '../../enums/Stasharr';
+import { useSettings } from '../../../contexts/useSettings';
+import { Stasharr } from '../../../enums/Stasharr';
 import { createMemo, createResource, For } from 'solid-js';
-import { Config } from '../../models/Config';
-import WhisparrService from '../../service/WhisparrService';
+import WhisparrService from '../../../service/WhisparrService';
 import { parseInt } from 'lodash';
+import { ReactiveStoreFactory } from '../../../factory/ReactiveStoreFactory';
 
 const Tags = () => {
   const { store, setStore } = useSettings();
 
   const reactiveStore = createMemo(
-    () => new Config(store.protocol, store.domain, store.whisparrApiKey),
+    ReactiveStoreFactory.createReactiveStore(store),
   );
 
   const [tags] = createResource(reactiveStore, async (s) => {
@@ -37,7 +37,6 @@ const Tags = () => {
         aria-label="Tags select"
         multiple={true}
         onChange={(e) => handleTagsChange(e.target.selectedOptions)}
-        // value={store.tags.map((tag) => tag + '')}
         id={Stasharr.ID.Modal.Tags}
         data-bs-toggle="tooltip"
         data-bs-title="Enter tags to be associated with the scenes, studios, and performers added via Stasharr."

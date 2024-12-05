@@ -1,4 +1,4 @@
-import { ConfigValidation } from './ConfigValidation';
+import { BasicConfigValidation, ConfigValidation } from './ConfigValidation';
 
 export class Config {
   protocol: boolean = false;
@@ -45,6 +45,16 @@ export class Config {
       return true;
     } catch (error) {
       console.error('Validation failed:', error);
+      return false;
+    }
+  }
+
+  basicValidation(): boolean {
+    try {
+      BasicConfigValidation.parse(this);
+      return true;
+    } catch (e) {
+      console.error('Basic Validation failed: ', e);
       return false;
     }
   }

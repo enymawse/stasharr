@@ -1,7 +1,7 @@
 import { For } from 'solid-js';
-import { useSettings } from '../../contexts/useSettings';
+import { useSettings } from '../../../contexts/useSettings';
 import { Form } from 'solid-bootstrap';
-import { Stasharr } from '../../enums/Stasharr';
+import { Stasharr } from '../../../enums/Stasharr';
 
 const SearchOnAddSelect = () => {
   const { store, setStore } = useSettings();
