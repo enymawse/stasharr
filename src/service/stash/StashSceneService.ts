@@ -69,6 +69,8 @@ export default class StashSceneService extends StashServiceBase {
             }
         }`;
     const request = StashServiceBase.request(config, { query, variables });
-    return request.then((res) => res.data?.findScenes?.scenes[0] as StashScene);
+    return request.then(
+      (res) => res?.data?.findScenes?.scenes[0] as StashScene,
+    );
   }
 }
