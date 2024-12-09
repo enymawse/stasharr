@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from 'solid-fontawesome';
-import { useSettings } from '../contexts/useSettings';
-import { Stasharr } from '../enums/Stasharr';
+import { useSettings } from '../../../contexts/useSettings';
+import { Stasharr } from '../../../enums/Stasharr';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { createSignal } from 'solid-js';

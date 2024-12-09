@@ -1,4 +1,8 @@
-import { BasicConfigValidation, ConfigValidation } from './ConfigValidation';
+import {
+  BasicConfigValidation,
+  ConfigValidation,
+  StashConfigValidation,
+} from './ConfigValidation';
 
 export class Config {
   protocol: boolean = false;
@@ -7,13 +11,39 @@ export class Config {
   qualityProfile: number = 1;
   rootFolderPath: string = '';
   searchForNewMovie: boolean = true;
-  stashDomain: string = 'http://localhost:9999';
   tags: number[] = [];
+  stashDomain: string = 'http://localhost:9999';
+  stashApiKey: string = '';
 
-  constructor(protocol?: boolean, domain?: string, whisparrApiKey?: string) {
+  constructor(
+    protocol?: boolean,
+    domain?: string,
+    whisparrApiKey?: string,
+    stashDomain?: string,
+    stashApiKey?: string,
+  ) {
     if (protocol) this.protocol = protocol;
     if (domain) this.domain = domain;
     if (whisparrApiKey) this.whisparrApiKey = whisparrApiKey;
+    if (stashDomain) this.stashDomain = stashDomain;
+    if (stashApiKey) this.stashApiKey = stashApiKey;
+  }
+
+  stashValid(): boolean {
+    try {
+      StashConfigValidation.parse(this);
+      return true;
+    } catch (e) {
+      console.error('Validation of Stash configuration failed: ', e);
+      return false;
+    }
+  }
+
+  stashGqlEndpoint(): string {
+    let parts = this.stashDomain.split('/');
+    let protocol = parts[0];
+    let domain = parts[2];
+    return `${protocol}//${domain}/graphql`;
   }
 
   whisparrUrl(): string {

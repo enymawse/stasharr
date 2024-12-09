@@ -1,0 +1,41 @@
+export type StashStats = {
+  scene_count: number;
+  scenes_size: number;
+  scenes_duration: number;
+  image_count: number;
+  images_size: number;
+  gallery_count: number;
+  performer_count: number;
+  studio_count: number;
+  group_count: number;
+  movie_count: number;
+  tag_count: number;
+  total_o_count: number;
+  total_play_duration: number;
+  total_play_count: number;
+  scenes_played: number;
+};
+
+export type StashScene = {
+  id: string;
+  title: string;
+  code: string;
+  details: string;
+  director: string;
+  url: string;
+  urls: string[];
+  date: string;
+  rating100: string | null;
+  organized: boolean;
+  o_counter: number;
+  interactive: boolean;
+  interactive_speed: string | null;
+  created_at: string;
+  updated_at: string;
+  last_played_at: string;
+  resume_time: number;
+  play_duration: number;
+  play_count: number;
+  play_history: string[];
+  o_history: string[];
+};

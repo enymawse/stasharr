@@ -23,6 +23,7 @@ const stashDomain = `${stasharrPrefix}-stashDomain`;
 const tags = `${stasharrPrefix}-tags`;
 const headerDetails = `${stasharrPrefix}-headerDetails`;
 const whisparrCardButton = `whisparr-card-button`;
+const stashApiKey = `${stasharrPrefix}-stashApiKey`;
 
 export const Stasharr = {
   DataAttribute: {
@@ -46,6 +47,7 @@ export const Stasharr = {
       RootFolderPath: rootFolderPath,
       SearchOnAdd: searchOnAdd,
       StashDomain: stashDomain,
+      StashApiKey: stashApiKey,
       Tags: tags,
     },
   },
@@ -69,6 +71,7 @@ export const Stasharr = {
       RootFolderPath: `#${rootFolderPath}`,
       SearchOnAdd: `#${searchOnAdd}`,
       StashDomain: `#${stashDomain}`,
+      StashApiKey: `#${stashApiKey}`,
     },
     SceneCardWithNoStatus: () =>
       `${StashDB.DOMSelector.SceneCard}:not([${Stasharr.DataAttribute.SceneStatus}])`,

@@ -13,6 +13,7 @@ import { getButtonDetails, clickHandler } from '../../../util/button';
 import { fetchSceneStatus, tooltips } from '../../../util/util';
 import LoadingButton from '../../LoadingButton';
 import { SceneStatus } from '../../../enums/SceneStatus';
+import StashSceneService from '../../../service/stash/StashSceneService';
 
 const CardButton = (props: { config: Config; stashId: string }) => {
   const [sceneStatus, { refetch: refetchStatus }] = createResource(
@@ -34,6 +35,16 @@ const CardButton = (props: { config: Config; stashId: string }) => {
     return v !== undefined;
   });
 
+  const [stashSceneDetails] = createResource(props, async (p) => {
+    if (p.config.stashValid()) {
+      return StashSceneService.getSceneByStashId(p.config, p.stashId);
+    }
+  });
+
+  const stashLink = createMemo(() => {
+    return `${props.config.stashDomain}/scenes/${stashSceneDetails()?.id}`;
+  });
+
   createEffect(() => {
     if (sceneStatus()) {
       tooltips();
@@ -51,7 +62,18 @@ const CardButton = (props: { config: Config; stashId: string }) => {
             href={`${props.config.whisparrUrl()}/movie/${props.stashId}`}
             target="_blank"
           >
-            <FontAwesomeIcon icon="fa-solid fa-arrow-up-right-from-square" />
+            <i class="whisparrIcon"></i>
+          </a>
+        </Show>
+        <Show when={stashSceneDetails()}>
+          <a
+            class="stash-card-button"
+            data-bs-toggle="tooltip"
+            data-bs-title="View in Stash"
+            href={stashLink()}
+            target="_blank"
+          >
+            <i class="stashIcon"></i>
           </a>
         </Show>
         <Switch>

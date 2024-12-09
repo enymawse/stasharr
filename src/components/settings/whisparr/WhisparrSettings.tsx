@@ -1,6 +1,6 @@
 import { Show } from 'solid-js';
 import { Whisparr } from '../../../types/whisparr';
-import WhisparrApiKeyInput from '../../ApiKeyInput';
+import WhisparrApiKeyInput from './ApiKeyInput';
 import DomainInput from './DomainInput';
 import ProtocolSwitch from './ProtocolSwitch';
 import QualityProfileSelect from './QualityProfile';

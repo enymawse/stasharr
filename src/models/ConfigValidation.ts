@@ -34,3 +34,8 @@ export const BasicConfigValidation = z.object({
   domain: z.string().min(1),
   whisparrApiKey: z.string().min(1),
 });
+
+export const StashConfigValidation = z.object({
+  stashDomain: z.string().url(),
+  stashApiKey: z.string().min(1),
+});
