@@ -5,6 +5,7 @@ const StashInstance = () => {
   const { store, setStore } = useSettings();
 
   const handleChange = (value: string) => {
+    value = value.replace(/\/+$/, '');
     setStore('stashDomain', value === '' ? null : value);
   };
 
