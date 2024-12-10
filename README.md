@@ -6,11 +6,12 @@
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg?style=for-the-badge)](http://commitizen.github.io/cz-cli/)
 [![Built with SolidJS](https://img.shields.io/badge/Built%20with-SolidJS-blue?style=for-the-badge)](https://github.com/solidjs/solid)
 
-This userscript enables integration with your self-hosted Whisparr (v3+ only) instance and the StashDB website.
+This userscript enables integration with your self-hosted Whisparr (v3+ only) and Stash apps, and the StashDB website.
 
 ## Features
 
 - **One-click Scene Download**: Add scenes from StashDB directly to Whisparr.
+- **View in Whisparr/Stash**: View scenes in your Whisparr or Stash apps.
 - **Bulk Actions**: Add all the scenes listed on a page with one button click.
 - **Monitoring**: Monitor or Unmonitor Studios and Performers right from the StashDB website.
 - **Exclusions**: See which scenes are on your Exclusion List.
@@ -36,8 +37,6 @@ Before using the script, you need to configure a few parameters:
 3. **Click Settings** under the stasharr script and fill in your details:
 
 ![image](https://github.com/user-attachments/assets/5556ae1a-39b9-43cd-922b-00cf39a219f9)
-
-
 
 4. When you've input a valid domain and API key, the userscript extension will prompt to allow access to your Whisparr domain AND the Quality Profile and Root Folder Path dropdowns will populate with additional settings.
 
