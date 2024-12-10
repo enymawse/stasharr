@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/enymawse/stasharr/compare/v2.5.0...v2.6.0) (2024-12-10)
+
+
+### Features
+
+* integrate stash app ([#56](https://github.com/enymawse/stasharr/issues/56)) ([4f031d6](https://github.com/enymawse/stasharr/commit/4f031d65223232ab072b7bb428536b74f87a9816)), closes [#55](https://github.com/enymawse/stasharr/issues/55)
+
 ## [2.5.0](https://github.com/enymawse/stasharr/compare/v2.4.1...v2.5.0) (2024-12-03)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "stasharr",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Enhance your StashDB experience by integrating Whisparr with this UserScript.",
   "main": "stasharr.js",
   "scripts": {
