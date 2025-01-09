@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/enymawse/stasharr/compare/v2.6.0...v2.7.0) (2025-01-09)
+
+
+### Features
+
+* changes the button color of the search icon depending on the monitored state of the scene ([#64](https://github.com/enymawse/stasharr/issues/64)) ([2c17d7e](https://github.com/enymawse/stasharr/commit/2c17d7e5e5debdc7893fb0f4e2fcd4aca1121eb9)), closes [#59](https://github.com/enymawse/stasharr/issues/59)
+
 ## [2.6.0](https://github.com/enymawse/stasharr/compare/v2.5.0...v2.6.0) (2024-12-10)
 
 
