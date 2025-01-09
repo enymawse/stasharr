@@ -10,19 +10,17 @@ import {
 } from 'solid-js';
 import { Config } from '../../../models/Config';
 import { getButtonDetails, clickHandler } from '../../../util/button';
-import { fetchSceneStatus, tooltips } from '../../../util/util';
+import { fetchWhisparrSceneAndStatus, tooltips } from '../../../util/util';
 import LoadingButton from '../../LoadingButton';
 import { SceneStatus } from '../../../enums/SceneStatus';
 import StashSceneService from '../../../service/stash/StashSceneService';
 
 const CardButton = (props: { config: Config; stashId: string }) => {
-  const [sceneStatus, { refetch: refetchStatus }] = createResource(
-    props,
-    fetchSceneStatus,
-  );
+  const [whisparrSceneAndStatus, { refetch: refreshWhisparrSceneAndStatus }] =
+    createResource(props, fetchWhisparrSceneAndStatus);
 
   const buttonDetails = createMemo(() =>
-    getButtonDetails(sceneStatus(), false),
+    getButtonDetails(whisparrSceneAndStatus(), false),
   );
 
   const inWhisparr = createMemo(() => {
@@ -30,7 +28,7 @@ const CardButton = (props: { config: Config; stashId: string }) => {
       SceneStatus.EXISTS_AND_HAS_FILE,
       SceneStatus.EXISTS_AND_NO_FILE,
     ].find((val) => {
-      return val === sceneStatus();
+      return val === whisparrSceneAndStatus()?.status;
     });
     return v !== undefined;
   });
@@ -46,7 +44,7 @@ const CardButton = (props: { config: Config; stashId: string }) => {
   });
 
   createEffect(() => {
-    if (sceneStatus()) {
+    if (whisparrSceneAndStatus()?.status) {
       tooltips();
     }
   });
@@ -77,22 +75,22 @@ const CardButton = (props: { config: Config; stashId: string }) => {
           </a>
         </Show>
         <Switch>
-          <Match when={sceneStatus.error}>
-            <span>Error: {sceneStatus.error}</span>
+          <Match when={whisparrSceneAndStatus.error}>
+            <span>Error: {whisparrSceneAndStatus.error}</span>
           </Match>
-          <Match when={sceneStatus() !== undefined}>
+          <Match when={whisparrSceneAndStatus() !== undefined}>
             <button
               class={buttonDetails().class}
               disabled={buttonDetails().disabled}
-              data-stasharr-scenestatus={sceneStatus()}
+              data-stasharr-scenestatus={whisparrSceneAndStatus()?.status}
               data-bs-toggle="tooltip"
               data-bs-title={buttonDetails().tooltip}
               onClick={() =>
                 clickHandler(
-                  sceneStatus(),
+                  whisparrSceneAndStatus()?.status,
                   props.config,
                   props.stashId,
-                  refetchStatus,
+                  refreshWhisparrSceneAndStatus,
                 )
               }
             >

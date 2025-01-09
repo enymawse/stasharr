@@ -7,9 +7,15 @@ import SceneService from '../service/SceneService';
 import ToastService from '../service/ToastService';
 import { SceneSearchCommandStatus } from '../enums/SceneSearchCommandStatus';
 import { Config } from '../models/Config';
+import { Whisparr } from '../types/whisparr';
 
 export const getButtonDetails = (
-  sceneStatus: SceneStatusType | undefined,
+  whisparrSceneAndStatus:
+    | {
+        scene: Whisparr.WhisparrScene | null;
+        status: SceneStatusType | undefined;
+      }
+    | undefined,
   header: boolean,
 ) => {
   let iconToUse = 'fa-solid ';
@@ -17,34 +23,38 @@ export const getButtonDetails = (
   let buttonClass = header ? 'stasharr-button' : 'stasharr-card-button';
   let disabled = false;
   let tooltipText = '';
-  switch (sceneStatus) {
-    case SceneStatus.EXISTS_AND_HAS_FILE:
-      iconToUse += 'fa-circle-check';
-      buttonText = 'Already Downloaded';
-      buttonClass += ` ${buttonClass}-downloaded`;
-      disabled = true;
-      tooltipText = 'Scene downloaded already.';
-      break;
-    case SceneStatus.EXISTS_AND_NO_FILE:
-      iconToUse += 'fa-search';
-      buttonText = 'In Whisparr';
-      buttonClass += ` ${buttonClass}-searchable`;
-      tooltipText =
-        'Scene exists but no file has been downloaded. Trigger Whisparr to search for this scene.';
-      break;
-    case SceneStatus.NOT_IN_WHISPARR:
-      iconToUse += 'fa-download';
-      buttonText = 'Add to Whisparr';
-      buttonClass += ` ${buttonClass}-add`;
-      tooltipText = 'Add this scene to Whisparr.';
-      break;
-    case SceneStatus.EXCLUDED:
-      iconToUse += 'fa-video-slash';
-      buttonText = 'Excluded';
-      buttonClass += ` ${buttonClass}-excluded`;
-      disabled = true;
-      tooltipText = 'This scene is on your Exclusion List.';
-      break;
+  if (whisparrSceneAndStatus !== undefined) {
+    switch (whisparrSceneAndStatus.status) {
+      case SceneStatus.EXISTS_AND_HAS_FILE:
+        iconToUse += 'fa-circle-check';
+        buttonText = 'Already Downloaded';
+        buttonClass += ` ${buttonClass}-downloaded`;
+        disabled = true;
+        tooltipText = 'Scene downloaded already.';
+        break;
+      case SceneStatus.EXISTS_AND_NO_FILE:
+        iconToUse += 'fa-search';
+        buttonText = 'In Whisparr';
+        buttonClass += ` ${buttonClass}-searchable`;
+        if (!whisparrSceneAndStatus.scene?.monitored)
+          buttonClass += ' unmonitored';
+        tooltipText =
+          'Scene exists but no file has been downloaded. Trigger Whisparr to search for this scene. Gray: unmonitored, Yellow: monitored';
+        break;
+      case SceneStatus.NOT_IN_WHISPARR:
+        iconToUse += 'fa-download';
+        buttonText = 'Add to Whisparr';
+        buttonClass += ` ${buttonClass}-add`;
+        tooltipText = 'Add this scene to Whisparr.';
+        break;
+      case SceneStatus.EXCLUDED:
+        iconToUse += 'fa-video-slash';
+        buttonText = 'Excluded';
+        buttonClass += ` ${buttonClass}-excluded`;
+        disabled = true;
+        tooltipText = 'This scene is on your Exclusion List.';
+        break;
+    }
   }
   return {
     icon: iconToUse,

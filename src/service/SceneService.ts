@@ -71,6 +71,32 @@ export default class SceneService extends ServiceBase {
   }
 
   /**
+   * Provides a Scene from Whisparr and its SceneStatus
+   */
+  static async getSceneWithStatus(
+    config: Config,
+    stashId: string,
+  ): Promise<{
+    scene: Whisparr.WhisparrScene | null;
+    status: SceneStatusType;
+  }> {
+    const exclusionMap = await ExclusionListService.getExclusionsMap(config);
+    let status;
+    if (exclusionMap.size > 0) {
+      if (exclusionMap.has(stashId)) status = SceneStatus.EXCLUDED;
+    }
+    const scene = await SceneService.getSceneByStashId(config, stashId);
+    if (scene) {
+      status = scene.hasFile
+        ? SceneStatus.EXISTS_AND_HAS_FILE
+        : SceneStatus.EXISTS_AND_NO_FILE;
+    } else {
+      status = SceneStatus.NOT_IN_WHISPARR;
+    }
+    return { scene, status };
+  }
+
+  /**
    * Looks up a scene by its Stash ID in the Whisparr API. Will return the Scene if it
    * exists in the Whisparr instance otherwise will return null.
    * @param config The configuration object with API details and user preferences

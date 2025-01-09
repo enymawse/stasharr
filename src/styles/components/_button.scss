@@ -27,6 +27,14 @@
       --stasharr-color-yellow,
       --stasharr-color-black
     );
+
+    // Unmonitored modifier
+    &.unmonitored {
+      @include mixins.button-variant(
+        --stasharr-color-gray-1,
+        --stasharr-color-white
+      );
+    }
   }
 
   &-downloaded {

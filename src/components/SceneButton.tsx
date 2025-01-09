@@ -9,7 +9,7 @@ import {
 import { Config } from '../models/Config';
 import { Stasharr } from '../enums/Stasharr';
 import { getButtonDetails, clickHandler } from '../util/button';
-import { fetchSceneStatus, tooltips } from '../util/util';
+import { fetchWhisparrSceneAndStatus, tooltips } from '../util/util';
 import LoadingButton from './LoadingButton';
 import { FontAwesomeIcon } from 'solid-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
@@ -27,17 +27,15 @@ function SceneButton(props: {
   stashId: string;
   header: boolean;
 }) {
-  const [sceneStatus, { refetch: refetchStatus }] = createResource(
-    props,
-    fetchSceneStatus,
-  );
+  const [whisparrSceneAndStatus, { refetch: refreshWhisparrSceneAndStatus }] =
+    createResource(props, fetchWhisparrSceneAndStatus);
 
   const buttonDetails = createMemo(() =>
-    getButtonDetails(sceneStatus(), props.header),
+    getButtonDetails(whisparrSceneAndStatus(), props.header),
   );
 
   createEffect(() => {
-    if (sceneStatus()) {
+    if (whisparrSceneAndStatus()?.status) {
       tooltips();
     }
   });
@@ -46,23 +44,23 @@ function SceneButton(props: {
     <>
       <Suspense fallback={<LoadingButton header={props.header} />}>
         <Switch>
-          <Match when={sceneStatus.error}>
-            <span>Error: {sceneStatus.error}</span>
+          <Match when={whisparrSceneAndStatus.error}>
+            <span>Error: {whisparrSceneAndStatus.error}</span>
           </Match>
-          <Match when={sceneStatus() !== undefined}>
+          <Match when={whisparrSceneAndStatus() !== undefined}>
             <button
               class={buttonDetails().class}
               disabled={buttonDetails().disabled}
               id={props.header ? Stasharr.ID.HeaderButton : undefined}
-              data-stasharr-scenestatus={sceneStatus()}
+              data-stasharr-scenestatus={whisparrSceneAndStatus()?.status}
               data-bs-toggle="tooltip"
               data-bs-title={buttonDetails().tooltip}
               onClick={() =>
                 clickHandler(
-                  sceneStatus(),
+                  whisparrSceneAndStatus()?.status,
                   props.config,
                   props.stashId,
-                  refetchStatus,
+                  refreshWhisparrSceneAndStatus,
                 )
               }
             >

@@ -15,6 +15,7 @@ import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
 import { render } from 'solid-js/web';
 import SceneButton from '../components/SceneButton';
 import WhisparrService from '../service/WhisparrService';
+import { Whisparr } from '../types/whisparr';
 
 export const ObserverConfig = { childList: true, subtree: true };
 
@@ -139,6 +140,16 @@ export const fetchSceneStatus = async (p: {
 }) => {
   const response = await SceneService.getSceneStatus(p.config, p.stashId);
   return response;
+};
+
+export const fetchWhisparrSceneAndStatus = async (p: {
+  config: Config;
+  stashId: string;
+}): Promise<{
+  scene: Whisparr.WhisparrScene | null;
+  status: SceneStatusType;
+}> => {
+  return await SceneService.getSceneWithStatus(p.config, p.stashId);
 };
 
 export const rehydrateSceneCards = async (
