@@ -56,7 +56,8 @@ export class Config {
 
   load() {
     console.log('Loading configuration');
-    const savedConfig = localStorage.getItem('stasharr-config');
+    // eslint-disable-next-line no-undef
+    const savedConfig = GM_getValue<string>('stasharr-config');
     if (savedConfig) {
       Object.assign(this, JSON.parse(savedConfig));
     }
@@ -65,7 +66,8 @@ export class Config {
 
   save() {
     console.log('Saving configuration');
-    localStorage.setItem('stasharr-config', JSON.stringify(this));
+    // eslint-disable-next-line no-undef
+    GM_setValue('stasharr-config', JSON.stringify(this));
   }
 
   valid(): boolean {
