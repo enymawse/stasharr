@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://github.com/enymawse/stasharr/compare/v2.7.1...v2.8.0) (2025-03-21)
+
+
+### Features
+
+* allows configuration data to be kept when using incognito or private browsing ([#69](https://github.com/enymawse/stasharr/issues/69)) ([696bc32](https://github.com/enymawse/stasharr/commit/696bc32bf779c62a31d20496621d79af79d18d49))
+
 ## [2.7.1](https://github.com/enymawse/stasharr/compare/v2.7.0...v2.7.1) (2025-03-21)
 
 
