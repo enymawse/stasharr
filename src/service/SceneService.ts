@@ -83,7 +83,8 @@ export default class SceneService extends ServiceBase {
     const exclusionMap = await ExclusionListService.getExclusionsMap(config);
     let status;
     if (exclusionMap.size > 0) {
-      if (exclusionMap.has(stashId)) status = SceneStatus.EXCLUDED;
+      if (exclusionMap.has(stashId))
+        return { scene: null, status: SceneStatus.EXCLUDED };
     }
     const scene = await SceneService.getSceneByStashId(config, stashId);
     if (scene) {
