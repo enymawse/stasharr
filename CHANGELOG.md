@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.1](https://github.com/enymawse/stasharr/compare/v2.7.0...v2.7.1) (2025-03-21)
+
+
+### Bug Fixes
+
+* **sceneservice:** fix an issue where excluded scenes were not being represented correctly ([#67](https://github.com/enymawse/stasharr/issues/67)) ([38da2c5](https://github.com/enymawse/stasharr/commit/38da2c539edabbd9d69f7e8ecfe8ec5f2680955f))
+
 ## [2.7.0](https://github.com/enymawse/stasharr/compare/v2.6.0...v2.7.0) (2025-01-09)
 
 
