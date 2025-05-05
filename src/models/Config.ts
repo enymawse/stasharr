@@ -40,10 +40,13 @@ export class Config {
   }
 
   stashGqlEndpoint(): string {
-    let parts = this.stashDomain.split('/');
-    let protocol = parts[0];
-    let domain = parts[2];
-    return `${protocol}//${domain}/graphql`;
+    let domain = this.stashDomain.trim().replace(/\/+$/, ''); // remove trailing slashes
+
+    if (!/^https?:\/\//i.test(domain)) {
+      domain = `https://${domain}`;
+    }
+  
+    return `${domain}/graphql`;
   }
 
   whisparrUrl(): string {
