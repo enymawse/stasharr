@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.1](https://github.com/enymawse/stasharr/compare/v2.8.0...v2.8.1) (2025-05-15)
+
+
+### Bug Fixes
+
+* don't strip subfolder from stash endpoint ([#75](https://github.com/enymawse/stasharr/issues/75)) ([3466a9a](https://github.com/enymawse/stasharr/commit/3466a9af92f6bcbbadf8f2650748c85bba305564))
+
 ## [2.8.0](https://github.com/enymawse/stasharr/compare/v2.7.1...v2.8.0) (2025-03-21)
 
 
