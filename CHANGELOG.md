@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.9.0](https://github.com/enymawse/stasharr/compare/v2.8.1...v2.9.0) (2025-08-26)
+
+
+### Features
+
+* copy stash id button ([#84](https://github.com/enymawse/stasharr/issues/84)) ([a6a9cf3](https://github.com/enymawse/stasharr/commit/a6a9cf3719c61f1e44462f58fa275a41401bd4e6)), closes [#74](https://github.com/enymawse/stasharr/issues/74)
+
 ## [2.8.1](https://github.com/enymawse/stasharr/compare/v2.8.0...v2.8.1) (2025-05-15)
 
 
