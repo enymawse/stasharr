@@ -24,6 +24,7 @@ const tags = `${stasharrPrefix}-tags`;
 const headerDetails = `${stasharrPrefix}-headerDetails`;
 const whisparrCardButton = `whisparr-card-button`;
 const stashApiKey = `${stasharrPrefix}-stashApiKey`;
+const floatingCopyButton = `${stasharrPrefix}-floating-copy-button`;
 
 export const Stasharr = {
   DataAttribute: {
@@ -39,6 +40,7 @@ export const Stasharr = {
     StudioMonitor: studiomonitor,
     PerformerMonitor: performermonitor,
     SearchAllExisting: searchallavailable,
+    FloatingCopyButton: floatingCopyButton,
     Modal: {
       Protocol: protocol,
       Domain: domain,
@@ -63,6 +65,7 @@ export const Stasharr = {
     StudioMonitor: `#${studiomonitor}`,
     PerformerMonitor: `#${performermonitor}`,
     SearchAllExisting: `#${searchallavailable}`,
+    FloatingCopyButton: `#${floatingCopyButton}`,
     Modal: {
       Protocol: `#${protocol}`,
       Domain: `#${domain}`,
