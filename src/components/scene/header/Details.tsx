@@ -36,7 +36,8 @@ const Details = (props: { config: Config; stashId: string }) => {
   const whisparrLink = `${props.config.whisparrUrl()}/movie/${props.stashId}`;
 
   const stashLink = createMemo(() => {
-    return `${props.config.stashDomain}/scenes/${stashSceneDetails()?.id}`;
+    const sceneId = stashSceneDetails()?.id;
+    return sceneId ? props.config.stashSceneUrl(sceneId) : '';
   });
 
   return (

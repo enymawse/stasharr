@@ -3,6 +3,7 @@ import {
   ConfigValidation,
   StashConfigValidation,
 } from './ConfigValidation';
+import { UrlProcessor } from '../util/urlProcessor';
 
 export class Config {
   protocol: boolean = false;
@@ -40,21 +41,56 @@ export class Config {
   }
 
   stashGqlEndpoint(): string {
-    let domain = this.stashDomain.trim().replace(/\/+$/, ''); // remove trailing slashes
-
-    if (!/^https?:\/\//i.test(domain)) {
-      domain = `https://${domain}`;
+    if (!this.stashDomain) {
+      return '';
     }
 
-    return `${domain}/graphql`;
+    const processedUrl = UrlProcessor.parseStashUrl(this.stashDomain);
+    if (!processedUrl.isValid) {
+      console.warn('Invalid Stash URL:', processedUrl.errors);
+      // Fallback to old behavior for backward compatibility
+      let domain = this.stashDomain.trim().replace(/\/+$/, '');
+      if (!/^https?:\/\//i.test(domain)) {
+        domain = `https://${domain}`;
+      }
+      return `${domain}/graphql`;
+    }
+
+    return UrlProcessor.buildStashGraphqlUrl(processedUrl.fullBaseUrl);
   }
 
   whisparrUrl(): string {
-    return `${this.protocol ? 'https' : 'http'}://${this.domain}`;
+    const processedUrl = UrlProcessor.parseWhisparrUrl(
+      this.domain,
+      this.protocol,
+    );
+    if (!processedUrl.isValid) {
+      console.warn('Invalid Whisparr URL:', processedUrl.errors);
+      // Fallback to old behavior for backward compatibility
+      return `${this.protocol ? 'https' : 'http'}://${this.domain}`;
+    }
+
+    return processedUrl.fullBaseUrl;
   }
 
   whisparrApiUrl(): string {
-    return `${this.protocol ? 'https' : 'http'}://${this.domain}/api/v3/`;
+    const baseUrl = this.whisparrUrl();
+    return UrlProcessor.buildWhisparrApiUrl(baseUrl);
+  }
+
+  stashSceneUrl(sceneId: string): string {
+    if (!this.stashDomain) {
+      return '';
+    }
+
+    const processedUrl = UrlProcessor.parseStashUrl(this.stashDomain);
+    if (!processedUrl.isValid) {
+      console.warn('Invalid Stash URL:', processedUrl.errors);
+      // Fallback to old behavior for backward compatibility
+      return `${this.stashDomain}/scenes/${sceneId}`;
+    }
+
+    return UrlProcessor.buildStashSceneUrl(processedUrl.fullBaseUrl, sceneId);
   }
 
   load() {
