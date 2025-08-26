@@ -19,5 +19,6 @@ export default {
     'GM.xmlHttpRequest',
     'GM_getValue',
     'GM_setValue',
+    'GM_setClipboard',
   ],
 };

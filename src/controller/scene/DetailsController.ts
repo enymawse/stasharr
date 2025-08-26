@@ -7,6 +7,7 @@ import { BaseController } from '../BaseController';
 import Details from '../../components/scene/header/Details';
 import { extractStashIdFromPath } from '../../util/util';
 import SceneButton from '../../components/SceneButton';
+import FloatingCopyButton from '../../components/FloatingCopyButton';
 
 export class DetailsController extends BaseController {
   initialize(): void {
@@ -34,16 +35,27 @@ export class DetailsController extends BaseController {
         cardHeader,
       );
     }
+
+    const floatingCopyButton = document.querySelector(
+      Stasharr.DOMSelector.FloatingCopyButton,
+    );
+    if (floatingCopyButton === null && stashId !== null) {
+      render(() => FloatingCopyButton({ textToCopy: stashId }), document.body);
+    }
   }
   shouldReinit(): boolean {
     const details = document.querySelector(Stasharr.DOMSelector.HeaderDetails);
     const headerButton = document.querySelector(
       Stasharr.DOMSelector.HeaderButton,
     );
+    const floatingCopyButton = document.querySelector(
+      Stasharr.DOMSelector.FloatingCopyButton,
+    );
     if (
       document.querySelector(StashDB.DOMSelector.SceneInfoCardHeader) &&
       details === null &&
-      headerButton === null
+      headerButton === null &&
+      floatingCopyButton === null
     ) {
       return true;
     }

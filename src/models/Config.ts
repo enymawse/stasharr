@@ -45,7 +45,7 @@ export class Config {
     if (!/^https?:\/\//i.test(domain)) {
       domain = `https://${domain}`;
     }
-  
+
     return `${domain}/graphql`;
   }
 

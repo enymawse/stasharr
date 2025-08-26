@@ -8,6 +8,7 @@ import SceneService from '../../../service/SceneService';
 import WhisparrService from '../../../service/WhisparrService';
 import { Config } from '../../../models/Config';
 import StashSceneService from '../../../service/stash/StashSceneService';
+import CopyButton from '../../CopyButton';
 
 library.add(faArrowUpRightFromSquare);
 
@@ -64,6 +65,14 @@ const Details = (props: { config: Config; stashId: string }) => {
             (item) => item.id === sceneDetails()!.qualityProfileId,
           )?.name
         }
+        <br />
+        <div style="margin-top: 8px;">
+          <CopyButton
+            textToCopy={props.stashId}
+            className="btn btn-sm btn-outline-primary"
+            tooltip="Copy Stash ID to clipboard"
+          />
+        </div>
       </div>
     </Show>
   );
