@@ -40,7 +40,8 @@ const CardButton = (props: { config: Config; stashId: string }) => {
   });
 
   const stashLink = createMemo(() => {
-    return `${props.config.stashDomain}/scenes/${stashSceneDetails()?.id}`;
+    const sceneId = stashSceneDetails()?.id;
+    return sceneId ? props.config.stashSceneUrl(sceneId) : '';
   });
 
   createEffect(() => {
