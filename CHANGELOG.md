@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.10.0](https://github.com/enymawse/stasharr/compare/v2.9.0...v2.10.0) (2025-08-27)
+
+
+### Features
+
+* add general setting configuration for opening links in new tab ([#88](https://github.com/enymawse/stasharr/issues/88)) ([a5d8d0d](https://github.com/enymawse/stasharr/commit/a5d8d0dd2782d15b5be7f75655a31f9d1cf0a4e2)), closes [#61](https://github.com/enymawse/stasharr/issues/61)
+* **settings:** smart url handling ([#86](https://github.com/enymawse/stasharr/issues/86)) ([2422eb1](https://github.com/enymawse/stasharr/commit/2422eb19eac1807c49e945986f170adc014e7604))
+
+
+### Bug Fixes
+
+* **tooltips:** resolve issue where tooltip would get stuck ([#89](https://github.com/enymawse/stasharr/issues/89)) ([2a61ac2](https://github.com/enymawse/stasharr/commit/2a61ac24b85d3475f2cee3bae2ad8fb95e609745)), closes [#58](https://github.com/enymawse/stasharr/issues/58)
+
 ## [2.9.0](https://github.com/enymawse/stasharr/compare/v2.8.1...v2.9.0) (2025-08-26)
 
 
