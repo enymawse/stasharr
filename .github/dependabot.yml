@@ -3,16 +3,15 @@
 
 version: 2
 updates:
-  # Enable version updates for npm dependencies
+  # Enable version and security updates for npm dependencies
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '09:00'
+      interval: 'daily'
+      time: '06:00'
       timezone: 'Etc/UTC'
-    # Increase the number of open pull requests for npm to 10
-    open-pull-requests-limit: 10
+    # Increase the number of open pull requests for npm to 15
+    open-pull-requests-limit: 15
     # Group dependency updates to reduce PR noise
     groups:
       # Group all patch-level updates
@@ -90,28 +89,6 @@ updates:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
         versions: ['*-alpha', '*-beta', '*-rc*']
-
-  # Enable security updates for npm (runs daily)
-  - package-ecosystem: 'npm'
-    directory: '/'
-    schedule:
-      interval: 'daily'
-      time: '06:00'
-      timezone: 'Etc/UTC'
-    # Only security updates in this configuration
-    open-pull-requests-limit: 5
-    labels:
-      - 'security'
-      - 'dependencies'
-      - 'automated'
-    assignees:
-      - 'enymawse'
-    commit-message:
-      prefix: 'security(deps)'
-    # Only allow security updates
-    allow:
-      - dependency-type: 'all'
-        dependency-name: 'security'
 
   # GitHub Actions workflow updates
   - package-ecosystem: 'github-actions'
