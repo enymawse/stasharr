@@ -26,6 +26,7 @@ const whisparrCardButton = `whisparr-card-button`;
 const stashApiKey = `${stasharrPrefix}-stashApiKey`;
 const floatingCopyButton = `${stasharrPrefix}-floating-copy-button`;
 const copyCardButton = `copy-card-button`;
+const openLinksInNewTab = `${stasharrPrefix}-openLinksInNewTab`;
 
 export const Stasharr = {
   DataAttribute: {
@@ -42,6 +43,7 @@ export const Stasharr = {
     PerformerMonitor: performermonitor,
     SearchAllExisting: searchallavailable,
     FloatingCopyButton: floatingCopyButton,
+    OpenLinksInNewTab: openLinksInNewTab,
     Modal: {
       Protocol: protocol,
       Domain: domain,

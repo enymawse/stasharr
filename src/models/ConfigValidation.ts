@@ -49,6 +49,10 @@ export const ConfigValidation = z.object({
         message: 'Please enter a valid Stash URL (e.g., http://localhost:9999)',
       },
     ),
+  openLinksInNewTab: z.boolean({
+    required_error: 'Link behavior must be true or false.',
+    invalid_type_error: 'Link behavior must be a boolean.',
+  }),
 });
 
 export const BasicConfigValidation = z.object({

@@ -13,6 +13,7 @@ import { Stasharr } from '../../enums/Stasharr';
 import { ReactiveStoreFactory } from '../../factory/ReactiveStoreFactory';
 import WhisparrSettings from './whisparr/WhisparrSettings';
 import StashSettings from './stashapp/StashSettings';
+import GeneralSettings from './general/GeneralSettings';
 
 function SettingsModal(props: { config: Config }) {
   const [show, setShow] = createSignal(false);
@@ -55,10 +56,13 @@ function SettingsModal(props: { config: Config }) {
           <Modal.Title>Stasharr Settings</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Tab.Container id="left-tabs" defaultActiveKey="whisparr">
+          <Tab.Container id="left-tabs" defaultActiveKey="general">
             <Row>
               <Col sm={3}>
                 <Nav variant="pills" class="flex-column">
+                  <Nav.Item>
+                    <Nav.Link eventKey="general">General</Nav.Link>
+                  </Nav.Item>
                   <Nav.Item>
                     <Nav.Link eventKey="whisparr">Whisparr</Nav.Link>
                   </Nav.Item>
@@ -69,6 +73,9 @@ function SettingsModal(props: { config: Config }) {
               </Col>
               <Col sm={9}>
                 <Tab.Content>
+                  <Tab.Pane eventKey="general">
+                    <GeneralSettings />
+                  </Tab.Pane>
                   <Tab.Pane eventKey="whisparr">
                     <WhisparrSettings systemStatus={systemStatus()} />
                   </Tab.Pane>

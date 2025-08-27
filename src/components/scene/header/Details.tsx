@@ -9,6 +9,7 @@ import WhisparrService from '../../../service/WhisparrService';
 import { Config } from '../../../models/Config';
 import StashSceneService from '../../../service/stash/StashSceneService';
 import CopyButton from '../../CopyButton';
+import ExternalLink from '../../common/ExternalLink';
 
 library.add(faArrowUpRightFromSquare);
 
@@ -44,16 +45,16 @@ const Details = (props: { config: Config; stashId: string }) => {
     <Show when={sceneDetails() && qualityProfiles()}>
       <div id={Stasharr.ID.HeaderDetails} style={'text-align: right'}>
         <Show when={stashSceneDetails()}>
-          <a href={stashLink()}>
+          <ExternalLink href={stashLink()} config={props.config}>
             <FontAwesomeIcon icon="fa-solid fa-arrow-up-right-from-square" />{' '}
             View in Stash
-          </a>
+          </ExternalLink>
           <br />
         </Show>
-        <a href={whisparrLink}>
+        <ExternalLink href={whisparrLink} config={props.config}>
           <FontAwesomeIcon icon="fa-solid fa-arrow-up-right-from-square" /> View
           in Whisparr
-        </a>
+        </ExternalLink>
         <br />
         Size:{' '}
         {sceneDetails()!.sizeOnDisk > 0
