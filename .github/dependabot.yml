@@ -82,13 +82,9 @@ updates:
       include: 'scope'
     # Ignore specific packages that require manual updates
     ignore:
-      # Ignore major version updates for critical packages
-      - dependency-name: 'node'
-        update-types: ['version-update:semver-major']
-      # Ignore pre-release versions
+      # Ignore major version updates to prevent breaking changes
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
-        versions: ['*-alpha', '*-beta', '*-rc*']
 
   # GitHub Actions workflow updates
   - package-ecosystem: 'github-actions'
