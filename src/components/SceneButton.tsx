@@ -1,15 +1,8 @@
-import {
-  createEffect,
-  createMemo,
-  createResource,
-  Match,
-  Suspense,
-  Switch,
-} from 'solid-js';
+import { createMemo, createResource, Match, Suspense, Switch } from 'solid-js';
 import { Config } from '../models/Config';
 import { Stasharr } from '../enums/Stasharr';
 import { getButtonDetails, clickHandler } from '../util/button';
-import { fetchWhisparrSceneAndStatus, tooltips } from '../util/util';
+import { fetchWhisparrSceneAndStatus } from '../util/util';
 import LoadingButton from './LoadingButton';
 import { FontAwesomeIcon } from 'solid-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
@@ -33,12 +26,6 @@ function SceneButton(props: {
   const buttonDetails = createMemo(() =>
     getButtonDetails(whisparrSceneAndStatus(), props.header),
   );
-
-  createEffect(() => {
-    if (whisparrSceneAndStatus()?.status) {
-      tooltips();
-    }
-  });
 
   return (
     <>

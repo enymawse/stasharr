@@ -108,6 +108,7 @@ export class DetailsController extends BaseController {
       this.floatingCopyButtonDispose();
       this.floatingCopyButtonDispose = undefined;
     }
+    this.cleanupTooltips();
   }
 
   constructor(private _config: Config) {

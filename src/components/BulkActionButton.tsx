@@ -3,15 +3,10 @@ import { faSearch, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { parseInt } from 'lodash';
 import { StashDB } from '../enums/StashDB';
 import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
-import {
-  extractStashIdFromSceneCard,
-  rehydrateSceneCards,
-  tooltips,
-} from '../util/util';
+import { extractStashIdFromSceneCard, rehydrateSceneCards } from '../util/util';
 import { SceneStatus, SceneStatusType } from '../enums/SceneStatus';
 import SceneService from '../service/SceneService';
 import ToastService from '../service/ToastService';
-import { createEffect } from 'solid-js';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from 'solid-fontawesome';
 import { useSettings } from '../contexts/useSettings';
@@ -100,10 +95,6 @@ const BulkActionButton = (props: { actionType: 'search' | 'add' }) => {
   };
 
   const details = getButtonDetails();
-
-  createEffect(() => {
-    tooltips();
-  });
 
   return (
     <div class="ms-3 mb-2">
