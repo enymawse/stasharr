@@ -1,0 +1,132 @@
+# Dependabot configuration for automated dependency updates
+# Documentation: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Enable version updates for npm dependencies
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'Etc/UTC'
+    # Increase the number of open pull requests for npm to 10
+    open-pull-requests-limit: 10
+    # Group dependency updates to reduce PR noise
+    groups:
+      # Group all patch-level updates
+      patch-updates:
+        patterns:
+          - '*'
+        update-types:
+          - 'patch'
+      # Group all minor updates for development dependencies
+      dev-dependencies-minor:
+        patterns:
+          - '*'
+        dependency-type: 'development'
+        update-types:
+          - 'minor'
+      # Group all TypeScript related packages
+      typescript:
+        patterns:
+          - 'typescript*'
+          - '@types/*'
+          - 'ts-*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group all ESLint related packages
+      eslint:
+        patterns:
+          - 'eslint*'
+          - '@typescript-eslint/*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group all Webpack related packages
+      webpack:
+        patterns:
+          - 'webpack*'
+          - '*-loader'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group all SolidJS related packages
+      solidjs:
+        patterns:
+          - 'solid-*'
+          - 'babel-preset-solid'
+        update-types:
+          - 'minor'
+          - 'patch'
+      # Group all FontAwesome packages
+      fontawesome:
+        patterns:
+          - '@fortawesome/*'
+        update-types:
+          - 'minor'
+          - 'patch'
+    # Add assignees for review
+    assignees:
+      - 'enymawse'
+    # Add labels to categorize PRs
+    labels:
+      - 'dependencies'
+      - 'automated'
+    # Enable rebasing of PRs when conflicts occur
+    rebase-strategy: 'auto'
+    # Add commit message prefix for conventional commits
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    # Ignore specific packages that require manual updates
+    ignore:
+      # Ignore major version updates for critical packages
+      - dependency-name: 'node'
+        update-types: ['version-update:semver-major']
+      # Ignore pre-release versions
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+        versions: ['*-alpha', '*-beta', '*-rc*']
+
+  # Enable security updates for npm (runs daily)
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'daily'
+      time: '06:00'
+      timezone: 'Etc/UTC'
+    # Only security updates in this configuration
+    open-pull-requests-limit: 5
+    labels:
+      - 'security'
+      - 'dependencies'
+      - 'automated'
+    assignees:
+      - 'enymawse'
+    commit-message:
+      prefix: 'security(deps)'
+    # Only allow security updates
+    allow:
+      - dependency-type: 'all'
+        dependency-name: 'security'
+
+  # GitHub Actions workflow updates
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'tuesday'
+      time: '10:00'
+      timezone: 'Etc/UTC'
+    open-pull-requests-limit: 5
+    labels:
+      - 'github-actions'
+      - 'dependencies'
+      - 'automated'
+    assignees:
+      - 'enymawse'
+    commit-message:
+      prefix: 'chore(actions)'
