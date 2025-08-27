@@ -1,6 +1,6 @@
 import { SceneStatus, SceneStatusType } from '../enums/SceneStatus';
 import { StashDB } from '../enums/StashDB';
-import { Tooltip } from 'bootstrap';
+import { TooltipManager } from '../service/TooltipManager';
 import { Styles } from '../enums/Styles';
 import {
   faCircleCheck,
@@ -86,19 +86,15 @@ export function shouldScenesListInit(node: HTMLElement): boolean {
 }
 
 export function addTooltip(element: HTMLElement, tooltip: string): void {
-  const existingTooltipInstance = Tooltip.getInstance(element);
-  if (existingTooltipInstance) {
-    existingTooltipInstance.setContent({ '.tooltip-inner': tooltip });
-  } else {
-    element.setAttribute('data-bs-toggle', 'tooltip');
-    element.setAttribute('title', tooltip);
-    new Tooltip(element);
-  }
+  element.setAttribute('data-bs-toggle', 'tooltip');
+  element.setAttribute('title', tooltip);
+  TooltipManager.register(element);
 }
 
 export function removeTooltip(element: HTMLElement): void {
-  const existingTooltipInstance = Tooltip.getInstance(element);
-  if (existingTooltipInstance) existingTooltipInstance.dispose();
+  TooltipManager.unregister(element);
+  element.removeAttribute('data-bs-toggle');
+  element.removeAttribute('title');
 }
 
 export function responseStatusCodeOK(code: number) {
@@ -164,17 +160,6 @@ export const rehydrateSceneCards = async (
     );
   });
 };
-
-export function tooltips() {
-  const tooltipTriggerList = document.querySelectorAll(
-    '[data-bs-toggle="tooltip"]',
-  );
-  tooltipTriggerList.forEach((tooltipTriggerEl) => {
-    const tooltip = Tooltip.getInstance(tooltipTriggerEl);
-    if (tooltip) tooltip.dispose();
-    new Tooltip(tooltipTriggerEl);
-  });
-}
 
 export async function getSystemStatus(config: Config) {
   const status = await WhisparrService.systemStatus(config);

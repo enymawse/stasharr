@@ -1,11 +1,10 @@
-import { createEffect, createResource, Match, Switch } from 'solid-js';
+import { createResource, Match, Switch } from 'solid-js';
 import { Config } from '../models/Config';
 import StudioService from '../service/StudioService';
 import { Stasharr } from '../enums/Stasharr';
 import { faBookmark, faCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { faBookmark as faBookmarkEmpty } from '@fortawesome/free-regular-svg-icons';
 import { Whisparr } from '../types/whisparr';
-import { tooltips } from '../util/util';
 import { FontAwesomeIcon } from 'solid-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 
@@ -33,10 +32,6 @@ function Studio(props: { config: Config; stashId: string }) {
     await StudioService.updateStudio(props.config, studio);
     refetch();
   };
-
-  createEffect(() => {
-    if (studioDetails()) tooltips();
-  });
 
   return (
     <>
