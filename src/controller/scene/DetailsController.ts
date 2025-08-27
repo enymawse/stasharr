@@ -10,6 +10,10 @@ import SceneButton from '../../components/SceneButton';
 import FloatingCopyButton from '../../components/FloatingCopyButton';
 
 export class DetailsController extends BaseController {
+  private detailsDispose?: () => void;
+  private headerButtonDispose?: () => void;
+  private floatingCopyButtonDispose?: () => void;
+
   initialize(): void {
     const details = document.querySelector(Stasharr.DOMSelector.HeaderDetails);
     const floatEnd = document.querySelector(
@@ -17,10 +21,12 @@ export class DetailsController extends BaseController {
     );
     const stashId = extractStashIdFromPath();
     if (floatEnd !== null && stashId !== null && details === null) {
-      render(
-        () => Details({ config: this._config, stashId: stashId }),
-        floatEnd,
-      );
+      if (!this.detailsDispose) {
+        this.detailsDispose = render(
+          () => Details({ config: this._config, stashId: stashId }),
+          floatEnd,
+        );
+      }
     }
     const headerButton = document.querySelector(
       Stasharr.DOMSelector.HeaderButton,
@@ -29,18 +35,29 @@ export class DetailsController extends BaseController {
       StashDB.DOMSelector.SceneInfoCardHeader,
     );
     if (headerButton === null && stashId !== null && cardHeader !== null) {
-      render(
-        () =>
-          SceneButton({ config: this._config, stashId: stashId, header: true }),
-        cardHeader,
-      );
+      if (!this.headerButtonDispose) {
+        this.headerButtonDispose = render(
+          () =>
+            SceneButton({
+              config: this._config,
+              stashId: stashId,
+              header: true,
+            }),
+          cardHeader,
+        );
+      }
     }
 
     const floatingCopyButton = document.querySelector(
       Stasharr.DOMSelector.FloatingCopyButton,
     );
     if (floatingCopyButton === null && stashId !== null) {
-      render(() => FloatingCopyButton({ textToCopy: stashId }), document.body);
+      if (!this.floatingCopyButtonDispose) {
+        this.floatingCopyButtonDispose = render(
+          () => FloatingCopyButton({ textToCopy: stashId }),
+          document.body,
+        );
+      }
     }
   }
   shouldReinit(): boolean {
@@ -51,16 +68,48 @@ export class DetailsController extends BaseController {
     const floatingCopyButton = document.querySelector(
       Stasharr.DOMSelector.FloatingCopyButton,
     );
+    const sceneInfoCardHeader = document.querySelector(
+      StashDB.DOMSelector.SceneInfoCardHeader,
+    );
+
+    // Reset dispose functions if elements are missing (page navigation/refresh)
+    if (details === null && this.detailsDispose) {
+      this.detailsDispose();
+      this.detailsDispose = undefined;
+    }
+    if (headerButton === null && this.headerButtonDispose) {
+      this.headerButtonDispose();
+      this.headerButtonDispose = undefined;
+    }
+    if (floatingCopyButton === null && this.floatingCopyButtonDispose) {
+      this.floatingCopyButtonDispose();
+      this.floatingCopyButtonDispose = undefined;
+    }
+
     if (
-      document.querySelector(StashDB.DOMSelector.SceneInfoCardHeader) &&
-      details === null &&
-      headerButton === null &&
-      floatingCopyButton === null
+      sceneInfoCardHeader &&
+      (details === null || headerButton === null || floatingCopyButton === null)
     ) {
+      console.log('shouldReinit - DetailsController');
       return true;
     }
     return false;
   }
+  cleanup(): void {
+    if (this.detailsDispose) {
+      this.detailsDispose();
+      this.detailsDispose = undefined;
+    }
+    if (this.headerButtonDispose) {
+      this.headerButtonDispose();
+      this.headerButtonDispose = undefined;
+    }
+    if (this.floatingCopyButtonDispose) {
+      this.floatingCopyButtonDispose();
+      this.floatingCopyButtonDispose = undefined;
+    }
+  }
+
   constructor(private _config: Config) {
     super(new DetailsMutationHandler());
   }

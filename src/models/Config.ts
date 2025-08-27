@@ -15,6 +15,7 @@ export class Config {
   tags: number[] = [];
   stashDomain: string = 'http://localhost:9999';
   stashApiKey: string = '';
+  openLinksInNewTab: boolean = true;
 
   constructor(
     protocol?: boolean,
@@ -22,12 +23,15 @@ export class Config {
     whisparrApiKey?: string,
     stashDomain?: string,
     stashApiKey?: string,
+    openLinksInNewTab?: boolean,
   ) {
     if (protocol) this.protocol = protocol;
     if (domain) this.domain = domain;
     if (whisparrApiKey) this.whisparrApiKey = whisparrApiKey;
     if (stashDomain) this.stashDomain = stashDomain;
     if (stashApiKey) this.stashApiKey = stashApiKey;
+    if (openLinksInNewTab !== undefined)
+      this.openLinksInNewTab = openLinksInNewTab;
   }
 
   stashValid(): boolean {

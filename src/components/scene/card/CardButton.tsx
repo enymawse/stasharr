@@ -14,6 +14,7 @@ import { fetchWhisparrSceneAndStatus, tooltips } from '../../../util/util';
 import LoadingButton from '../../LoadingButton';
 import { SceneStatus } from '../../../enums/SceneStatus';
 import StashSceneService from '../../../service/stash/StashSceneService';
+import ExternalLink from '../../common/ExternalLink';
 
 const CardButton = (props: { config: Config; stashId: string }) => {
   const [whisparrSceneAndStatus, { refetch: refreshWhisparrSceneAndStatus }] =
@@ -54,26 +55,28 @@ const CardButton = (props: { config: Config; stashId: string }) => {
     <>
       <Suspense fallback={<LoadingButton header={false} />}>
         <Show when={inWhisparr()}>
-          <a
+          <ExternalLink
             class="whisparr-card-button"
             data-bs-toggle="tooltip"
             data-bs-title="View in Whisparr"
             href={`${props.config.whisparrUrl()}/movie/${props.stashId}`}
-            target="_blank"
+            config={props.config}
+            showIndicator={false}
           >
             <i class="whisparrIcon"></i>
-          </a>
+          </ExternalLink>
         </Show>
         <Show when={stashSceneDetails()}>
-          <a
+          <ExternalLink
             class="stash-card-button"
             data-bs-toggle="tooltip"
             data-bs-title="View in Stash"
             href={stashLink()}
-            target="_blank"
+            config={props.config}
+            showIndicator={false}
           >
             <i class="stashIcon"></i>
-          </a>
+          </ExternalLink>
         </Show>
         <Switch>
           <Match when={whisparrSceneAndStatus.error}>

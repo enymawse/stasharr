@@ -3,6 +3,7 @@ import { useSettings } from '../../../contexts/useSettings';
 import { ReactiveStoreFactory } from '../../../factory/ReactiveStoreFactory';
 import { Alert } from 'solid-bootstrap';
 import WhisparrService from '../../../service/WhisparrService';
+import ExternalLink from '../../common/ExternalLink';
 
 const VersionAlert = () => {
   const { store } = useSettings();
@@ -28,8 +29,14 @@ const VersionAlert = () => {
     <Show when={version() < 3}>
       <Alert variant="danger">
         Stasharr has been purpose built to work with Whisparr's V3 API. Please
-        consult <a href="https://wiki.servarr.com/whisparr">Whisparr's Wiki</a>{' '}
-        or head over to the <a href="https://whisparr.com/discord">discord</a>{' '}
+        consult{' '}
+        <ExternalLink href="https://wiki.servarr.com/whisparr" config={store}>
+          Whisparr's Wiki
+        </ExternalLink>{' '}
+        or head over to the{' '}
+        <ExternalLink href="https://whisparr.com/discord" config={store}>
+          discord
+        </ExternalLink>{' '}
         server for more details.
       </Alert>
     </Show>
