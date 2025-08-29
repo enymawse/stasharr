@@ -13,6 +13,9 @@ import ExclusionListService from './ExclusionListService';
 import ServiceBase from './ServiceBase';
 import ToastService from './ToastService';
 import WhisparrService from './WhisparrService';
+import SceneComparisonService from './SceneComparisonService';
+import { StashDBScene } from './StashDBService';
+import { SceneButtonRefreshService } from './SceneButtonRefreshService';
 
 export default class SceneService extends ServiceBase {
   /**
@@ -256,5 +259,172 @@ export default class SceneService extends ServiceBase {
     await Promise.all(updatePromises);
 
     return stashIdtoSceneCardAndStatusMap;
+  }
+
+  /**
+   * Add missing scenes found through comprehensive StashDB/Whisparr comparison
+   */
+  static async addAllMissingScenes(config: Config): Promise<{
+    totalFound: number;
+    totalAdded: number;
+    failed: string[];
+  }> {
+    try {
+      ToastService.showToast('Searching for missing scenes...', true);
+
+      // Analyze current page context for smart filtering
+      const filters = SceneComparisonService.analyzeCurrentPageContext();
+
+      console.log('Finding missing scenes with filters:', filters);
+      const missingScenes = await SceneComparisonService.findMissingScenes(
+        config,
+        filters,
+      );
+
+      if (missingScenes.length === 0) {
+        ToastService.showToast('No missing scenes found!', true);
+        return {
+          totalFound: 0,
+          totalAdded: 0,
+          failed: [],
+        };
+      }
+
+      console.log(
+        `Found ${missingScenes.length} missing scenes, starting batch add...`,
+      );
+      ToastService.showToast(
+        `Found ${missingScenes.length} missing scenes. Adding to Whisparr...`,
+        true,
+      );
+
+      // Use the safe scene addition method with built-in filtering
+      return await this.addScenesFromList(config, missingScenes);
+    } catch (error) {
+      console.error('Add all missing scenes failed:', error);
+      ToastService.showToast('Failed to add missing scenes', false);
+      throw error;
+    }
+  }
+
+  /**
+   * Add missing scenes from specific studios (for studio pages)
+   */
+  static async addAllMissingScenesFromStudios(
+    config: Config,
+    studioIds: string[],
+  ): Promise<{
+    totalFound: number;
+    totalAdded: number;
+    failed: string[];
+  }> {
+    return await SceneComparisonService.findMissingScenes(config, {
+      studios: studioIds,
+      excludeExisting: true,
+      excludeExcluded: true,
+    }).then(async (missingScenes) => {
+      console.log(
+        `Found ${missingScenes.length} missing scenes from ${studioIds.length} studios`,
+      );
+      return await this.addScenesFromList(config, missingScenes);
+    });
+  }
+
+  /**
+   * Add missing scenes from specific performers (for performer pages)
+   */
+  static async addAllMissingScenesFromPerformers(
+    config: Config,
+    performerIds: string[],
+  ): Promise<{
+    totalFound: number;
+    totalAdded: number;
+    failed: string[];
+  }> {
+    return await SceneComparisonService.findMissingScenes(config, {
+      performers: performerIds,
+      excludeExisting: true,
+      excludeExcluded: true,
+    }).then(async (missingScenes) => {
+      console.log(
+        `Found ${missingScenes.length} missing scenes from ${performerIds.length} performers`,
+      );
+      return await this.addScenesFromList(config, missingScenes);
+    });
+  }
+
+  /**
+   * Helper method to add scenes from a list with batch processing
+   */
+  private static async addScenesFromList(
+    config: Config,
+    scenes: StashDBScene[],
+  ): Promise<{
+    totalFound: number;
+    totalAdded: number;
+    failed: string[];
+  }> {
+    // Pre-filter scenes to only include those safe to add (not in Whisparr, not excluded)
+    const sceneIds = scenes.map((scene) => scene.id);
+    const safeToAddIds = await SceneComparisonService.getSafeToAddSceneIds(
+      config,
+      sceneIds,
+    );
+
+    console.log(
+      `Filtered ${scenes.length} scenes down to ${safeToAddIds.length} safe to add`,
+    );
+
+    const safeScenes = scenes.filter((scene) =>
+      safeToAddIds.includes(scene.id),
+    );
+
+    const batchSize = 10;
+    const results = {
+      totalFound: scenes.length,
+      totalAdded: 0,
+      failed: [] as string[],
+    };
+
+    // Skip processing if no scenes are safe to add
+    if (safeScenes.length === 0) {
+      console.log(
+        'No scenes are safe to add - all already exist or are excluded',
+      );
+      return results;
+    }
+
+    for (let i = 0; i < safeScenes.length; i += batchSize) {
+      const batch = safeScenes.slice(i, i + batchSize);
+
+      const batchPromises = batch.map(async (scene) => {
+        try {
+          const status = await this.lookupAndAddScene(config, scene.id);
+          if (status === SceneLookupStatus.ADDED) {
+            results.totalAdded++;
+          } else {
+            results.failed.push(scene.id);
+          }
+        } catch (error) {
+          console.error(`Failed to add scene ${scene.id}:`, error);
+          results.failed.push(scene.id);
+        }
+      });
+
+      await Promise.all(batchPromises);
+
+      // Trigger button refresh after each batch to provide real-time feedback
+      SceneButtonRefreshService.triggerRefresh();
+
+      // Small delay between batches
+      if (i + batchSize < safeScenes.length) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    // Final refresh after all scenes processed
+    SceneButtonRefreshService.triggerRefresh();
+
+    return results;
   }
 }

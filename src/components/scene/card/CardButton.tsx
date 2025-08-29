@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from 'solid-fontawesome';
 import {
   createResource,
   createMemo,
+  createEffect,
   Suspense,
   Switch,
   Match,
@@ -14,10 +15,18 @@ import LoadingButton from '../../LoadingButton';
 import { SceneStatus } from '../../../enums/SceneStatus';
 import StashSceneService from '../../../service/stash/StashSceneService';
 import ExternalLink from '../../common/ExternalLink';
+import { SceneButtonRefreshService } from '../../../service/SceneButtonRefreshService';
 
 const CardButton = (props: { config: Config; stashId: string }) => {
   const [whisparrSceneAndStatus, { refetch: refreshWhisparrSceneAndStatus }] =
     createResource(props, fetchWhisparrSceneAndStatus);
+
+  // Subscribe to global refresh events
+  const refreshSignal = SceneButtonRefreshService.getRefreshSignal();
+  createEffect(() => {
+    refreshSignal(); // Subscribe to the signal
+    refreshWhisparrSceneAndStatus(); // Refetch when signal changes
+  });
 
   const buttonDetails = createMemo(() =>
     getButtonDetails(whisparrSceneAndStatus(), false),
