@@ -8,6 +8,7 @@ import {
   faDownload,
   faSyncAlt,
   faExclamationTriangle,
+  faInfoCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import { useSettings } from '../contexts/useSettings';
 import SceneService from '../service/SceneService';
@@ -25,55 +26,61 @@ library.add(
   faDownload,
   faSyncAlt,
   faExclamationTriangle,
+  faInfoCircle,
 );
 
 export enum BulkActionType {
-  ADD_ALL = 'add_all',
+  ADD_ALL_ON_PAGE = 'add_all',
   ADD_ALL_MISSING = 'add_all_missing',
-  SEARCH_ALL = 'search_all',
+  SEARCH_ALL_ON_PAGE = 'search_all',
 }
 
 const BulkActionDropdown = () => {
   const { store } = useSettings();
   const [isOpen, setIsOpen] = createSignal(false);
-  const [showConfirmModal, setShowConfirmModal] = createSignal(false);
+  const [showAddAllMissingModal, setShowAddAllMissingModal] =
+    createSignal(false);
+  const [showAddAllOnPageModal, setShowAddAllOnPageModal] = createSignal(false);
+  const [showSearchAllOnPageModal, setShowSearchAllOnPageModal] =
+    createSignal(false);
 
   const handleAction = async (actionType: BulkActionType) => {
     setIsOpen(false);
 
     switch (actionType) {
       case BulkActionType.ADD_ALL_MISSING:
-        setShowConfirmModal(true);
+        setShowAddAllMissingModal(true);
         break;
-      case BulkActionType.ADD_ALL:
-        await handleAddAll();
+      case BulkActionType.ADD_ALL_ON_PAGE:
+        setShowAddAllOnPageModal(true);
         break;
-      case BulkActionType.SEARCH_ALL:
-        await handleSearchAll();
+      case BulkActionType.SEARCH_ALL_ON_PAGE:
+        setShowSearchAllOnPageModal(true);
         break;
     }
   };
 
   const handleAddAllMissing = async () => {
-    setShowConfirmModal(false);
+    setShowAddAllMissingModal(false);
 
     try {
       const results = await SceneService.addAllMissingScenes(store);
-      ToastService.showToast(
+      ToastService.showPersistentToast(
         `Add All Missing completed: ${results.totalAdded} scenes added, ${results.failed.length} failed`,
         results.failed.length === 0,
       );
     } catch (error) {
       console.error('Add All Missing failed:', error);
-      ToastService.showToast('Add All Missing operation failed', false);
+      ToastService.showPersistentToast(
+        'Add All Missing operation failed',
+        false,
+      );
     }
   };
 
-  const handleConfirmCancel = () => {
-    setShowConfirmModal(false);
-  };
+  const handleAddAllOnPage = async () => {
+    setShowAddAllOnPageModal(false);
 
-  const handleAddAll = async () => {
     const pageNumber: number = parseInt(
       document
         .querySelector<HTMLElement>(StashDB.DOMSelector.DataPage)
@@ -108,18 +115,20 @@ const BulkActionDropdown = () => {
         store,
         stashIdtoSceneCardAndStatusMap,
       );
-      ToastService.showToast(
+      ToastService.showPersistentToast(
         `Added ${sceneMap.size} new scenes to Whisparr from page ${pageNumber + 1}.`,
         true,
       );
       rehydrateSceneCards(store, sceneMap);
     } catch (error) {
       console.error('Add All failed:', error);
-      ToastService.showToast('Add All operation failed', false);
+      ToastService.showPersistentToast('Add All operation failed', false);
     }
   };
 
-  const handleSearchAll = async () => {
+  const handleSearchAllOnPage = async () => {
+    setShowSearchAllOnPageModal(false);
+
     const pageNumber: number = parseInt(
       document
         .querySelector<HTMLElement>(StashDB.DOMSelector.DataPage)
@@ -142,22 +151,35 @@ const BulkActionDropdown = () => {
 
     try {
       await SceneService.triggerWhisparrSearchAll(store, stashIds);
-      ToastService.showToast(
+      ToastService.showPersistentToast(
         `Triggered search for ${stashIds.length} existing scenes on page ${pageNumber + 1}.`,
         true,
       );
     } catch (error) {
       console.error('Search All failed:', error);
-      ToastService.showToast('Search All operation failed', false);
+      ToastService.showPersistentToast('Search All operation failed', false);
     }
+  };
+
+  // Cancel handlers for modals
+  const handleAddAllMissingCancel = () => {
+    setShowAddAllMissingModal(false);
+  };
+
+  const handleAddAllOnPageCancel = () => {
+    setShowAddAllOnPageModal(false);
+  };
+
+  const handleSearchAllOnPageCancel = () => {
+    setShowSearchAllOnPageModal(false);
   };
 
   const getActionDetails = (actionType: BulkActionType) => {
     switch (actionType) {
-      case BulkActionType.ADD_ALL:
+      case BulkActionType.ADD_ALL_ON_PAGE:
         return {
           icon: 'fa-solid fa-download',
-          label: 'Add All',
+          label: 'Add All on Page',
           description: 'Add all available scenes on this page to Whisparr',
           className: 'text-primary',
         };
@@ -169,10 +191,10 @@ const BulkActionDropdown = () => {
             'Find and add all scenes missing from your Whisparr library',
           className: 'text-success',
         };
-      case BulkActionType.SEARCH_ALL:
+      case BulkActionType.SEARCH_ALL_ON_PAGE:
         return {
           icon: 'fa-solid fa-search',
-          label: 'Search All',
+          label: 'Search All on Page',
           description: 'Search all monitored scenes on this page in Whisparr',
           className: 'text-warning',
         };
@@ -198,9 +220,9 @@ const BulkActionDropdown = () => {
             <Dropdown.Header>Bulk Scene Actions</Dropdown.Header>
 
             {[
-              BulkActionType.ADD_ALL,
+              BulkActionType.ADD_ALL_ON_PAGE,
+              BulkActionType.SEARCH_ALL_ON_PAGE,
               BulkActionType.ADD_ALL_MISSING,
-              BulkActionType.SEARCH_ALL,
             ].map((actionType) => {
               const details = getActionDetails(actionType);
               return (
@@ -230,7 +252,11 @@ const BulkActionDropdown = () => {
       </div>
 
       {/* Confirmation Modal for Add All Missing */}
-      <Modal show={showConfirmModal()} onHide={handleConfirmCancel} centered>
+      <Modal
+        show={showAddAllMissingModal()}
+        onHide={handleAddAllMissingCancel}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>
             <span class="me-2 text-warning">
@@ -257,12 +283,98 @@ const BulkActionDropdown = () => {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleConfirmCancel}>
+          <Button variant="secondary" onClick={handleAddAllMissingCancel}>
             Cancel
           </Button>
           <Button variant="warning" onClick={handleAddAllMissing}>
             <span class="me-2">
               <FontAwesomeIcon icon="fa-solid fa-sync-alt" />
+            </span>
+            Continue
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Confirmation Modal for Add All on Page */}
+      <Modal
+        show={showAddAllOnPageModal()}
+        onHide={handleAddAllOnPageCancel}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <span class="me-2 text-primary">
+              <FontAwesomeIcon icon="fa-solid fa-download" />
+            </span>
+            Confirm Add All on Page
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div class="mb-3">
+            <p class="mb-2">
+              This will add <strong>all available scenes</strong> on this page
+              to Whisparr.
+            </p>
+            <div class="alert alert-info" role="alert">
+              <span class="me-2">
+                <FontAwesomeIcon icon="fa-solid fa-info-circle" />
+              </span>
+              <strong>Note:</strong> Only scenes not already in your Whisparr
+              library will be added.
+            </div>
+            <p class="mb-0 text-muted">Are you sure you want to continue?</p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleAddAllOnPageCancel}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleAddAllOnPage}>
+            <span class="me-2">
+              <FontAwesomeIcon icon="fa-solid fa-download" />
+            </span>
+            Continue
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Confirmation Modal for Search All on Page */}
+      <Modal
+        show={showSearchAllOnPageModal()}
+        onHide={handleSearchAllOnPageCancel}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <span class="me-2 text-warning">
+              <FontAwesomeIcon icon="fa-solid fa-search" />
+            </span>
+            Confirm Search All on Page
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div class="mb-3">
+            <p class="mb-2">
+              This will trigger a search for{' '}
+              <strong>all monitored scenes</strong> on this page in Whisparr.
+            </p>
+            <div class="alert alert-info" role="alert">
+              <span class="me-2">
+                <FontAwesomeIcon icon="fa-solid fa-info-circle" />
+              </span>
+              <strong>Note:</strong> Only scenes that exist in Whisparr but have
+              no files will be searched.
+            </div>
+            <p class="mb-0 text-muted">Are you sure you want to continue?</p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleSearchAllOnPageCancel}>
+            Cancel
+          </Button>
+          <Button variant="warning" onClick={handleSearchAllOnPage}>
+            <span class="me-2">
+              <FontAwesomeIcon icon="fa-solid fa-search" />
             </span>
             Continue
           </Button>
