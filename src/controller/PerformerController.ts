@@ -17,6 +17,11 @@ export class PerformerController extends BaseController {
     return false;
   }
   initialize(): void {
+    // Only initialize on performer pages
+    if (!window.location.pathname.includes('/performers/')) {
+      return;
+    }
+
     const performerStashId = extractStashIdFromPath();
     if (this._config.whisparrApiKey == '' || performerStashId == null) return;
 

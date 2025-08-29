@@ -22,6 +22,11 @@ export class StudioController extends BaseController {
   }
 
   initialize() {
+    // Only initialize on studio pages
+    if (!window.location.pathname.includes('/studios/')) {
+      return;
+    }
+
     const studioStashId = extractStashIdFromPath();
     if (this._config.whisparrApiKey == '' || studioStashId == null) return;
 
