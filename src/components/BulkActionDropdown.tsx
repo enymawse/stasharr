@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js';
-import { Dropdown } from 'solid-bootstrap';
+import { Dropdown, Modal, Button } from 'solid-bootstrap';
 import { FontAwesomeIcon } from 'solid-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -7,6 +7,7 @@ import {
   faSearch,
   faDownload,
   faSyncAlt,
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import { useSettings } from '../contexts/useSettings';
 import SceneService from '../service/SceneService';
@@ -18,7 +19,13 @@ import { Stasharr } from '../enums/Stasharr';
 import { StashDB } from '../enums/StashDB';
 import { parseInt } from 'lodash';
 
-library.add(faChevronDown, faSearch, faDownload, faSyncAlt);
+library.add(
+  faChevronDown,
+  faSearch,
+  faDownload,
+  faSyncAlt,
+  faExclamationTriangle,
+);
 
 export enum BulkActionType {
   ADD_ALL = 'add_all',
@@ -29,13 +36,14 @@ export enum BulkActionType {
 const BulkActionDropdown = () => {
   const { store } = useSettings();
   const [isOpen, setIsOpen] = createSignal(false);
+  const [showConfirmModal, setShowConfirmModal] = createSignal(false);
 
   const handleAction = async (actionType: BulkActionType) => {
     setIsOpen(false);
 
     switch (actionType) {
       case BulkActionType.ADD_ALL_MISSING:
-        await handleAddAllMissing();
+        setShowConfirmModal(true);
         break;
       case BulkActionType.ADD_ALL:
         await handleAddAll();
@@ -47,12 +55,7 @@ const BulkActionDropdown = () => {
   };
 
   const handleAddAllMissing = async () => {
-    const confirmed = window.confirm(
-      'This will search StashDB and Whisparr to find ALL missing scenes from the current context (studio/performer/page). ' +
-        'This operation may take several minutes and will query both APIs extensively. Continue?',
-    );
-
-    if (!confirmed) return;
+    setShowConfirmModal(false);
 
     try {
       const results = await SceneService.addAllMissingScenes(store);
@@ -64,6 +67,10 @@ const BulkActionDropdown = () => {
       console.error('Add All Missing failed:', error);
       ToastService.showToast('Add All Missing operation failed', false);
     }
+  };
+
+  const handleConfirmCancel = () => {
+    setShowConfirmModal(false);
   };
 
   const handleAddAll = async () => {
@@ -173,53 +180,95 @@ const BulkActionDropdown = () => {
   };
 
   return (
-    <div class="ms-3 mb-2">
-      <Dropdown show={isOpen()} onToggle={setIsOpen}>
-        <Dropdown.Toggle
-          variant="primary"
-          id="stasharr-actions-dropdown"
-          class="stasharr-button"
-          data-bs-toggle="tooltip"
-          data-bs-title="Bulk actions for scenes"
-        >
-          <FontAwesomeIcon icon="fa-solid fa-download" /> Stasharr Actions{' '}
-          <FontAwesomeIcon icon="fa-solid fa-chevron-down" />
-        </Dropdown.Toggle>
+    <>
+      <div class="ms-3 mb-2">
+        <Dropdown show={isOpen()} onToggle={setIsOpen}>
+          <Dropdown.Toggle
+            variant="primary"
+            id="stasharr-actions-dropdown"
+            class="stasharr-button"
+            data-bs-toggle="tooltip"
+            data-bs-title="Bulk actions for scenes"
+          >
+            <FontAwesomeIcon icon="fa-solid fa-download" /> Stasharr Actions{' '}
+            <FontAwesomeIcon icon="fa-solid fa-chevron-down" />
+          </Dropdown.Toggle>
 
-        <Dropdown.Menu>
-          <Dropdown.Header>Bulk Scene Actions</Dropdown.Header>
+          <Dropdown.Menu>
+            <Dropdown.Header>Bulk Scene Actions</Dropdown.Header>
 
-          {[
-            BulkActionType.ADD_ALL,
-            BulkActionType.ADD_ALL_MISSING,
-            BulkActionType.SEARCH_ALL,
-          ].map((actionType) => {
-            const details = getActionDetails(actionType);
-            return (
-              <Dropdown.Item
-                onClick={() => handleAction(actionType)}
-                class={`${details.className} py-2`}
-              >
-                <div class="d-flex align-items-start">
-                  <div class="me-3 mt-1" style={{ width: '16px' }}>
-                    <FontAwesomeIcon icon={details.icon} />
+            {[
+              BulkActionType.ADD_ALL,
+              BulkActionType.ADD_ALL_MISSING,
+              BulkActionType.SEARCH_ALL,
+            ].map((actionType) => {
+              const details = getActionDetails(actionType);
+              return (
+                <Dropdown.Item
+                  onClick={() => handleAction(actionType)}
+                  class={`${details.className} py-2`}
+                >
+                  <div class="d-flex align-items-start">
+                    <div class="me-3 mt-1" style={{ width: '16px' }}>
+                      <FontAwesomeIcon icon={details.icon} />
+                    </div>
+                    <div>
+                      <div class="fw-semibold">{details.label}</div>
+                      <small class="text-muted">{details.description}</small>
+                    </div>
                   </div>
-                  <div>
-                    <div class="fw-semibold">{details.label}</div>
-                    <small class="text-muted">{details.description}</small>
-                  </div>
-                </div>
-              </Dropdown.Item>
-            );
-          })}
+                </Dropdown.Item>
+              );
+            })}
 
-          <Dropdown.Divider />
-          <Dropdown.ItemText class="text-muted small px-3">
-            Actions will show confirmation before executing
-          </Dropdown.ItemText>
-        </Dropdown.Menu>
-      </Dropdown>
-    </div>
+            <Dropdown.Divider />
+            <Dropdown.ItemText class="text-muted small px-3">
+              Actions will show confirmation before executing
+            </Dropdown.ItemText>
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
+
+      {/* Confirmation Modal for Add All Missing */}
+      <Modal show={showConfirmModal()} onHide={handleConfirmCancel} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <span class="me-2 text-warning">
+              <FontAwesomeIcon icon="fa-solid fa-sync-alt" />
+            </span>
+            Confirm Add All Missing
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div class="mb-3">
+            <p class="mb-2">
+              This will search StashDB and Whisparr to find{' '}
+              <strong>ALL missing scenes</strong> from the current context
+              (studio/performer/page).
+            </p>
+            <div class="alert alert-warning" role="alert">
+              <span class="me-2">
+                <FontAwesomeIcon icon="fa-solid fa-exclamation-triangle" />
+              </span>
+              <strong>Warning:</strong> This operation may take several minutes
+              and will query both APIs extensively.
+            </div>
+            <p class="mb-0 text-muted">Are you sure you want to continue?</p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleConfirmCancel}>
+            Cancel
+          </Button>
+          <Button variant="warning" onClick={handleAddAllMissing}>
+            <span class="me-2">
+              <FontAwesomeIcon icon="fa-solid fa-sync-alt" />
+            </span>
+            Continue
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 };
 

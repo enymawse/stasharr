@@ -91,6 +91,23 @@ export class ControllerManager {
     ];
 
     let totalRemoved = 0;
+
+    // Also clean up duplicate Stasharr nav links
+    const stasharrNavLinks = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('.nav-link'),
+    ).filter((link) => link.textContent?.trim() === 'Stasharr');
+
+    if (stasharrNavLinks.length > 1) {
+      console.log(
+        `ControllerManager: Found ${stasharrNavLinks.length} duplicate Stasharr nav links, removing extras`,
+      );
+      // Keep the first one, remove the rest
+      stasharrNavLinks.slice(1).forEach((link) => {
+        console.log('ControllerManager: Removing duplicate Stasharr nav link');
+        link.remove();
+        totalRemoved++;
+      });
+    }
     stasharrSelectors.forEach((selector) => {
       const elements = document.querySelectorAll(selector);
       elements.forEach((element) => {

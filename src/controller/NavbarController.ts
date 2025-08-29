@@ -25,9 +25,27 @@ export class NavbarController extends BaseController {
   }
 
   initialize(): void {
+    console.log('🎯 NavbarController: initialize() called');
+
+    // Check if Stasharr nav link already exists
+    const existingStasharrLink = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('.nav-link'),
+    ).find((link) => link.textContent?.trim() === 'Stasharr');
+
+    if (existingStasharrLink) {
+      console.log(
+        '🎯 NavbarController: Stasharr nav link already exists, skipping render',
+      );
+      return;
+    }
+
     const navbar = document.querySelector(StashDB.DOMSelector.Navbar);
+    console.log('🎯 NavbarController: navbar found:', !!navbar);
+
     if (navbar) {
+      console.log('🎯 NavbarController: Rendering SettingsModal to navbar');
       render(() => SettingsModal({ config: this._config }), navbar);
+      console.log('🎯 NavbarController: SettingsModal render complete');
     }
   }
 }
