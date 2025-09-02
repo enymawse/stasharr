@@ -41,7 +41,8 @@ Turn StashDB from a simple database into a comprehensive content management syst
 
 ### **User Experience**
 
-- **Toast Notifications** — Clear feedback for all operations (success, error, progress)
+- **Progress Modal for Bulk** — Bulk actions use a dedicated modal for progress and summaries
+- **Toast Notifications** — Reserved for quick feedback; bulk workflows rely on the modal
 - **Responsive Design** — Works seamlessly across all screen sizes
 - **Accessibility** — Full keyboard navigation and screen reader support
 - **Modern UI** — Clean, intuitive interface that integrates perfectly with StashDB
@@ -157,13 +158,21 @@ Navigate to any scene on StashDB to see Stasharr's enhanced interface:
 
 ### Bulk Operations
 
-![Bulk Actions](https://github.com/user-attachments/assets/ce42ef9f-7e03-4f3f-8d40-81f53bfb569d)
+![Bulk Actions](docs/images/bulk-actions-dropdown.png)
 
-On any StashDB page showing multiple scenes:
+On any StashDB page showing multiple scenes, the Stasharr Actions dropdown provides three bulk tools:
 
-- **"Add All"** — Add all visible scenes to Whisparr in one operation
-- **"Search All"** — Trigger search for all monitored scenes
-- **Progress tracking** — Real-time updates as operations complete
+- **Add All on Page:** Adds all available scenes on the current page to Whisparr
+- **Search All on Page:** Triggers a search for all monitored scenes on the current page in Whisparr
+- **Add All Missing:** Finds and adds scenes missing from your Whisparr library based on context (page/studio/performer)
+
+What you’ll see during bulk operations:
+
+- **Progress Modal:** Centralized progress with overall progress bar, per-item status, and final summary
+- **Scene Titles:** Items show human-readable scene titles (not hashes)
+- **Skipped Info:** Shows how many were skipped with reason “already in Whisparr”
+- **Clear Empty-State:** If there’s nothing to do, the modal shows an info message (no false “1/1 succeeded”)
+- **Confirmation:** Each action shows a confirmation dialog before executing
 
 ### Studio & Performer Management
 
