@@ -7,17 +7,22 @@ import ServiceBase from './ServiceBase';
 import ToastService from './ToastService';
 
 export default class ExclusionListService extends ServiceBase {
-  static async getExclusionsMap(config: Config): Promise<ExclusionsMap> {
+  static async getExclusionsMap(
+    config: Config,
+    suppressToasts?: boolean,
+  ): Promise<ExclusionsMap> {
     const endpoint = 'exclusions';
     let map: ExclusionsMap = new Map();
     let response;
     try {
       response = await ServiceBase.request(config, endpoint);
     } catch (e) {
-      ToastService.showToast(
-        'Error occurred while looking up Exclusions List',
-        false,
-      );
+      if (!suppressToasts) {
+        ToastService.showToast(
+          'Error occurred while looking up Exclusions List',
+          false,
+        );
+      }
       console.error('Error in getExclusionsMap:', e);
       return map;
     }

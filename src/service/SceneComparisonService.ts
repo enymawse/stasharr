@@ -37,16 +37,21 @@ export default class SceneComparisonService {
   static async compareScenes(
     config: Config,
     filters: ComparisonFilters = {},
+    options?: { suppressToasts?: boolean },
   ): Promise<SceneComparisonResult> {
     try {
       console.log('Starting comprehensive scene comparison...');
-      ToastService.showToast('Analyzing scene libraries...', true);
+      if (!options?.suppressToasts) {
+        ToastService.showToast('Analyzing scene libraries...', true);
+      }
 
       // Fetch data from both platforms in parallel
       const [stashdbScenes, whisparrScenes, exclusionMap] = await Promise.all([
-        this.fetchStashDBScenes(filters),
-        WhisparrService.getAllScenes(config),
-        ExclusionListService.getExclusionsMap(config),
+        this.fetchStashDBScenes(filters, options),
+        WhisparrService.getAllScenes(config, {
+          suppressToasts: options?.suppressToasts,
+        }),
+        ExclusionListService.getExclusionsMap(config, options?.suppressToasts),
       ]);
 
       console.log(
@@ -92,15 +97,19 @@ export default class SceneComparisonService {
       console.log(
         `Comparison complete: ${result.totalMissing} missing scenes found`,
       );
-      ToastService.showToast(
-        `Found ${result.totalMissing} missing scenes out of ${result.totalStashDBScenes} StashDB scenes`,
-        true,
-      );
+      if (!options?.suppressToasts) {
+        ToastService.showToast(
+          `Found ${result.totalMissing} missing scenes out of ${result.totalStashDBScenes} StashDB scenes`,
+          true,
+        );
+      }
 
       return result;
     } catch (error) {
       console.error('Scene comparison failed:', error);
-      ToastService.showToast('Failed to compare scene libraries', false);
+      if (!options?.suppressToasts) {
+        ToastService.showToast('Failed to compare scene libraries', false);
+      }
       throw error;
     }
   }
@@ -111,11 +120,16 @@ export default class SceneComparisonService {
   static async findMissingScenes(
     config: Config,
     filters: ComparisonFilters = {},
+    options?: { suppressToasts?: boolean },
   ): Promise<StashDBScene[]> {
-    const comparison = await this.compareScenes(config, {
-      ...filters,
-      excludeExcluded: true, // Don't include excluded scenes in missing list
-    });
+    const comparison = await this.compareScenes(
+      config,
+      {
+        ...filters,
+        excludeExcluded: true, // Don't include excluded scenes in missing list
+      },
+      options,
+    );
 
     return comparison.missingScenes
       .filter((missing) => missing.reason === 'not_in_whisparr')
@@ -152,19 +166,29 @@ export default class SceneComparisonService {
    */
   private static async fetchStashDBScenes(
     filters: ComparisonFilters,
+    options?: { suppressToasts?: boolean },
   ): Promise<StashDBScene[]> {
     if (filters.studios && filters.studios.length > 0) {
-      return await StashDBService.getAllScenesFromStudios(filters.studios);
+      return await StashDBService.getAllScenesFromStudios(
+        filters.studios,
+        options,
+      );
     }
 
     if (filters.performers && filters.performers.length > 0) {
-      return await StashDBService.getAllPerformerScenes(filters.performers);
+      return await StashDBService.getAllPerformerScenes(
+        filters.performers,
+        options,
+      );
     }
 
     // Default to comprehensive fetch with optional text/tag filters
-    return await StashDBService.getAllScenes({
-      tags: filters.tags,
-    });
+    return await StashDBService.getAllScenes(
+      {
+        tags: filters.tags,
+      },
+      options,
+    );
   }
 
   /**

@@ -104,7 +104,10 @@ export default class WhisparrService extends ServiceBase {
   /**
    * Fetches all scenes from Whisparr with pagination support
    */
-  static async getAllScenes(config: Config): Promise<Whisparr.WhisparrScene[]> {
+  static async getAllScenes(
+    config: Config,
+    options?: { suppressToasts?: boolean },
+  ): Promise<Whisparr.WhisparrScene[]> {
     const allScenes: Whisparr.WhisparrScene[] = [];
     let page = 1;
     const pageSize = 100;
@@ -139,10 +142,12 @@ export default class WhisparrService extends ServiceBase {
         }
       } catch (error) {
         console.error(`Failed to fetch Whisparr scenes page ${page}:`, error);
-        ToastService.showToast(
-          `Error fetching scenes from Whisparr: ${error}`,
-          false,
-        );
+        if (!options?.suppressToasts) {
+          ToastService.showToast(
+            `Error fetching scenes from Whisparr: ${error}`,
+            false,
+          );
+        }
         break;
       }
     }

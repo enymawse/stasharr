@@ -40,16 +40,19 @@ export default class SceneService extends ServiceBase {
    */ static async getSceneByStashId(
     config: Config,
     sceneID: string,
+    options?: { suppressToasts?: boolean },
   ): Promise<Whisparr.WhisparrScene | null> {
     const endpoint = `movie?stashId=${encodeURIComponent(sceneID)}`;
     let response;
     try {
       response = await ServiceBase.request(config, endpoint);
     } catch (e) {
-      ToastService.showToast(
-        'Error occurred while looking up the scene',
-        false,
-      );
+      if (!options?.suppressToasts) {
+        ToastService.showToast(
+          'Error occurred while looking up the scene',
+          false,
+        );
+      }
       console.error('Error in getSceneByStashId', e);
       return null;
     }
@@ -123,16 +126,19 @@ export default class SceneService extends ServiceBase {
   static async lookupSceneByStashId(
     config: Config,
     stashId: string,
+    options?: { suppressToasts?: boolean },
   ): Promise<Whisparr.WhisparrScene | null> {
     const endpoint = `lookup/scene?term=stash:${encodeURIComponent(stashId)}`;
     let response;
     try {
       response = await ServiceBase.request(config, endpoint);
     } catch (e) {
-      ToastService.showToast(
-        'Error occurred while looking up the scene',
-        false,
-      );
+      if (!options?.suppressToasts) {
+        ToastService.showToast(
+          'Error occurred while looking up the scene',
+          false,
+        );
+      }
       console.error('Error in lookupSceneByStashId', e);
       return null;
     }
@@ -153,9 +159,12 @@ export default class SceneService extends ServiceBase {
   static async triggerWhisparrSearch(
     config: Config,
     stashId: string,
+    options?: { suppressToasts?: boolean },
   ): Promise<SceneSearchCommandStatus> {
     const scene: Whisparr.WhisparrScene | null =
-      await SceneService.getSceneByStashId(config, stashId);
+      await SceneService.getSceneByStashId(config, stashId, {
+        suppressToasts: options?.suppressToasts,
+      });
     if (scene) {
       let payload = new CommandPayloadBuilder()
         .setName('MoviesSearch')
@@ -188,7 +197,9 @@ export default class SceneService extends ServiceBase {
         progressTracker.updateItem(stashId, 'processing');
       }
       try {
-        await SceneService.triggerWhisparrSearch(config, stashId);
+        await SceneService.triggerWhisparrSearch(config, stashId, {
+          suppressToasts: Boolean(progressTracker),
+        });
         if (progressTracker) {
           progressTracker.updateItem(stashId, 'success');
         }
@@ -214,6 +225,7 @@ export default class SceneService extends ServiceBase {
   static async addScene(
     config: Config,
     scene: Whisparr.WhisparrScene,
+    options?: { suppressToasts?: boolean },
   ): Promise<Whisparr.WhisparrScene | null> {
     const endpoint = 'movie';
     const payload = new ScenePayloadBuilder()
@@ -229,7 +241,9 @@ export default class SceneService extends ServiceBase {
     try {
       response = await ServiceBase.request(config, endpoint, 'POST', payload);
     } catch (e) {
-      ToastService.showToast('Error occurred while adding the scene.', false);
+      if (!options?.suppressToasts) {
+        ToastService.showToast('Error occurred while adding the scene.', false);
+      }
       console.error('Error adding scene', e);
       return null;
     }
@@ -251,16 +265,19 @@ export default class SceneService extends ServiceBase {
   static async lookupAndAddScene(
     config: Config,
     stashId: string,
+    options?: { suppressToasts?: boolean },
   ): Promise<SceneLookupStatus> {
-    let scene = await SceneService.lookupSceneByStashId(config, stashId).then(
-      async (s) => {
-        if (s) {
-          return await SceneService.addScene(config, s);
-        } else {
-          return SceneLookupStatus.NOT_FOUND;
-        }
-      },
-    );
+    let scene = await SceneService.lookupSceneByStashId(config, stashId, {
+      suppressToasts: options?.suppressToasts,
+    }).then(async (s) => {
+      if (s) {
+        return await SceneService.addScene(config, s, {
+          suppressToasts: options?.suppressToasts,
+        });
+      } else {
+        return SceneLookupStatus.NOT_FOUND;
+      }
+    });
     return scene ? SceneLookupStatus.ADDED : SceneLookupStatus.ERROR;
   }
 
@@ -288,6 +305,7 @@ export default class SceneService extends ServiceBase {
         const status: SceneLookupStatus = await SceneService.lookupAndAddScene(
           config,
           key,
+          { suppressToasts: Boolean(progressTracker) },
         );
         obj.status = SceneLookupStatus.mapToSceneStatus(status);
         if (progressTracker) {
@@ -324,7 +342,11 @@ export default class SceneService extends ServiceBase {
     failed: string[];
   }> {
     try {
-      ToastService.showToast('Searching for missing scenes...', true);
+      if (progressTracker) {
+        progressTracker.updateItem('search', 'processing', 'Searching...');
+      } else {
+        ToastService.showToast('Searching for missing scenes...', true);
+      }
 
       // Analyze current page context for smart filtering
       const filters = SceneComparisonService.analyzeCurrentPageContext();
@@ -333,10 +355,13 @@ export default class SceneService extends ServiceBase {
       const missingScenes = await SceneComparisonService.findMissingScenes(
         config,
         filters,
+        { suppressToasts: Boolean(progressTracker) },
       );
 
       if (missingScenes.length === 0) {
-        ToastService.showToast('No missing scenes found!', true);
+        if (!progressTracker) {
+          ToastService.showToast('No missing scenes found!', true);
+        }
         if (progressTracker) {
           progressTracker.updateItem(
             'search',
@@ -356,10 +381,18 @@ export default class SceneService extends ServiceBase {
       console.log(
         `Found ${missingScenes.length} missing scenes, starting batch add...`,
       );
-      ToastService.showToast(
-        `Found ${missingScenes.length} missing scenes. Adding to Whisparr...`,
-        true,
-      );
+      if (!progressTracker) {
+        ToastService.showToast(
+          `Found ${missingScenes.length} missing scenes. Adding to Whisparr...`,
+          true,
+        );
+      } else {
+        progressTracker.updateItem(
+          'search',
+          'processing',
+          `Found ${missingScenes.length} scenes. Preparing to add...`,
+        );
+      }
 
       // Pre-filter scenes to only include those safe to add (not in Whisparr, not excluded)
       const sceneIds = missingScenes.map((scene) => scene.id);
@@ -378,12 +411,7 @@ export default class SceneService extends ServiceBase {
 
       // Update the search progress and add only the scenes that will actually be processed
       if (progressTracker) {
-        const skippedTotal = missingScenes.length - safeScenes.length;
         let message = `Found ${missingScenes.length} scenes, ${safeScenes.length} will be added`;
-
-        if (skippedTotal > 0) {
-          message += `, ${skippedTotal} skipped (already in Whisparr)`;
-        }
 
         progressTracker.updateItem('search', 'success', message);
 
@@ -394,11 +422,6 @@ export default class SceneService extends ServiceBase {
         }));
         progressTracker.addItems(sceneProgressItems);
 
-        // Set information about skipped scenes
-        if (skippedTotal > 0) {
-          progressTracker.setSkippedInfo(skippedTotal, 'already in Whisparr');
-        }
-
         // Remove the search item now that we have the actual scenes
         progressTracker.removeItem('search');
       }
@@ -407,7 +430,15 @@ export default class SceneService extends ServiceBase {
       return await this.addScenesFromList(config, safeScenes, progressTracker);
     } catch (error) {
       console.error('Add all missing scenes failed:', error);
-      ToastService.showToast('Failed to add missing scenes', false);
+      if (progressTracker) {
+        progressTracker.updateItem(
+          'search',
+          'error',
+          `Failed to add missing scenes: ${error}`,
+        );
+      } else {
+        ToastService.showToast('Failed to add missing scenes', false);
+      }
       throw error;
     }
   }
