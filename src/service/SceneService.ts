@@ -378,11 +378,11 @@ export default class SceneService extends ServiceBase {
 
       // Update the search progress and add only the scenes that will actually be processed
       if (progressTracker) {
-        const skippedCount = missingScenes.length - safeScenes.length;
+        const skippedTotal = missingScenes.length - safeScenes.length;
         let message = `Found ${missingScenes.length} scenes, ${safeScenes.length} will be added`;
 
-        if (skippedCount > 0) {
-          message += `, ${skippedCount} skipped (already in Whisparr)`;
+        if (skippedTotal > 0) {
+          message += `, ${skippedTotal} skipped (already in Whisparr)`;
         }
 
         progressTracker.updateItem('search', 'success', message);
@@ -395,8 +395,8 @@ export default class SceneService extends ServiceBase {
         progressTracker.addItems(sceneProgressItems);
 
         // Set information about skipped scenes
-        if (skippedCount > 0) {
-          progressTracker.setSkippedInfo(skippedCount, 'already in Whisparr');
+        if (skippedTotal > 0) {
+          progressTracker.setSkippedInfo(skippedTotal, 'already in Whisparr');
         }
 
         // Remove the search item now that we have the actual scenes

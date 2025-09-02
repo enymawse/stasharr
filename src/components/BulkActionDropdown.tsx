@@ -198,7 +198,7 @@ const BulkActionDropdown = () => {
       progressItems,
     );
 
-    // Set skipped information if there are scenes already in Whisparr
+    // Set skipped information (exclude-only scenes are already filtered elsewhere)
     if (alreadyInWhisparr > 0) {
       progressTracker.setSkippedInfo(alreadyInWhisparr, 'already in Whisparr');
     }
@@ -287,7 +287,7 @@ const BulkActionDropdown = () => {
     const stashIds: string[] = [];
     const progressItems: { id: string; name: string }[] = [];
 
-    let notSearchable = 0;
+    let alreadyInWhisparrHasFile = 0;
 
     // Count all scenes on page and categorize them
     allSceneCards.forEach((node) => {
@@ -298,11 +298,8 @@ const BulkActionDropdown = () => {
           ?.getAttribute(Stasharr.DataAttribute.SceneStatus);
         const sceneStatusNumber = parseInt(sceneStatusRaw || '-1', 10);
 
-        if (
-          sceneStatusNumber !== SceneStatus.EXISTS_AND_NO_FILE &&
-          sceneStatusNumber > -1
-        ) {
-          notSearchable++;
+        if (sceneStatusNumber === SceneStatus.EXISTS_AND_HAS_FILE) {
+          alreadyInWhisparrHasFile++;
         }
       }
     });
@@ -340,11 +337,11 @@ const BulkActionDropdown = () => {
       progressItems,
     );
 
-    // Set skipped information if there are scenes that can't be searched
-    if (notSearchable > 0) {
+    // Set skipped information for scenes that already have files
+    if (alreadyInWhisparrHasFile > 0) {
       progressTracker.setSkippedInfo(
-        notSearchable,
-        'not available for search (not in Whisparr or already have files)',
+        alreadyInWhisparrHasFile,
+        'already in Whisparr',
       );
     }
 

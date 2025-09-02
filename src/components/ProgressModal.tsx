@@ -106,6 +106,17 @@ const ProgressModal = (props: ProgressModalProps) => {
           </div>
         </div>
 
+        {/* Skipped Info (visible during progress and on completion) */}
+        <Show when={props.skippedCount && props.skippedCount > 0}>
+          <Alert variant="info" class="py-2 mb-3">
+            <span class="me-2">
+              <FontAwesomeIcon icon="fa-solid fa-exclamation-triangle" />
+            </span>
+            Skipped: {props.skippedCount}
+            {props.skippedReason ? ` (${props.skippedReason})` : ''}
+          </Alert>
+        </Show>
+
         {/* Items List */}
         <div style={{ 'max-height': '300px', overflow: 'auto' }}>
           <For each={props.items}>
