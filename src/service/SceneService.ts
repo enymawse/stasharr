@@ -17,6 +17,18 @@ import SceneComparisonService from './SceneComparisonService';
 import { StashDBScene } from './StashDBService';
 import { SceneButtonRefreshService } from './SceneButtonRefreshService';
 
+interface ProgressTracker {
+  updateItem: (
+    id: string,
+    status: 'pending' | 'processing' | 'success' | 'error',
+    message?: string,
+  ) => void;
+  complete: () => void;
+  addItems: (items: { id: string; name: string }[]) => void;
+  removeItem: (itemId: string) => void;
+  setSkippedInfo: (count: number, reason: string) => void;
+}
+
 export default class SceneService extends ServiceBase {
   /**
    * Retrieves scene information from Whisparr using the Stash ID.
@@ -164,14 +176,32 @@ export default class SceneService extends ServiceBase {
    * Trigger Whisparr to search for an array of scenes.
    * @param config The configuration object containing API details and user preferences.
    * @param stashIds An array of unique scene identifiers.
+   * @param progressTracker Optional progress tracker for bulk operations.
    */
   static async triggerWhisparrSearchAll(
     config: Config,
     stashIds: string[],
+    progressTracker?: ProgressTracker,
   ): Promise<void> {
-    stashIds.forEach((stashId) => {
-      SceneService.triggerWhisparrSearch(config, stashId);
-    });
+    for (const stashId of stashIds) {
+      if (progressTracker) {
+        progressTracker.updateItem(stashId, 'processing');
+      }
+      try {
+        await SceneService.triggerWhisparrSearch(config, stashId);
+        if (progressTracker) {
+          progressTracker.updateItem(stashId, 'success');
+        }
+      } catch (error) {
+        if (progressTracker) {
+          progressTracker.updateItem(
+            stashId,
+            'error',
+            `Failed to trigger search: ${error}`,
+          );
+        }
+      }
+    }
   }
 
   /**
@@ -239,21 +269,42 @@ export default class SceneService extends ServiceBase {
    * @param {Config} config The configuration object containing API details and user preferences.
    * @param {StashIdToSceneCardAndStatusMap} stashIdtoSceneCardAndStatusMap A map
    * of scene identifiers and their associated objects.
+   * @param progressTracker Optional progress tracker for bulk operations.
    * @returns {Promise<StashIdToSceneCardAndStatusMap>} A promise
    * that resolves to an updated map with scene statuses.
    */
   static async lookupAndAddAll(
     config: Config,
     stashIdtoSceneCardAndStatusMap: StashIdToSceneCardAndStatusMap,
+    progressTracker?: ProgressTracker,
   ): Promise<StashIdToSceneCardAndStatusMap> {
     const updatePromises = Array.from(
       stashIdtoSceneCardAndStatusMap.entries(),
     ).map(async ([key, obj]) => {
-      const status: SceneLookupStatus = await SceneService.lookupAndAddScene(
-        config,
-        key,
-      );
-      obj.status = SceneLookupStatus.mapToSceneStatus(status);
+      if (progressTracker) {
+        progressTracker.updateItem(key, 'processing');
+      }
+      try {
+        const status: SceneLookupStatus = await SceneService.lookupAndAddScene(
+          config,
+          key,
+        );
+        obj.status = SceneLookupStatus.mapToSceneStatus(status);
+        if (progressTracker) {
+          progressTracker.updateItem(
+            key,
+            status === SceneLookupStatus.ADDED ? 'success' : 'error',
+          );
+        }
+      } catch (error) {
+        if (progressTracker) {
+          progressTracker.updateItem(
+            key,
+            'error',
+            `Failed to add scene: ${error}`,
+          );
+        }
+      }
     });
 
     await Promise.all(updatePromises);
@@ -264,7 +315,10 @@ export default class SceneService extends ServiceBase {
   /**
    * Add missing scenes found through comprehensive StashDB/Whisparr comparison
    */
-  static async addAllMissingScenes(config: Config): Promise<{
+  static async addAllMissingScenes(
+    config: Config,
+    progressTracker?: ProgressTracker,
+  ): Promise<{
     totalFound: number;
     totalAdded: number;
     failed: string[];
@@ -283,6 +337,15 @@ export default class SceneService extends ServiceBase {
 
       if (missingScenes.length === 0) {
         ToastService.showToast('No missing scenes found!', true);
+        if (progressTracker) {
+          progressTracker.updateItem(
+            'search',
+            'success',
+            'No missing scenes found',
+          );
+          // Remove the search item since operation is complete
+          progressTracker.removeItem('search');
+        }
         return {
           totalFound: 0,
           totalAdded: 0,
@@ -298,8 +361,50 @@ export default class SceneService extends ServiceBase {
         true,
       );
 
-      // Use the safe scene addition method with built-in filtering
-      return await this.addScenesFromList(config, missingScenes);
+      // Pre-filter scenes to only include those safe to add (not in Whisparr, not excluded)
+      const sceneIds = missingScenes.map((scene) => scene.id);
+      const safeToAddIds = await SceneComparisonService.getSafeToAddSceneIds(
+        config,
+        sceneIds,
+      );
+
+      console.log(
+        `Filtered ${missingScenes.length} scenes down to ${safeToAddIds.length} safe to add`,
+      );
+
+      const safeScenes = missingScenes.filter((scene) =>
+        safeToAddIds.includes(scene.id),
+      );
+
+      // Update the search progress and add only the scenes that will actually be processed
+      if (progressTracker) {
+        const skippedCount = missingScenes.length - safeScenes.length;
+        let message = `Found ${missingScenes.length} scenes, ${safeScenes.length} will be added`;
+
+        if (skippedCount > 0) {
+          message += `, ${skippedCount} skipped (already in Whisparr)`;
+        }
+
+        progressTracker.updateItem('search', 'success', message);
+
+        // Add only the scenes that will actually be processed to the progress modal
+        const sceneProgressItems = safeScenes.map((scene) => ({
+          id: scene.id,
+          name: scene.title || `Scene ${scene.id.substring(0, 8)}`,
+        }));
+        progressTracker.addItems(sceneProgressItems);
+
+        // Set information about skipped scenes
+        if (skippedCount > 0) {
+          progressTracker.setSkippedInfo(skippedCount, 'already in Whisparr');
+        }
+
+        // Remove the search item now that we have the actual scenes
+        progressTracker.removeItem('search');
+      }
+
+      // Use the safe scene addition method with pre-filtered scenes
+      return await this.addScenesFromList(config, safeScenes, progressTracker);
     } catch (error) {
       console.error('Add all missing scenes failed:', error);
       ToastService.showToast('Failed to add missing scenes', false);
@@ -359,26 +464,12 @@ export default class SceneService extends ServiceBase {
   private static async addScenesFromList(
     config: Config,
     scenes: StashDBScene[],
+    progressTracker?: ProgressTracker,
   ): Promise<{
     totalFound: number;
     totalAdded: number;
     failed: string[];
   }> {
-    // Pre-filter scenes to only include those safe to add (not in Whisparr, not excluded)
-    const sceneIds = scenes.map((scene) => scene.id);
-    const safeToAddIds = await SceneComparisonService.getSafeToAddSceneIds(
-      config,
-      sceneIds,
-    );
-
-    console.log(
-      `Filtered ${scenes.length} scenes down to ${safeToAddIds.length} safe to add`,
-    );
-
-    const safeScenes = scenes.filter((scene) =>
-      safeToAddIds.includes(scene.id),
-    );
-
     const batchSize = 10;
     const results = {
       totalFound: scenes.length,
@@ -386,28 +477,42 @@ export default class SceneService extends ServiceBase {
       failed: [] as string[],
     };
 
-    // Skip processing if no scenes are safe to add
-    if (safeScenes.length === 0) {
-      console.log(
-        'No scenes are safe to add - all already exist or are excluded',
-      );
+    // Skip processing if no scenes to add
+    if (scenes.length === 0) {
+      console.log('No scenes to add');
       return results;
     }
 
-    for (let i = 0; i < safeScenes.length; i += batchSize) {
-      const batch = safeScenes.slice(i, i + batchSize);
+    for (let i = 0; i < scenes.length; i += batchSize) {
+      const batch = scenes.slice(i, i + batchSize);
 
       const batchPromises = batch.map(async (scene) => {
+        if (progressTracker) {
+          progressTracker.updateItem(scene.id, 'processing');
+        }
         try {
           const status = await this.lookupAndAddScene(config, scene.id);
           if (status === SceneLookupStatus.ADDED) {
             results.totalAdded++;
+            if (progressTracker) {
+              progressTracker.updateItem(scene.id, 'success');
+            }
           } else {
             results.failed.push(scene.id);
+            if (progressTracker) {
+              progressTracker.updateItem(
+                scene.id,
+                'error',
+                'Failed to add scene',
+              );
+            }
           }
         } catch (error) {
           console.error(`Failed to add scene ${scene.id}:`, error);
           results.failed.push(scene.id);
+          if (progressTracker) {
+            progressTracker.updateItem(scene.id, 'error', `Error: ${error}`);
+          }
         }
       });
 
@@ -417,7 +522,7 @@ export default class SceneService extends ServiceBase {
       SceneButtonRefreshService.triggerRefresh();
 
       // Small delay between batches
-      if (i + batchSize < safeScenes.length) {
+      if (i + batchSize < scenes.length) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }

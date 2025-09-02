@@ -323,6 +323,58 @@ export default class StashDBService extends ServiceBase {
   }
 
   /**
+   * Find a single scene by its ID using StashDB's findScene query
+   */
+  static async getSceneById(sceneId: string): Promise<StashDBScene | null> {
+    const query = `
+      query FindScene($id: ID!) {
+        findScene(id: $id) {
+          id
+          title
+          release_date
+          studio { id name }
+          performers { performer { id name } as }
+          fingerprints { hash algorithm duration }
+        }
+      }
+    `;
+
+    try {
+      const data = (await this.executeQuery(query, { id: sceneId })) as {
+        findScene?: StashDBScene | null;
+      };
+      return (data && data.findScene) || null;
+    } catch (error) {
+      console.warn(`Failed to fetch scene by id ${sceneId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get scene titles for specific scene IDs
+   * Uses multiple smaller queries to avoid overwhelming the API
+   */
+  static async getSceneTitlesByIds(
+    sceneIds: string[],
+  ): Promise<Map<string, string>> {
+    const titleMap = new Map<string, string>();
+
+    // Query each ID directly via findScene to avoid ambiguous text search results
+    for (const id of sceneIds) {
+      try {
+        const scene = await this.getSceneById(id);
+        if (scene && scene.title) {
+          titleMap.set(id, scene.title);
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch title for scene ${id}:`, error);
+      }
+    }
+
+    return titleMap;
+  }
+
+  /**
    * Extract StashDB scene IDs from scene objects
    */
   static extractSceneIds(scenes: StashDBScene[]): string[] {

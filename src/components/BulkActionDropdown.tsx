@@ -9,10 +9,12 @@ import {
   faSyncAlt,
   faExclamationTriangle,
   faInfoCircle,
+  faTasks,
 } from '@fortawesome/free-solid-svg-icons';
 import { useSettings } from '../contexts/useSettings';
 import SceneService from '../service/SceneService';
-import ToastService from '../service/ToastService';
+import FeedbackService from '../service/FeedbackService';
+import StashDBService from '../service/StashDBService';
 import { extractStashIdFromSceneCard, rehydrateSceneCards } from '../util/util';
 import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
 import { SceneStatus, SceneStatusType } from '../enums/SceneStatus';
@@ -27,6 +29,7 @@ library.add(
   faSyncAlt,
   faExclamationTriangle,
   faInfoCircle,
+  faTasks,
 );
 
 export enum BulkActionType {
@@ -63,17 +66,50 @@ const BulkActionDropdown = () => {
   const handleAddAllMissing = async () => {
     setShowAddAllMissingModal(false);
 
+    // Start the operation - update button to show activity
+    FeedbackService.startButtonOperation(
+      'stasharr-actions-dropdown',
+      'Searching...',
+    );
+
     try {
-      const results = await SceneService.addAllMissingScenes(store);
-      ToastService.showPersistentToast(
-        `Add All Missing completed: ${results.totalAdded} scenes added, ${results.failed.length} failed`,
-        results.failed.length === 0,
+      // Start with a placeholder - we'll get the actual scenes from the service
+      const progressTracker = FeedbackService.startBulkOperation(
+        'Add All Missing Scenes',
+        [{ id: 'search', name: 'Searching for missing scenes...' }],
+      );
+
+      progressTracker.updateItem('search', 'processing');
+
+      const results = await SceneService.addAllMissingScenes(
+        store,
+        progressTracker,
+      );
+
+      progressTracker.complete();
+
+      // Show success notification for completed operation
+      FeedbackService.showNotification(
+        'Stasharr: Add All Missing Complete',
+        `Added ${results.totalAdded} scenes, ${results.failed.length} failed`,
+      );
+
+      // Complete the operation - show success briefly then restore
+      FeedbackService.completeButtonOperation(
+        'stasharr-actions-dropdown',
+        `Added ${results.totalAdded} scenes`,
+        4000,
       );
     } catch (error) {
       console.error('Add All Missing failed:', error);
-      ToastService.showPersistentToast(
-        'Add All Missing operation failed',
-        false,
+      FeedbackService.showError(
+        'Add All Missing operation failed: ' +
+          (error instanceof Error ? error.message : String(error)),
+      );
+      FeedbackService.completeButtonOperation(
+        'stasharr-actions-dropdown',
+        'Operation Failed',
+        4000,
       );
     }
   };
@@ -87,13 +123,40 @@ const BulkActionDropdown = () => {
         ?.getAttribute(StashDB.DataAttribute.DataPage) || '{Page not found}',
     );
 
-    const stashIdtoSceneCardAndStatusMap: StashIdToSceneCardAndStatusMap =
-      new Map();
-    const sceneCards = document.querySelectorAll<HTMLElement>(
+    // Get ALL scene cards on the page to understand what's being skipped
+    const allSceneCards = document.querySelectorAll<HTMLElement>(
+      '.scene-card, [data-scene-id]',
+    );
+    const addableSceneCards = document.querySelectorAll<HTMLElement>(
       Stasharr.DOMSelector.SceneCardByButtonStatus(SceneStatus.NOT_IN_WHISPARR),
     );
 
-    sceneCards.forEach((node) => {
+    const stashIdtoSceneCardAndStatusMap: StashIdToSceneCardAndStatusMap =
+      new Map();
+    const progressItems: { id: string; name: string }[] = [];
+
+    let alreadyInWhisparr = 0;
+
+    // Count all scenes on page and categorize them
+    allSceneCards.forEach((node) => {
+      const stashId = extractStashIdFromSceneCard(node);
+      if (stashId) {
+        const sceneStatusRaw = node
+          .querySelector(Stasharr.DOMSelector.CardButton)
+          ?.getAttribute(Stasharr.DataAttribute.SceneStatus);
+        const sceneStatusNumber = parseInt(sceneStatusRaw || '-1', 10);
+
+        if (
+          sceneStatusNumber !== SceneStatus.NOT_IN_WHISPARR &&
+          sceneStatusNumber > -1
+        ) {
+          alreadyInWhisparr++;
+        }
+      }
+    });
+
+    // Process only the addable scenes
+    addableSceneCards.forEach((node) => {
       const stashId = extractStashIdFromSceneCard(node);
       if (stashId) {
         const sceneStatusRaw = node
@@ -106,23 +169,99 @@ const BulkActionDropdown = () => {
             status: sceneStatusNumber as SceneStatusType,
             sceneCard: node,
           });
+
+          // Add initial progress item with placeholder name
+          progressItems.push({
+            id: stashId,
+            name: `Scene ${stashId.substring(0, 8)}`,
+          });
+
+          // Set scene card as processing
+          FeedbackService.updateSceneCard(stashId, 'processing');
         }
       }
     });
+
+    if (progressItems.length === 0) {
+      FeedbackService.showError('No scenes available to add on this page.');
+      return;
+    }
+
+    // Start the operation - update button to show activity
+    FeedbackService.startButtonOperation(
+      'stasharr-actions-dropdown',
+      'Adding...',
+    );
+
+    const progressTracker = FeedbackService.startBulkOperation(
+      `Add All Scenes - Page ${pageNumber + 1}`,
+      progressItems,
+    );
+
+    // Set skipped information if there are scenes already in Whisparr
+    if (alreadyInWhisparr > 0) {
+      progressTracker.setSkippedInfo(alreadyInWhisparr, 'already in Whisparr');
+    }
+
+    // Fetch real scene titles from StashDB and update progress items
+    try {
+      const sceneIds = progressItems.map((item) => item.id);
+      const titleMap = await StashDBService.getSceneTitlesByIds(sceneIds);
+
+      // Update item names in place to avoid duplicate IDs removal
+      const updatedItems = progressItems
+        .map((item) => ({
+          id: item.id,
+          name: titleMap.get(item.id) || item.name,
+        }))
+        .filter((u) => !!u.name);
+      if ((updatedItems?.length || 0) > 0) {
+        // Use bulk name update for efficiency
+        progressTracker.updateItemNames(updatedItems);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch scene titles from StashDB:', error);
+      // Continue with placeholder names if fetching fails
+    }
 
     try {
       const sceneMap = await SceneService.lookupAndAddAll(
         store,
         stashIdtoSceneCardAndStatusMap,
+        progressTracker,
       );
-      ToastService.showPersistentToast(
-        `Added ${sceneMap.size} new scenes to Whisparr from page ${pageNumber + 1}.`,
-        true,
-      );
+
+      progressTracker.complete();
       rehydrateSceneCards(store, sceneMap);
+
+      // Complete the operation - show success briefly then restore
+      FeedbackService.completeButtonOperation(
+        'stasharr-actions-dropdown',
+        `Added ${sceneMap.size} scenes`,
+        3000,
+      );
+
+      // Show notification
+      FeedbackService.showNotification(
+        'Stasharr: Add All Complete',
+        `Added ${sceneMap.size} scenes from page ${pageNumber + 1}`,
+      );
     } catch (error) {
       console.error('Add All failed:', error);
-      ToastService.showPersistentToast('Add All operation failed', false);
+      FeedbackService.showError(
+        'Add All operation failed: ' +
+          (error instanceof Error ? error.message : String(error)),
+      );
+      FeedbackService.completeButtonOperation(
+        'stasharr-actions-dropdown',
+        'Operation Failed',
+        4000,
+      );
+
+      // Mark all scene cards as error
+      progressItems.forEach((item) => {
+        FeedbackService.updateSceneCard(item.id, 'error');
+      });
     }
   };
 
@@ -135,29 +274,141 @@ const BulkActionDropdown = () => {
         ?.getAttribute(StashDB.DataAttribute.DataPage) || '{Page not found}',
     );
 
-    const stashIds: string[] = [];
-    const sceneCards = document.querySelectorAll<HTMLElement>(
+    // Get ALL scene cards on the page to understand what's being skipped
+    const allSceneCards = document.querySelectorAll<HTMLElement>(
+      '.scene-card, [data-scene-id]',
+    );
+    const searchableSceneCards = document.querySelectorAll<HTMLElement>(
       Stasharr.DOMSelector.SceneCardByButtonStatus(
         SceneStatus.EXISTS_AND_NO_FILE,
       ),
     );
 
-    sceneCards.forEach((node) => {
+    const stashIds: string[] = [];
+    const progressItems: { id: string; name: string }[] = [];
+
+    let notSearchable = 0;
+
+    // Count all scenes on page and categorize them
+    allSceneCards.forEach((node) => {
       const stashId = extractStashIdFromSceneCard(node);
       if (stashId) {
-        stashIds.push(stashId);
+        const sceneStatusRaw = node
+          .querySelector(Stasharr.DOMSelector.CardButton)
+          ?.getAttribute(Stasharr.DataAttribute.SceneStatus);
+        const sceneStatusNumber = parseInt(sceneStatusRaw || '-1', 10);
+
+        if (
+          sceneStatusNumber !== SceneStatus.EXISTS_AND_NO_FILE &&
+          sceneStatusNumber > -1
+        ) {
+          notSearchable++;
+        }
       }
     });
 
+    // Process only the searchable scenes
+    searchableSceneCards.forEach((node) => {
+      const stashId = extractStashIdFromSceneCard(node);
+      if (stashId) {
+        stashIds.push(stashId);
+
+        // Add initial progress item with placeholder name
+        progressItems.push({
+          id: stashId,
+          name: `Scene ${stashId.substring(0, 8)}`,
+        });
+
+        // Set scene card as processing
+        FeedbackService.updateSceneCard(stashId, 'processing');
+      }
+    });
+
+    if (stashIds.length === 0) {
+      FeedbackService.showError('No scenes available to search on this page.');
+      return;
+    }
+
+    // Start the operation - update button to show activity
+    FeedbackService.startButtonOperation(
+      'stasharr-actions-dropdown',
+      'Searching...',
+    );
+
+    const progressTracker = FeedbackService.startBulkOperation(
+      `Search All Scenes - Page ${pageNumber + 1}`,
+      progressItems,
+    );
+
+    // Set skipped information if there are scenes that can't be searched
+    if (notSearchable > 0) {
+      progressTracker.setSkippedInfo(
+        notSearchable,
+        'not available for search (not in Whisparr or already have files)',
+      );
+    }
+
+    // Fetch real scene titles from StashDB and update progress items
     try {
-      await SceneService.triggerWhisparrSearchAll(store, stashIds);
-      ToastService.showPersistentToast(
-        `Triggered search for ${stashIds.length} existing scenes on page ${pageNumber + 1}.`,
-        true,
+      const sceneIds = progressItems.map((item) => item.id);
+      const titleMap = await StashDBService.getSceneTitlesByIds(sceneIds);
+
+      // Update item names in place to avoid duplicate IDs removal
+      const updatedItems = progressItems
+        .map((item) => ({
+          id: item.id,
+          name: titleMap.get(item.id) || item.name,
+        }))
+        .filter((u) => !!u.name);
+      if ((updatedItems?.length || 0) > 0) {
+        progressTracker.updateItemNames(updatedItems);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch scene titles from StashDB:', error);
+      // Continue with placeholder names if fetching fails
+    }
+
+    try {
+      await SceneService.triggerWhisparrSearchAll(
+        store,
+        stashIds,
+        progressTracker,
+      );
+
+      progressTracker.complete();
+
+      // Mark all scenes as success (search triggered)
+      stashIds.forEach((stashId) => {
+        FeedbackService.updateSceneCard(stashId, 'success');
+      });
+
+      // Complete the operation - show success briefly then restore
+      FeedbackService.completeButtonOperation(
+        'stasharr-actions-dropdown',
+        `Searched ${stashIds.length} scenes`,
+        3000,
+      );
+
+      // Show success feedback
+      FeedbackService.showSuccess(
+        `Triggered search for ${stashIds.length} scenes on page ${pageNumber + 1}.`,
       );
     } catch (error) {
       console.error('Search All failed:', error);
-      ToastService.showPersistentToast('Search All operation failed', false);
+      FeedbackService.showError(
+        'Search All operation failed: ' +
+          (error instanceof Error ? error.message : String(error)),
+      );
+      FeedbackService.completeButtonOperation(
+        'stasharr-actions-dropdown',
+        'Search Failed',
+        4000,
+      );
+
+      // Mark all scene cards as error
+      stashIds.forEach((stashId) => {
+        FeedbackService.updateSceneCard(stashId, 'error');
+      });
     }
   };
 
