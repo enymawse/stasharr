@@ -289,7 +289,6 @@ const BulkActionDropdown = () => {
         `Search All Scenes - Page ${pageNumber + 1}`,
         [],
       );
-      // @ts-ignore: runtime method exists on tracker
       progressTracker.setInfo('No scenes available to search on this page.');
       progressTracker.complete();
       return;
