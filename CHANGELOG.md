@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.0](https://github.com/enymawse/stasharr/compare/v2.10.0...v2.11.0) (2025-09-02)
+
+
+### Features
+
+* **actions,ui:** improve bulk actions UX with scene titles and modal feedback ([#96](https://github.com/enymawse/stasharr/issues/96)) ([53a62e1](https://github.com/enymawse/stasharr/commit/53a62e1034f1e756e2a3c7f94685a4c2987f50c7))
+
 ## [2.10.0](https://github.com/enymawse/stasharr/compare/v2.9.0...v2.10.0) (2025-08-27)
 
 
