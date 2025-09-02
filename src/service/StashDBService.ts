@@ -63,6 +63,7 @@ export default class StashDBService extends ServiceBase {
   private static async executeQuery(
     query: string,
     variables: Record<string, unknown> = {},
+    options?: { suppressToasts?: boolean },
   ): Promise<unknown> {
     try {
       const stashboxCookie = this.getStashboxCookie();
@@ -101,7 +102,9 @@ export default class StashDBService extends ServiceBase {
       return result.data;
     } catch (error) {
       console.error('StashDB query failed:', error);
-      ToastService.showToast('Failed to query StashDB', false);
+      if (!options?.suppressToasts) {
+        ToastService.showToast('Failed to query StashDB', false);
+      }
       throw error;
     }
   }
@@ -111,6 +114,7 @@ export default class StashDBService extends ServiceBase {
    */
   static async searchScenes(
     queryInput: StashDBQueryInput,
+    options?: { suppressToasts?: boolean },
   ): Promise<StashDBScenesResponse> {
     const query = `
       query QueryScenes($input: SceneQueryInput!) {
@@ -182,7 +186,11 @@ export default class StashDBService extends ServiceBase {
 
     console.log(input);
 
-    return (await this.executeQuery(query, { input })) as StashDBScenesResponse;
+    return (await this.executeQuery(
+      query,
+      { input },
+      options,
+    )) as StashDBScenesResponse;
   }
 
   /**
@@ -190,6 +198,7 @@ export default class StashDBService extends ServiceBase {
    */
   static async getAllScenesFromStudios(
     studioIds: string[],
+    options?: { suppressToasts?: boolean },
   ): Promise<StashDBScene[]> {
     const allScenes: StashDBScene[] = [];
     let page = 1;
@@ -201,13 +210,16 @@ export default class StashDBService extends ServiceBase {
       console.log(`Fetching StashDB studio scenes page ${page}...`);
 
       try {
-        const response = await this.searchScenes({
-          studios: studioIds,
-          page,
-          per_page: this.ITEMS_PER_PAGE,
-          sort: 'DATE',
-          direction: 'DESC',
-        });
+        const response = await this.searchScenes(
+          {
+            studios: studioIds,
+            page,
+            per_page: this.ITEMS_PER_PAGE,
+            sort: 'DATE',
+            direction: 'DESC',
+          },
+          options,
+        );
 
         const scenes = response.queryScenes.scenes;
         allScenes.push(...scenes);
@@ -236,6 +248,7 @@ export default class StashDBService extends ServiceBase {
    */
   static async getAllPerformerScenes(
     performerIds: string[],
+    options?: { suppressToasts?: boolean },
   ): Promise<StashDBScene[]> {
     const allScenes: StashDBScene[] = [];
     let page = 1;
@@ -244,13 +257,16 @@ export default class StashDBService extends ServiceBase {
     while (hasMore) {
       console.log(`Fetching StashDB performer scenes page ${page}...`);
 
-      const response = await this.searchScenes({
-        performers: performerIds,
-        page,
-        per_page: this.ITEMS_PER_PAGE,
-        sort: 'DATE',
-        direction: 'DESC',
-      });
+      const response = await this.searchScenes(
+        {
+          performers: performerIds,
+          page,
+          per_page: this.ITEMS_PER_PAGE,
+          sort: 'DATE',
+          direction: 'DESC',
+        },
+        options,
+      );
 
       const scenes = response.queryScenes.scenes;
       allScenes.push(...scenes);
@@ -273,6 +289,7 @@ export default class StashDBService extends ServiceBase {
    */
   static async getAllScenes(
     filters: Omit<StashDBQueryInput, 'page' | 'per_page'> = {},
+    options?: { suppressToasts?: boolean },
   ): Promise<StashDBScene[]> {
     const allScenes: StashDBScene[] = [];
     let page = 1;
@@ -285,11 +302,14 @@ export default class StashDBService extends ServiceBase {
       console.log(`Fetching StashDB scenes page ${page}...`);
 
       try {
-        const response = await this.searchScenes({
-          ...filters,
-          page,
-          per_page: this.ITEMS_PER_PAGE,
-        });
+        const response = await this.searchScenes(
+          {
+            ...filters,
+            page,
+            per_page: this.ITEMS_PER_PAGE,
+          },
+          options,
+        );
 
         const scenes = response.queryScenes.scenes;
         allScenes.push(...scenes);
@@ -325,7 +345,10 @@ export default class StashDBService extends ServiceBase {
   /**
    * Find a single scene by its ID using StashDB's findScene query
    */
-  static async getSceneById(sceneId: string): Promise<StashDBScene | null> {
+  static async getSceneById(
+    sceneId: string,
+    options?: { suppressToasts?: boolean },
+  ): Promise<StashDBScene | null> {
     const query = `
       query FindScene($id: ID!) {
         findScene(id: $id) {
@@ -340,7 +363,11 @@ export default class StashDBService extends ServiceBase {
     `;
 
     try {
-      const data = (await this.executeQuery(query, { id: sceneId })) as {
+      const data = (await this.executeQuery(
+        query,
+        { id: sceneId },
+        options,
+      )) as {
         findScene?: StashDBScene | null;
       };
       return (data && data.findScene) || null;
@@ -362,7 +389,7 @@ export default class StashDBService extends ServiceBase {
     // Query each ID directly via findScene to avoid ambiguous text search results
     for (const id of sceneIds) {
       try {
-        const scene = await this.getSceneById(id);
+        const scene = await this.getSceneById(id, { suppressToasts: true });
         if (scene && scene.title) {
           titleMap.set(id, scene.title);
         }
