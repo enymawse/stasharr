@@ -2,6 +2,21 @@ import { Toast } from 'bootstrap';
 
 export default class ToastService {
   public static showToast(message: string, isSuccess: boolean = true): void {
+    this.createToast(message, isSuccess, false);
+  }
+
+  public static showPersistentToast(
+    message: string,
+    isSuccess: boolean = true,
+  ): void {
+    this.createToast(message, isSuccess, true);
+  }
+
+  private static createToast(
+    message: string,
+    isSuccess: boolean,
+    persistent: boolean,
+  ): void {
     const toastContainer = document.querySelector('.ToastContainer');
     if (toastContainer) {
       toastContainer.classList.add('toast-container');
@@ -15,6 +30,11 @@ export default class ToastService {
       customToast.role = 'alert';
       customToast.ariaLive = 'assertive';
       customToast.ariaAtomic = 'true';
+
+      // Set data-bs-autohide to false for persistent toasts
+      if (persistent) {
+        customToast.setAttribute('data-bs-autohide', 'false');
+      }
 
       const dflex = document.createElement('div');
       dflex.classList.add('d-flex');
@@ -42,7 +62,10 @@ export default class ToastService {
       customToast.addEventListener('hidden.bs.toast', () => {
         customToast.remove();
       });
-      const toast = new Toast(customToast);
+
+      const toast = new Toast(customToast, {
+        autohide: !persistent,
+      });
       toast.show();
     } else {
       console.log('ToastContainer not found.');

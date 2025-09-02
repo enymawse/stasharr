@@ -1,4 +1,11 @@
-import { createMemo, createResource, Match, Suspense, Switch } from 'solid-js';
+import {
+  createMemo,
+  createResource,
+  createEffect,
+  Match,
+  Suspense,
+  Switch,
+} from 'solid-js';
 import { Config } from '../models/Config';
 import { Stasharr } from '../enums/Stasharr';
 import { getButtonDetails, clickHandler } from '../util/button';
@@ -12,6 +19,7 @@ import {
   faSearch,
   faVideoSlash,
 } from '@fortawesome/free-solid-svg-icons';
+import { SceneButtonRefreshService } from '../service/SceneButtonRefreshService';
 
 library.add(faDownload, faCircleCheck, faSearch, faVideoSlash);
 
@@ -22,6 +30,13 @@ function SceneButton(props: {
 }) {
   const [whisparrSceneAndStatus, { refetch: refreshWhisparrSceneAndStatus }] =
     createResource(props, fetchWhisparrSceneAndStatus);
+
+  // Subscribe to global refresh events
+  const refreshSignal = SceneButtonRefreshService.getRefreshSignal();
+  createEffect(() => {
+    refreshSignal(); // Subscribe to the signal
+    refreshWhisparrSceneAndStatus(); // Refetch when signal changes
+  });
 
   const buttonDetails = createMemo(() =>
     getButtonDetails(whisparrSceneAndStatus(), props.header),

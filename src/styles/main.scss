@@ -4,3 +4,31 @@
 @use 'components/modal';
 @use 'components/whisparr';
 @use 'components/stash';
+
+// Scene card status feedback styles
+.scene-processing {
+  border: 2px solid var(--bs-primary) !important;
+  box-shadow: 0 0 10px rgba(13, 110, 253, 0.3);
+}
+
+.scene-success {
+  border: 2px solid var(--bs-success) !important;
+  box-shadow: 0 0 10px rgba(25, 135, 84, 0.3);
+}
+
+.scene-error {
+  border: 2px solid var(--bs-danger) !important;
+  box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+}
+
+.scene-status-indicator {
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}

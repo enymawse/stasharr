@@ -100,4 +100,77 @@ export default class WhisparrService extends ServiceBase {
     }
     return response.response as Whisparr.Tag[];
   }
+
+  /**
+   * Fetches all scenes from Whisparr with pagination support
+   */
+  static async getAllScenes(
+    config: Config,
+    options?: { suppressToasts?: boolean },
+  ): Promise<Whisparr.WhisparrScene[]> {
+    const allScenes: Whisparr.WhisparrScene[] = [];
+    let page = 1;
+    const pageSize = 100;
+    let hasMore = true;
+
+    console.log('Starting Whisparr scene inventory fetch...');
+
+    while (hasMore) {
+      console.log(`Fetching Whisparr scenes page ${page}...`);
+
+      try {
+        const endpoint = `movie?page=${page}&pageSize=${pageSize}`;
+        const response = await ServiceBase.request(
+          config,
+          endpoint,
+          'GET',
+          undefined,
+        );
+        const scenes = response.response as Whisparr.WhisparrScene[];
+
+        if (scenes && scenes.length > 0) {
+          allScenes.push(...scenes);
+          hasMore = scenes.length === pageSize;
+          page++;
+
+          // Add small delay to avoid overwhelming the API
+          if (hasMore) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+        } else {
+          hasMore = false;
+        }
+      } catch (error) {
+        console.error(`Failed to fetch Whisparr scenes page ${page}:`, error);
+        if (!options?.suppressToasts) {
+          ToastService.showToast(
+            `Error fetching scenes from Whisparr: ${error}`,
+            false,
+          );
+        }
+        break;
+      }
+    }
+
+    console.log(`Total Whisparr scenes fetched: ${allScenes.length}`);
+    return allScenes;
+  }
+
+  /**
+   * Create a map of Stash ID to Whisparr scene for quick lookups
+   */
+  static createStashIdToSceneMap(
+    scenes: Whisparr.WhisparrScene[],
+  ): Map<string, Whisparr.WhisparrScene> {
+    const map = new Map<string, Whisparr.WhisparrScene>();
+
+    scenes.forEach((scene) => {
+      if (scene.foreignId && scene.foreignId.startsWith('stash:')) {
+        const stashId = scene.foreignId.replace('stash:', '');
+        map.set(stashId, scene);
+      }
+    });
+
+    return map;
+  }
 }
