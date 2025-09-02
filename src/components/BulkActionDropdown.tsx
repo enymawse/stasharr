@@ -160,12 +160,12 @@ const BulkActionDropdown = () => {
     });
 
     if (progressItems.length === 0) {
-      // Use progress modal instead of toast for consistent feedback
+      // Use progress modal with empty-state info
       const progressTracker = FeedbackService.startBulkOperation(
         `Add All Scenes - Page ${pageNumber + 1}`,
-        [{ id: 'none', name: 'No scenes available to add on this page.' }],
+        [],
       );
-      progressTracker.updateItem('none', 'success');
+      progressTracker.setInfo('No scenes available to add on this page.');
       progressTracker.complete();
       return;
     }
@@ -284,12 +284,13 @@ const BulkActionDropdown = () => {
     });
 
     if (stashIds.length === 0) {
-      // Use progress modal instead of toast for consistent feedback
+      // Use progress modal with empty-state info
       const progressTracker = FeedbackService.startBulkOperation(
         `Search All Scenes - Page ${pageNumber + 1}`,
-        [{ id: 'none', name: 'No scenes available to search on this page.' }],
+        [],
       );
-      progressTracker.updateItem('none', 'success');
+      // @ts-ignore: runtime method exists on tracker
+      progressTracker.setInfo('No scenes available to search on this page.');
       progressTracker.complete();
       return;
     }

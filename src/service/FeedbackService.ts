@@ -9,6 +9,7 @@ export interface FeedbackState {
   isComplete: boolean;
   skippedCount?: number;
   skippedReason?: string;
+  infoMessage?: string;
 }
 
 // Global feedback state
@@ -45,6 +46,7 @@ export default class FeedbackService {
       modalTitle: title,
       progressItems,
       isComplete: false,
+      infoMessage: undefined,
     });
 
     return {
@@ -54,6 +56,7 @@ export default class FeedbackService {
       removeItem: this.removeProgressItem.bind(this),
       updateItemName: this.updateProgressItemName.bind(this),
       updateItemNames: this.updateProgressItemNames.bind(this),
+      setInfo: this.setInfoMessage.bind(this),
       setSkippedInfo: this.setSkippedInfo.bind(this),
     };
   }
@@ -111,6 +114,14 @@ export default class FeedbackService {
     setFeedbackState((prev) => ({
       ...prev,
       progressItems: prev.progressItems.filter((item) => item.id !== itemId),
+    }));
+  }
+
+  // Set an informational message for empty-state or general info
+  static setInfoMessage(message?: string) {
+    setFeedbackState((prev) => ({
+      ...prev,
+      infoMessage: message,
     }));
   }
 

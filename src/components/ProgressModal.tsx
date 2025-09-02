@@ -35,6 +35,7 @@ interface ProgressModalProps {
   isComplete: boolean;
   skippedCount?: number;
   skippedReason?: string;
+  infoMessage?: string;
 }
 
 const ProgressModal = (props: ProgressModalProps) => {
@@ -63,6 +64,8 @@ const ProgressModal = (props: ProgressModalProps) => {
     }
   };
 
+  const isEmpty = () => totalItems() === 0;
+
   return (
     <Modal show={props.show} onHide={props.onClose} size="lg" centered>
       <Modal.Header closeButton={props.isComplete}>
@@ -76,35 +79,51 @@ const ProgressModal = (props: ProgressModalProps) => {
 
       <Modal.Body>
         {/* Overall Progress */}
-        <div class="mb-4">
-          <div class="d-flex justify-content-between mb-2">
-            <span>
-              Progress: {completedItems()}/{totalItems()}
-            </span>
-            <span>{Math.round(progressPercentage())}%</span>
+        <Show when={!isEmpty()}>
+          <div class="mb-4">
+            <div class="d-flex justify-content-between mb-2">
+              <span>
+                Progress: {completedItems()}/{totalItems()}
+              </span>
+              <span>{Math.round(progressPercentage())}%</span>
+            </div>
+            <ProgressBar
+              now={progressPercentage()}
+              variant={errorCount() > 0 ? 'warning' : 'success'}
+              style={{ height: '8px' }}
+            />
           </div>
-          <ProgressBar
-            now={progressPercentage()}
-            variant={errorCount() > 0 ? 'warning' : 'success'}
-            style={{ height: '8px' }}
-          />
-        </div>
+        </Show>
 
         {/* Summary Stats */}
-        <div class="row mb-3">
-          <div class="col-4 text-center">
-            <div class="text-success fs-5">{successCount()}</div>
-            <small class="text-muted">Success</small>
+        <Show when={!isEmpty()}>
+          <div class="row mb-3">
+            <div class="col-4 text-center">
+              <div class="text-success fs-5">{successCount()}</div>
+              <small class="text-muted">Success</small>
+            </div>
+            <div class="col-4 text-center">
+              <div class="text-danger fs-5">{errorCount()}</div>
+              <small class="text-muted">Failed</small>
+            </div>
+            <div class="col-4 text-center">
+              <div class="text-muted fs-5">
+                {totalItems() - completedItems()}
+              </div>
+              <small class="text-muted">Remaining</small>
+            </div>
           </div>
-          <div class="col-4 text-center">
-            <div class="text-danger fs-5">{errorCount()}</div>
-            <small class="text-muted">Failed</small>
-          </div>
-          <div class="col-4 text-center">
-            <div class="text-muted fs-5">{totalItems() - completedItems()}</div>
-            <small class="text-muted">Remaining</small>
-          </div>
-        </div>
+        </Show>
+
+        {/* Empty state message */}
+        <Show when={isEmpty() && props.infoMessage}>
+          <Alert variant="info" class="py-2 mb-3">
+            <span class="me-2">
+              <FontAwesomeIcon icon="fa-solid fa-exclamation-triangle" />
+            </span>
+            {props.infoMessage}
+          </Alert>
+        </Show>
 
         {/* Skipped Info (visible during progress and on completion) */}
         <Show when={props.skippedCount && props.skippedCount > 0}>
@@ -118,28 +137,30 @@ const ProgressModal = (props: ProgressModalProps) => {
         </Show>
 
         {/* Items List */}
-        <div style={{ 'max-height': '300px', overflow: 'auto' }}>
-          <For each={props.items}>
-            {(item) => {
-              const statusIcon = getStatusIcon(item.status);
-              return (
-                <div class="d-flex align-items-center mb-2 p-2 rounded border">
-                  <div class="me-3">
-                    <span class={statusIcon.class}>
-                      <FontAwesomeIcon icon={statusIcon.icon} />
-                    </span>
+        <Show when={!isEmpty()}>
+          <div style={{ 'max-height': '300px', overflow: 'auto' }}>
+            <For each={props.items}>
+              {(item) => {
+                const statusIcon = getStatusIcon(item.status);
+                return (
+                  <div class="d-flex align-items-center mb-2 p-2 rounded border">
+                    <div class="me-3">
+                      <span class={statusIcon.class}>
+                        <FontAwesomeIcon icon={statusIcon.icon} />
+                      </span>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="fw-medium">{item.name}</div>
+                      <Show when={item.message}>
+                        <small class="text-muted">{item.message}</small>
+                      </Show>
+                    </div>
                   </div>
-                  <div class="flex-grow-1">
-                    <div class="fw-medium">{item.name}</div>
-                    <Show when={item.message}>
-                      <small class="text-muted">{item.message}</small>
-                    </Show>
-                  </div>
-                </div>
-              );
-            }}
-          </For>
-        </div>
+                );
+              }}
+            </For>
+          </div>
+        </Show>
 
         {/* Completion Message */}
         <Show when={props.isComplete}>

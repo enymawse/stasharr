@@ -23,6 +23,7 @@ const SceneList = (props: { config: Config }) => {
         isComplete={feedbackState().isComplete}
         skippedCount={feedbackState().skippedCount}
         skippedReason={feedbackState().skippedReason}
+        infoMessage={feedbackState().infoMessage}
         onClose={() => FeedbackService.closeProgressModal()}
       />
     </SettingsContext.Provider>
