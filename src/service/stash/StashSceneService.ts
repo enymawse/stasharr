@@ -73,4 +73,37 @@ export default class StashSceneService extends StashServiceBase {
       (res) => res?.data?.findScenes?.scenes[0] as StashScene,
     );
   }
+
+  public static async deleteSceneById(
+    config: Config,
+    id: string,
+    options?: { deleteFile?: boolean; deleteGenerated?: boolean },
+  ): Promise<boolean> {
+    const variables = {
+      ids: [id],
+      deleteFile: options?.deleteFile ?? false,
+      deleteGenerated: options?.deleteGenerated ?? false,
+    };
+    const query = `
+      mutation SceneDestroy($ids: [ID!]!, $deleteFile: Boolean!, $deleteGenerated: Boolean!) {
+        sceneDestroy(input: { ids: $ids, delete_file: $deleteFile, delete_generated: $deleteGenerated })
+      }`;
+    const request = StashServiceBase.request(config, { query, variables });
+    return request
+      .then((res) => Boolean(res?.data?.sceneDestroy))
+      .catch((e) => {
+        console.error('Stash scene delete failed', e);
+        return false;
+      });
+  }
+
+  public static async deleteSceneByStashId(
+    config: Config,
+    stashId: string,
+    options?: { deleteFile?: boolean; deleteGenerated?: boolean },
+  ): Promise<boolean> {
+    const scene = await this.getSceneByStashId(config, stashId);
+    if (!scene?.id) return false;
+    return this.deleteSceneById(config, scene.id, options);
+  }
 }
