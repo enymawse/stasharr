@@ -31,6 +31,62 @@ interface ProgressTracker {
 
 export default class SceneService extends ServiceBase {
   /**
+   * Delete a scene from Whisparr by its Whisparr numeric id.
+   * Optionally delete files from disk. Exclusion can be handled by caller.
+   */
+  static async deleteSceneById(
+    config: Config,
+    whisparrId: number,
+    options?: {
+      deleteFiles?: boolean;
+      addImportListExclusion?: boolean;
+      suppressToasts?: boolean;
+    },
+  ): Promise<boolean> {
+    const endpoint = `movie/${whisparrId}?deleteFiles=${
+      options?.deleteFiles ? 'true' : 'false'
+    }&addImportExclusion=${options?.addImportListExclusion ? 'true' : 'false'}`;
+    try {
+      const response = await ServiceBase.request(config, endpoint, 'DELETE');
+      const ok = response.status >= 200 && response.status < 300;
+      if (!ok) throw new Error(`HTTP ${response.status}`);
+      if (!options?.suppressToasts) {
+        ToastService.showToast('Deleted scene from Whisparr', true);
+      }
+      return true;
+    } catch (e) {
+      if (!options?.suppressToasts) {
+        ToastService.showToast('Failed to delete scene from Whisparr', false);
+      }
+      console.error('Error deleting scene', e);
+      return false;
+    }
+  }
+
+  /**
+   * Delete a scene by its Stash ID. Resolves the Whisparr id first.
+   */
+  static async deleteSceneByStashId(
+    config: Config,
+    stashId: string,
+    options?: {
+      deleteFiles?: boolean;
+      addImportListExclusion?: boolean;
+      suppressToasts?: boolean;
+    },
+  ): Promise<boolean> {
+    const scene = await SceneService.getSceneByStashId(config, stashId, {
+      suppressToasts: true,
+    });
+    if (!scene) {
+      if (!options?.suppressToasts) {
+        ToastService.showToast('Scene not found in Whisparr', false);
+      }
+      return false;
+    }
+    return await SceneService.deleteSceneById(config, scene.id, options);
+  }
+  /**
    * Retrieves scene information from Whisparr using the Stash ID.
    *
    * @param {Config} config - The configuration object containing API details.

@@ -1,7 +1,8 @@
-import { createMemo, createResource, Show } from 'solid-js';
+import { createMemo, createResource, Show, createSignal } from 'solid-js';
 import { FontAwesomeIcon } from 'solid-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { filesize } from 'filesize';
 import { Stasharr } from '../../../enums/Stasharr';
 import SceneService from '../../../service/SceneService';
@@ -10,16 +11,20 @@ import { Config } from '../../../models/Config';
 import StashSceneService from '../../../service/stash/StashSceneService';
 import CopyButton from '../../CopyButton';
 import ExternalLink from '../../common/ExternalLink';
+import { SceneButtonRefreshService } from '../../../service/SceneButtonRefreshService';
+import DeleteConfirmModal from '../../DeleteConfirmModal';
 
-library.add(faArrowUpRightFromSquare);
+library.add(faArrowUpRightFromSquare, faTrashCan);
 
 const Details = (props: { config: Config; stashId: string }) => {
-  const [sceneDetails] = createResource(
+  const [sceneDetails, { refetch: refetchSceneDetails }] = createResource(
     props,
     async (p: { config: Config; stashId: string }) => {
       return SceneService.getSceneByStashId(p.config, p.stashId);
     },
   );
+
+  const [showDelete, setShowDelete] = createSignal(false);
 
   const [qualityProfiles] = createResource(
     props,
@@ -54,7 +59,17 @@ const Details = (props: { config: Config; stashId: string }) => {
         <ExternalLink href={whisparrLink} config={props.config}>
           <FontAwesomeIcon icon="fa-solid fa-arrow-up-right-from-square" /> View
           in Whisparr
-        </ExternalLink>
+        </ExternalLink>{' '}
+        <button
+          class="btn btn-link text-danger p-0 ms-2"
+          type="button"
+          id={Stasharr.ID.SceneDelete}
+          data-bs-toggle="tooltip"
+          data-bs-title={`Delete ${sceneDetails()!.title} from Whisparr`}
+          onClick={() => setShowDelete(true)}
+        >
+          <FontAwesomeIcon icon="fa-solid fa-trash-can" />
+        </button>
         <br />
         Size:{' '}
         {sceneDetails()!.sizeOnDisk > 0
@@ -76,6 +91,20 @@ const Details = (props: { config: Config; stashId: string }) => {
           />
         </div>
       </div>
+      <DeleteConfirmModal
+        type="scene"
+        show={showDelete()}
+        onClose={() => setShowDelete(false)}
+        onDeleted={() => {
+          // Refresh scene details to update UI
+          refetchSceneDetails();
+          // Notify scene cards/buttons to refresh their status
+          SceneButtonRefreshService.triggerRefresh();
+        }}
+        config={props.config}
+        stashId={props.stashId}
+        whisparrScene={sceneDetails()!}
+      />
     </Show>
   );
 };

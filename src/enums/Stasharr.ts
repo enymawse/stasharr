@@ -12,6 +12,7 @@ const settingsModal = `${stasharrPrefix}-settingsModal`;
 const addallavailable = `${stasharrPrefix}-addallavailable`;
 const studiomonitor = `${stasharrPrefix}-studiomonitor`;
 const performermonitor = `${stasharrPrefix}-performermonitor`;
+const scenedelete = `${stasharrPrefix}-scenedelete`;
 const searchallavailable = `${stasharrPrefix}-searchallavailable`;
 const protocol = `${stasharrPrefix}-protocol`;
 const domain = `${stasharrPrefix}-domain`;
@@ -36,6 +37,7 @@ export const Stasharr = {
     HeaderDetails: headerDetails,
     StudioAdd: studioadd,
     PerformerAdd: performeradd,
+    SceneDelete: scenedelete,
     HeaderButton: headerButton,
     SettingsModal: settingsModal,
     AddAllAvailable: addallavailable,
@@ -64,6 +66,7 @@ export const Stasharr = {
     StudioAdd: `#${studioadd}`,
     SettingsModal: `#${settingsModal}`,
     PerformerAdd: `#${performeradd}`,
+    SceneDelete: `#${scenedelete}`,
     HeaderButton: `#${headerButton}`,
     AddAllAvailable: `#${addallavailable}`,
     StudioMonitor: `#${studiomonitor}`,
