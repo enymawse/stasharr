@@ -43,7 +43,7 @@
     "@typescript-eslint/parser": "^8.42.0",
     "@violentmonkey/types": "^0.2.2",
     "babel-loader": "^9.2.1",
-    "babel-preset-solid": "^1.9.9",
+    "babel-preset-solid": "^1.9.10",
     "bootstrap": "^5.3.8",
     "commitizen": "^4.3.1",
     "css-loader": "^7.1.2",
