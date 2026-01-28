@@ -74,17 +74,18 @@ export default class SceneService extends ServiceBase {
     config: Config,
     stashId: string,
   ): Promise<SceneStatusType> {
-    const exclusionMap = await ExclusionListService.getExclusionsMap(config);
-    if (exclusionMap.size > 0) {
-      if (exclusionMap.has(stashId)) return SceneStatus.EXCLUDED;
-    }
-    const scene = await SceneService.getSceneByStashId(config, stashId);
-    if (scene) {
-      return scene.hasFile
-        ? SceneStatus.EXISTS_AND_HAS_FILE
-        : SceneStatus.EXISTS_AND_NO_FILE;
+    const exclusion = await ExclusionListService.getExclusion(config, stashId);
+    if (exclusion) {
+      return SceneStatus.EXCLUDED;
     } else {
-      return SceneStatus.NOT_IN_WHISPARR;
+      const scene = await SceneService.getSceneByStashId(config, stashId);
+      if (scene) {
+        return scene.hasFile
+          ? SceneStatus.EXISTS_AND_HAS_FILE
+          : SceneStatus.EXISTS_AND_NO_FILE;
+      } else {
+        return SceneStatus.NOT_IN_WHISPARR;
+      }
     }
   }
 
@@ -98,11 +99,10 @@ export default class SceneService extends ServiceBase {
     scene: Whisparr.WhisparrScene | null;
     status: SceneStatusType;
   }> {
-    const exclusionMap = await ExclusionListService.getExclusionsMap(config);
+    const exclusion = await ExclusionListService.getExclusion(config, stashId);
     let status;
-    if (exclusionMap.size > 0) {
-      if (exclusionMap.has(stashId))
-        return { scene: null, status: SceneStatus.EXCLUDED };
+    if (exclusion) {
+      return { scene: null, status: SceneStatus.EXCLUDED };
     }
     const scene = await SceneService.getSceneByStashId(config, stashId);
     if (scene) {
