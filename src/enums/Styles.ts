@@ -1,6 +1,6 @@
 export const Styles = {
   Color: {
-    PINK: '#e385ed',
+    PURPLE: '#7138C8',
     WHITE: '#ffffffcc',
     YELLOW: '#ffbb33',
     GRAY: '#cccccc',
@@ -12,17 +12,17 @@ export const Styles = {
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: ${() => Styles.Color.PINK};
+    background-color: ${() => Styles.Color.PURPLE};
     border: none;
     border-radius: 10%;
     padding: 5px;
     color: ${() => Styles.Color.WHITE};
   `,
   AddPerformerButton: `
-    color: ${() => Styles.Color.PINK};
+    color: ${() => Styles.Color.PURPLE};
   `,
   AddStudioButton: `
-    color: ${() => Styles.Color.PINK};
+    color: ${() => Styles.Color.PURPLE};
   `,
   AddPerformerButtonLoading: `
     color: ${() => Styles.Color.GRAY};
@@ -31,14 +31,14 @@ export const Styles = {
     color: ${() => Styles.Color.GRAY};
   `,
   HeaderButton: `
-    background-color: ${() => Styles.Color.PINK};
+    background-color: ${() => Styles.Color.PURPLE};
     color: ${() => Styles.Color.WHITE};
     padding: 10px;
     border: none;
     border-radius: 5px;
   `,
   SearchAllAvailable: `
-    background-color: ${() => Styles.Color.PINK};
+    background-color: ${() => Styles.Color.PURPLE};
     color: ${() => Styles.Color.WHITE};
     padding: 10px;
     border: none;
