@@ -29,10 +29,13 @@ export class PerformerController extends BaseController {
       StashDB.DOMSelector.PerformerCardHeader,
     );
 
+    const performerCardHeaderPlaceholder = document.createElement('div');
+
     if (performerTitle) {
+      performerTitle.appendChild(performerCardHeaderPlaceholder);
       render(
         () => Performer({ config: this._config, stashId: performerStashId }),
-        performerTitle,
+        performerCardHeaderPlaceholder,
       );
     }
   }
