@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.11.1](https://github.com/enymawse/stasharr/compare/v2.11.0...v2.11.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* bulk actions appear on performer, scene, and studio pages ([#143](https://github.com/enymawse/stasharr/issues/143)) ([86435c9](https://github.com/enymawse/stasharr/commit/86435c96bae0b2abe1503e69c138af662ea67646)), closes [#108](https://github.com/enymawse/stasharr/issues/108)
+* **performer:** inject a new div in the performer title so solidjs doesn't overwrite ([#142](https://github.com/enymawse/stasharr/issues/142)) ([6f447a7](https://github.com/enymawse/stasharr/commit/6f447a77fd9a45fd6915a060832bbae0a9d87fde)), closes [#107](https://github.com/enymawse/stasharr/issues/107)
+* **theme:** whisparr purple theme ([#141](https://github.com/enymawse/stasharr/issues/141)) ([0e0d9ba](https://github.com/enymawse/stasharr/commit/0e0d9bae382ba45258fa8dc44934a496fa5e4bff))
+
 ## [2.11.0](https://github.com/enymawse/stasharr/compare/v2.10.0...v2.11.0) (2025-09-02)
 
 

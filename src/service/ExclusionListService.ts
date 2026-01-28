@@ -66,4 +66,31 @@ export default class ExclusionListService extends ServiceBase {
     }
     return null;
   }
+
+  static async getExclusion(
+    config: Config,
+    stashId: string,
+    suppressToasts?: boolean,
+  ): Promise<Whisparr.Exclusion | null> {
+    const endpoint = `exclusions?stashId=${encodeURIComponent(stashId)}`;
+    let response;
+    try {
+      response = await ServiceBase.request(config, endpoint);
+      if (
+        responseStatusCodeOK(response.status) &&
+        response.response.length > 0
+      ) {
+        return response.response as Whisparr.Exclusion;
+      }
+    } catch (e) {
+      if (!suppressToasts) {
+        ToastService.showToast(
+          'Error occurred while looking up Exclusion',
+          false,
+        );
+      }
+      console.error('Error in getExclusion:', e);
+    }
+    return null;
+  }
 }
