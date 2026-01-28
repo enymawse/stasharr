@@ -104,10 +104,10 @@ export function responseStatusCodeOK(code: number) {
 export function stateByStatus(
   initialStatus: SceneStatusType,
 ): [boolean, string, IconDefinition] {
-  let state = { disabled: false, color: Styles.Color.PINK, icon: faDownload };
+  let state = { disabled: false, color: Styles.Color.PURPLE, icon: faDownload };
   switch (initialStatus) {
     case SceneStatus.NOT_IN_WHISPARR:
-      state.color = Styles.Color.PINK;
+      state.color = Styles.Color.PURPLE;
       state.icon = faDownload;
       break;
     case SceneStatus.EXCLUDED:
