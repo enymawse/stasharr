@@ -13,11 +13,6 @@ export class ScenesListController extends BaseController {
     return node.matches('.row');
   }
 
-  isOnTargetPath(): boolean {
-    const paths = ['/performers', '/studios', '/scenes'];
-    return paths.some((p) => window.location.pathname.includes(p));
-  }
-
   initialize() {
     console.log('🎯 ScenesListController: initialize() called');
     console.log('🔍 Current URL:', window.location.href);
