@@ -1,5 +1,4 @@
 import { createMemo, createResource, Show } from 'solid-js';
-import { FontAwesomeIcon } from 'solid-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
 import { filesize } from 'filesize';
@@ -8,8 +7,8 @@ import SceneService from '../../../service/SceneService';
 import WhisparrService from '../../../service/WhisparrService';
 import { Config } from '../../../models/Config';
 import StashSceneService from '../../../service/stash/StashSceneService';
-import CopyButton from '../../CopyButton';
 import ExternalLink from '../../common/ExternalLink';
+import { Badge } from 'solid-bootstrap';
 
 library.add(faArrowUpRightFromSquare);
 
@@ -42,41 +41,40 @@ const Details = (props: { config: Config; stashId: string }) => {
   });
 
   return (
-    <Show when={sceneDetails() && qualityProfiles()}>
-      <div id={Stasharr.ID.HeaderDetails} style={'text-align: right'}>
-        <Show when={stashSceneDetails()}>
-          <ExternalLink href={stashLink()} config={props.config}>
-            <FontAwesomeIcon icon="fa-solid fa-arrow-up-right-from-square" />{' '}
-            View in Stash
-          </ExternalLink>
-          <br />
-        </Show>
-        <ExternalLink href={whisparrLink} config={props.config}>
-          <FontAwesomeIcon icon="fa-solid fa-arrow-up-right-from-square" /> View
-          in Whisparr
-        </ExternalLink>
-        <br />
-        Size:{' '}
-        {sceneDetails()!.sizeOnDisk > 0
-          ? filesize(sceneDetails()!.sizeOnDisk)
-          : 'N/A'}
-        <br />
-        Quality Profile:{' '}
-        {
-          qualityProfiles()!.find(
-            (item) => item.id === sceneDetails()!.qualityProfileId,
-          )?.name
-        }
-        <br />
-        <div style="margin-top: 8px;">
-          <CopyButton
-            textToCopy={props.stashId}
-            className="btn btn-sm btn-outline-primary"
-            tooltip="Copy Stash ID to clipboard"
-          />
+    <>
+      <Show when={sceneDetails() && qualityProfiles()}>
+        <span>
+          {sceneDetails()!.sizeOnDisk > 0
+            ? filesize(sceneDetails()!.sizeOnDisk)
+            : 'N/A'}
+        </span>
+        <span class="mx-1">•</span>
+        <span>
+          {
+            qualityProfiles()!.find(
+              (item) => item.id === sceneDetails()!.qualityProfileId,
+            )?.name
+          }
+        </span>
+        <div
+          id={Stasharr.ID.SceneDetails}
+          class="scene-details-badge-container"
+        >
+          <Show when={stashSceneDetails()}>
+            <Badge pill bg="primary">
+              <ExternalLink href={stashLink()} config={props.config}>
+                Stash
+              </ExternalLink>
+            </Badge>
+          </Show>
+          <Badge pill bg="whisparr">
+            <ExternalLink href={whisparrLink} config={props.config}>
+              Whisparr
+            </ExternalLink>
+          </Badge>
         </div>
-      </div>
-    </Show>
+      </Show>
+    </>
   );
 };
 
