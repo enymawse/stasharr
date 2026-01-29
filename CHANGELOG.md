@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.2](https://github.com/enymawse/stasharr/compare/v2.11.1...v2.11.2) (2026-01-29)
+
+
+### Bug Fixes
+
+* **scene:** details deconfliction with editor controls([#148](https://github.com/enymawse/stasharr/issues/148)) ([b51f9fb](https://github.com/enymawse/stasharr/commit/b51f9fb8b370d97eafcfae907ed9d28df4fbe533))
+
 ## [2.11.1](https://github.com/enymawse/stasharr/compare/v2.11.0...v2.11.1) (2026-01-28)
 
 
