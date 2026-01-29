@@ -18,4 +18,10 @@ export abstract class BaseController implements Controller {
   protected cleanupTooltips(): void {
     TooltipManager.cleanupOrphaned();
   }
+
+  protected isOnTargetPath(specificPath?: string): boolean {
+    if (specificPath) return window.location.pathname.includes(specificPath);
+    const paths = ['/performers', '/studios', '/scenes'];
+    return paths.some((p) => window.location.pathname.includes(p));
+  }
 }

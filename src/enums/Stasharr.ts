@@ -21,7 +21,7 @@ const rootFolderPath = `${stasharrPrefix}-rootFolderPath`;
 const searchOnAdd = `${stasharrPrefix}-searchOnAdd`;
 const stashDomain = `${stasharrPrefix}-stashDomain`;
 const tags = `${stasharrPrefix}-tags`;
-const headerDetails = `${stasharrPrefix}-headerDetails`;
+const sceneDetails = `${stasharrPrefix}-sceneDetails`;
 const whisparrCardButton = `whisparr-card-button`;
 const stashApiKey = `${stasharrPrefix}-stashApiKey`;
 const floatingCopyButton = `${stasharrPrefix}-floating-copy-button`;
@@ -33,7 +33,7 @@ export const Stasharr = {
     SceneStatus: sceneStatus,
   },
   ID: {
-    HeaderDetails: headerDetails,
+    SceneDetails: sceneDetails,
     StudioAdd: studioadd,
     PerformerAdd: performeradd,
     HeaderButton: headerButton,
@@ -58,7 +58,7 @@ export const Stasharr = {
   },
   DOMSelector: {
     WhisparrCardButton: `.${whisparrCardButton}`,
-    HeaderDetails: `#${headerDetails}`,
+    SceneDetails: `#${sceneDetails}`,
     CardButton: `.${cardButton}`,
     CopyCardButton: `.${copyCardButton}`,
     StudioAdd: `#${studioadd}`,

@@ -10,31 +10,23 @@ import SceneButton from '../../components/SceneButton';
 import FloatingCopyButton from '../../components/FloatingCopyButton';
 
 export class DetailsController extends BaseController {
-  private detailsDispose?: () => void;
+  private sceneDetailsDispose?: () => void;
   private headerButtonDispose?: () => void;
   private floatingCopyButtonDispose?: () => void;
 
   initialize(): void {
-    const details = document.querySelector(Stasharr.DOMSelector.HeaderDetails);
-    const floatEnd = document.querySelector(
-      StashDB.DOMSelector.SceneInfoCardHeaderFloatEnd,
-    );
     const stashId = extractStashIdFromPath();
-    if (floatEnd !== null && stashId !== null && details === null) {
-      if (!this.detailsDispose) {
-        this.detailsDispose = render(
-          () => Details({ config: this._config, stashId: stashId }),
-          floatEnd,
-        );
-      }
-    }
     const headerButton = document.querySelector(
       Stasharr.DOMSelector.HeaderButton,
     );
-    const cardHeader: HTMLElement | null = document.querySelector<HTMLElement>(
+    const sceneInfoCardHeader = document.querySelector<HTMLElement>(
       StashDB.DOMSelector.SceneInfoCardHeader,
     );
-    if (headerButton === null && stashId !== null && cardHeader !== null) {
+    if (
+      headerButton === null &&
+      stashId !== null &&
+      sceneInfoCardHeader !== null
+    ) {
       if (!this.headerButtonDispose) {
         this.headerButtonDispose = render(
           () =>
@@ -43,12 +35,35 @@ export class DetailsController extends BaseController {
               stashId: stashId,
               header: true,
             }),
-          cardHeader,
+          sceneInfoCardHeader,
         );
       }
     }
 
-    const floatingCopyButton = document.querySelector(
+    const sceneDetails = document.querySelector(
+      Stasharr.DOMSelector.SceneDetails,
+    );
+    const sceneInfoCardHeaderH6 = document.querySelector<HTMLElement>(
+      StashDB.DOMSelector.SceneInfoCardHeaderH6,
+    );
+    if (
+      sceneDetails === null &&
+      stashId !== null &&
+      sceneInfoCardHeaderH6 !== null
+    ) {
+      if (!this.sceneDetailsDispose) {
+        this.sceneDetailsDispose = render(
+          () =>
+            Details({
+              config: this._config,
+              stashId: stashId,
+            }),
+          sceneInfoCardHeaderH6.appendChild(document.createElement('div')),
+        );
+      }
+    }
+
+    const floatingCopyButton = document.querySelector<HTMLElement>(
       Stasharr.DOMSelector.FloatingCopyButton,
     );
     if (floatingCopyButton === null && stashId !== null) {
@@ -60,8 +75,12 @@ export class DetailsController extends BaseController {
       }
     }
   }
-  shouldReinit(): boolean {
-    const details = document.querySelector(Stasharr.DOMSelector.HeaderDetails);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  shouldReinit(node: HTMLElement): boolean {
+    const sceneDetails = document.querySelector(
+      Stasharr.DOMSelector.SceneDetails,
+    );
     const headerButton = document.querySelector(
       Stasharr.DOMSelector.HeaderButton,
     );
@@ -73,9 +92,9 @@ export class DetailsController extends BaseController {
     );
 
     // Reset dispose functions if elements are missing (page navigation/refresh)
-    if (details === null && this.detailsDispose) {
-      this.detailsDispose();
-      this.detailsDispose = undefined;
+    if (sceneDetails === null && this.sceneDetailsDispose) {
+      this.sceneDetailsDispose();
+      this.sceneDetailsDispose = undefined;
     }
     if (headerButton === null && this.headerButtonDispose) {
       this.headerButtonDispose();
@@ -88,7 +107,9 @@ export class DetailsController extends BaseController {
 
     if (
       sceneInfoCardHeader &&
-      (details === null || headerButton === null || floatingCopyButton === null)
+      (sceneDetails === null ||
+        headerButton === null ||
+        floatingCopyButton === null)
     ) {
       console.log('shouldReinit - DetailsController');
       return true;
@@ -96,9 +117,9 @@ export class DetailsController extends BaseController {
     return false;
   }
   cleanup(): void {
-    if (this.detailsDispose) {
-      this.detailsDispose();
-      this.detailsDispose = undefined;
+    if (this.sceneDetailsDispose) {
+      this.sceneDetailsDispose();
+      this.sceneDetailsDispose = undefined;
     }
     if (this.headerButtonDispose) {
       this.headerButtonDispose();
