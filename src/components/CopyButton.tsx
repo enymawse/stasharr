@@ -41,11 +41,6 @@ const CopyButton = (props: CopyButtonProps) => {
       >
         <FontAwesomeIcon icon="fa-solid fa-check" />
       </Show>
-      <span class="ms-1">
-        <Show when={copied()} fallback="Copy ID">
-          Copied!
-        </Show>
-      </span>
     </button>
   );
 };
