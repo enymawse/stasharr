@@ -75,6 +75,8 @@ export class DetailsController extends BaseController {
       }
     }
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   shouldReinit(node: HTMLElement): boolean {
     const sceneDetails = document.querySelector(
       Stasharr.DOMSelector.SceneDetails,
