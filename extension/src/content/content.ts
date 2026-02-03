@@ -268,6 +268,8 @@ if (!document.getElementById(PANEL_ID)) {
             currentMonitorState = cached.monitored;
             monitorToggle.textContent = cached.monitored ? 'Unmonitor' : 'Monitor';
           }
+        } else {
+          monitorToggle.disabled = true;
         }
         return;
       }
