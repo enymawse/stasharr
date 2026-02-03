@@ -4,8 +4,26 @@ import { resolve, extname } from 'node:path';
 const distRoot = resolve(new URL('.', import.meta.url).pathname, '..', 'dist');
 const forbiddenStrings = ['==UserScript==', 'GM_', 'Violentmonkey', 'Tampermonkey'];
 const forbiddenExtensions = new Set(['.user.js']);
-const forbiddenContentTokens = ['api/v3', 'whisparr', 'radarr', 'sonarr', 'http://'];
-const forbiddenOptionsTokens = ['http://', '/api/v3/', 'X-Api-Key'];
+const forbiddenContentTokens = [
+  '/api/v3',
+  'qualityprofile',
+  'rootfolder',
+  'tag',
+  'X-Api-Key',
+  'whisparr',
+  'radarr',
+  'sonarr',
+  'http://',
+];
+const forbiddenOptionsTokens = [
+  '/api/v3',
+  '/api/v3/',
+  'qualityprofile',
+  'rootfolder',
+  'tag',
+  'X-Api-Key',
+  'http://',
+];
 
 const failures = [];
 
