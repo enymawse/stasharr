@@ -790,9 +790,45 @@ async function handleSetMonitorState(request: { type?: string; [key: string]: un
     return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: false, error: `Permission missing for ${origin}` };
   }
 
+  const existingResponse = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!existingResponse.ok || !isRecord(existingResponse.json)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.setMonitorState,
+      monitored: Boolean(request.monitored),
+      error: existingResponse.error ?? 'Failed to fetch Whisparr scene.',
+    };
+  }
+
+  const existing = existingResponse.json as Record<string, unknown>;
+  const qualityProfileId = Number(existing.qualityProfileId);
+  const rootFolderPath =
+    typeof existing.rootFolderPath === 'string' ? existing.rootFolderPath : '';
+  const path = typeof existing.path === 'string' ? existing.path : undefined;
+  if (!Number.isFinite(qualityProfileId) || !rootFolderPath) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.setMonitorState,
+      monitored: Boolean(request.monitored),
+      error: 'Whisparr scene missing required fields.',
+    };
+  }
+
   const payload = {
     id: whisparrId,
     monitored: Boolean(request.monitored),
+    qualityProfileId,
+    rootFolderPath,
+    tags: Array.isArray(existing.tags)
+      ? existing.tags.filter((tag) => Number.isFinite(Number(tag))).map((tag) => Number(tag))
+      : undefined,
+    title: typeof existing.title === 'string' ? existing.title : undefined,
+    year: Number.isFinite(Number(existing.year)) ? Number(existing.year) : undefined,
+    path,
   };
 
   const response = await handleFetchJson({
