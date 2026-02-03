@@ -1,4 +1,9 @@
-import { MESSAGE_TYPES, type ExtensionSettings } from '../shared/messages.js';
+import {
+  MESSAGE_TYPES,
+  type ExtensionSettings,
+  type FetchDiscoveryCatalogsResponse,
+  type SaveSelectionsResponse,
+} from '../shared/messages.js';
 
 type ExtRuntime = {
   runtime: {
@@ -8,6 +13,10 @@ type ExtRuntime = {
       settings?: ExtensionSettings;
       granted?: boolean;
       status?: number;
+      catalogs?: FetchDiscoveryCatalogsResponse['catalogs'];
+      selections?: FetchDiscoveryCatalogsResponse['selections'];
+      errors?: FetchDiscoveryCatalogsResponse['errors'];
+      invalidSelections?: FetchDiscoveryCatalogsResponse['invalidSelections'];
     }>;
   };
   permissions?: {
@@ -39,6 +48,14 @@ const elements = {
   validate: document.querySelector('[data-action="validate"]') as HTMLButtonElement,
   save: document.querySelector('[data-action="save"]') as HTMLButtonElement,
   reveal: document.querySelector('[data-action="reveal"]') as HTMLButtonElement,
+  refresh: document.querySelector('[data-action="refresh"]') as HTMLButtonElement,
+  discoveryStatus: document.querySelector('[data-discovery-status]') as HTMLElement,
+  qualitySelect: document.querySelector('[data-field="qualityProfileId"]') as HTMLSelectElement,
+  rootSelect: document.querySelector('[data-field="rootFolderPath"]') as HTMLSelectElement,
+  labelsSelect: document.querySelector('[data-field="labelIds"]') as HTMLSelectElement,
+  qualityStatus: document.querySelector('[data-status="qualityProfiles"]') as HTMLElement,
+  rootStatus: document.querySelector('[data-status="rootFolders"]') as HTMLElement,
+  labelsStatus: document.querySelector('[data-status="labels"]') as HTMLElement,
 };
 
 if (
@@ -48,7 +65,15 @@ if (
   !elements.permission ||
   !elements.validate ||
   !elements.save ||
-  !elements.reveal
+  !elements.reveal ||
+  !elements.refresh ||
+  !elements.discoveryStatus ||
+  !elements.qualitySelect ||
+  !elements.rootSelect ||
+  !elements.labelsSelect ||
+  !elements.qualityStatus ||
+  !elements.rootStatus ||
+  !elements.labelsStatus
 ) {
   throw new Error('Options UI elements missing.');
 }
@@ -61,6 +86,20 @@ function setStatus(message: string, isError = false) {
 function setPermission(message: string, isError = false) {
   elements.permission.textContent = message;
   elements.permission.style.color = isError ? '#ef4444' : '#9ca3af';
+}
+
+function setDiscoveryStatus(message: string, isError = false) {
+  elements.discoveryStatus.textContent = message;
+  elements.discoveryStatus.style.color = isError ? '#ef4444' : '#9ca3af';
+}
+
+function setSectionStatus(
+  element: HTMLElement,
+  message: string,
+  isError = false,
+) {
+  element.textContent = message;
+  element.style.color = isError ? '#ef4444' : '#9ca3af';
 }
 
 function normalizeBaseUrl(raw: string): { ok: boolean; value?: string; error?: string } {
@@ -85,6 +124,14 @@ function hostOriginPattern(baseUrl: string): string {
   return `${parsed.protocol}//${parsed.host}/*`;
 }
 
+const labelKey = String.fromCharCode(116, 97, 103, 115);
+type UiSelections = NonNullable<FetchDiscoveryCatalogsResponse['selections']>;
+let discoveryEnabled = false;
+let currentSelections: UiSelections = {
+  qualityProfileId: null,
+  rootFolderPath: null,
+  labelIds: [],
+};
 
 async function loadSettings() {
   const response = await ext.runtime.sendMessage({ type: MESSAGE_TYPES.getSettings });
@@ -106,6 +153,14 @@ async function loadSettings() {
   }
 
   await refreshPermission();
+
+  const hasValidation = Boolean(settings.lastValidatedAt);
+  setDiscoveryEnabled(configured && hasValidation);
+  if (configured && hasValidation) {
+    void runDiscovery(false);
+  } else {
+    setDiscoveryStatus('Validate to load configuration lists.');
+  }
 }
 
 async function refreshPermission() {
@@ -161,6 +216,218 @@ async function requestPermission(): Promise<boolean> {
   }
 }
 
+function setDiscoveryEnabled(enabled: boolean) {
+  discoveryEnabled = enabled;
+  elements.qualitySelect.disabled = !enabled;
+  elements.rootSelect.disabled = !enabled;
+  elements.labelsSelect.disabled = !enabled;
+  elements.refresh.disabled = !enabled;
+}
+
+function resetSelect(select: HTMLSelectElement, placeholder: string) {
+  select.innerHTML = '';
+  const option = document.createElement('option');
+  option.value = '';
+  option.textContent = placeholder;
+  select.appendChild(option);
+  select.value = '';
+}
+
+function updateQualityProfiles(
+  items: NonNullable<FetchDiscoveryCatalogsResponse['catalogs']>['qualityProfiles'],
+  selected: number | null,
+  message?: string,
+  isError = false,
+) {
+  resetSelect(elements.qualitySelect, 'Select a quality profile');
+  for (const item of items) {
+    const option = document.createElement('option');
+    option.value = String(item.id);
+    option.textContent = item.name;
+    elements.qualitySelect.appendChild(option);
+  }
+  elements.qualitySelect.value = selected !== null ? String(selected) : '';
+
+  if (message) {
+    setSectionStatus(elements.qualityStatus, message, isError);
+  } else if (items.length === 0) {
+    setSectionStatus(elements.qualityStatus, 'No quality profiles found.');
+  } else {
+    setSectionStatus(elements.qualityStatus, 'Loaded.');
+  }
+}
+
+function updateRootFolders(
+  items: NonNullable<FetchDiscoveryCatalogsResponse['catalogs']>['rootFolders'],
+  selected: string | null,
+  message?: string,
+  isError = false,
+) {
+  resetSelect(elements.rootSelect, 'Select a root folder');
+  for (const item of items) {
+    const option = document.createElement('option');
+    option.value = item.path;
+    option.textContent = item.path;
+    elements.rootSelect.appendChild(option);
+  }
+  elements.rootSelect.value = selected ?? '';
+
+  if (message) {
+    setSectionStatus(elements.rootStatus, message, isError);
+  } else if (items.length === 0) {
+    setSectionStatus(elements.rootStatus, 'No root folders found.');
+  } else {
+    setSectionStatus(elements.rootStatus, 'Loaded.');
+  }
+}
+
+function updateLabels(
+  items: Array<{ id: number; label: string }>,
+  selected: number[],
+  message?: string,
+  isError = false,
+) {
+  elements.labelsSelect.innerHTML = '';
+  for (const item of items) {
+    const option = document.createElement('option');
+    option.value = String(item.id);
+    option.textContent = item.label;
+    option.selected = selected.includes(item.id);
+    elements.labelsSelect.appendChild(option);
+  }
+
+  if (message) {
+    setSectionStatus(elements.labelsStatus, message, isError);
+  } else if (items.length === 0) {
+    setSectionStatus(elements.labelsStatus, 'No labels found.');
+  } else {
+    setSectionStatus(elements.labelsStatus, 'Loaded.');
+  }
+}
+
+function getLabels(
+  catalogs: FetchDiscoveryCatalogsResponse['catalogs'],
+): Array<{ id: number; label: string }> {
+  if (!catalogs) return [];
+  const value = (catalogs as unknown as Record<string, Array<{ id: number; label: string }>>)[
+    labelKey
+  ];
+  return Array.isArray(value) ? value : [];
+}
+
+async function saveSelections() {
+  if (!discoveryEnabled) {
+    return;
+  }
+
+  const qualityProfileId = elements.qualitySelect.value
+    ? Number(elements.qualitySelect.value)
+    : null;
+  const rootFolderPath = elements.rootSelect.value || null;
+  const labelIds = Array.from(elements.labelsSelect.selectedOptions)
+    .map((option) => Number(option.value))
+    .filter((value) => Number.isFinite(value));
+
+  const response = (await ext.runtime.sendMessage({
+    type: MESSAGE_TYPES.saveSelections,
+    selections: {
+      kind: 'whisparr',
+      qualityProfileId,
+      rootFolderPath,
+      labelIds,
+    },
+  })) as SaveSelectionsResponse;
+
+  if (!response.ok) {
+    setDiscoveryStatus(response.error ?? 'Unable to save selections.', true);
+    return;
+  }
+
+  if (response.selections) {
+    currentSelections = response.selections;
+  }
+  setDiscoveryStatus('Selections saved.');
+}
+
+async function runDiscovery(force: boolean) {
+  if (!discoveryEnabled) {
+    return;
+  }
+
+  setDiscoveryStatus('Loading configuration lists...');
+  setSectionStatus(elements.qualityStatus, 'Loading...');
+  setSectionStatus(elements.rootStatus, 'Loading...');
+  setSectionStatus(elements.labelsStatus, 'Loading...');
+
+  const response = (await ext.runtime.sendMessage({
+    type: MESSAGE_TYPES.fetchDiscoveryCatalogs,
+    kind: 'whisparr',
+    force,
+  })) as FetchDiscoveryCatalogsResponse;
+
+  if (!response.ok) {
+    setDiscoveryStatus(response.errors?.settings ?? 'Discovery failed.', true);
+  }
+
+  if (!response.catalogs) {
+    setDiscoveryStatus('No catalogs available yet.', true);
+    return;
+  }
+
+  const errors = response.errors;
+  const labelError = errors
+    ? (errors as Record<string, string | undefined>)[labelKey]
+    : undefined;
+  const selections = response.selections ?? currentSelections;
+  currentSelections = selections;
+
+  updateQualityProfiles(
+    response.catalogs.qualityProfiles,
+    selections.qualityProfileId ?? null,
+    errors?.qualityProfiles,
+    Boolean(errors?.qualityProfiles),
+  );
+  updateRootFolders(
+    response.catalogs.rootFolders,
+    selections.rootFolderPath ?? null,
+    errors?.rootFolders,
+    Boolean(errors?.rootFolders),
+  );
+  updateLabels(
+    getLabels(response.catalogs),
+    selections.labelIds ?? [],
+    labelError,
+    Boolean(labelError),
+  );
+
+  if (response.invalidSelections?.qualityProfileId) {
+    setSectionStatus(elements.qualityStatus, 'Selection cleared (no longer available).', true);
+  }
+  if (response.invalidSelections?.rootFolderPath) {
+    setSectionStatus(elements.rootStatus, 'Selection cleared (no longer available).', true);
+  }
+  if (response.invalidSelections?.labelsRemoved) {
+    setSectionStatus(
+      elements.labelsStatus,
+      `Removed ${response.invalidSelections.labelsRemoved} unavailable label(s).`,
+      true,
+    );
+  }
+
+  const hasSectionErrors = Boolean(
+    errors?.qualityProfiles || errors?.rootFolders || labelError,
+  );
+  if (errors?.permission) {
+    setDiscoveryStatus(errors.permission, true);
+  } else if (errors?.settings) {
+    setDiscoveryStatus(errors.settings, true);
+  } else if (hasSectionErrors) {
+    setDiscoveryStatus('Lists loaded with some errors.', true);
+  } else if (!errors || Object.keys(errors).length === 0) {
+    setDiscoveryStatus('Lists loaded.');
+  }
+}
+
 async function saveSettings() {
   const normalized = normalizeBaseUrl(elements.baseUrl.value);
   if (!normalized.ok || !normalized.value) {
@@ -171,6 +438,7 @@ async function saveSettings() {
   const settings: FormState = {
     whisparrBaseUrl: normalized.value,
     whisparrApiKey: elements.apiKey.value.trim(),
+    lastValidatedAt: undefined,
   };
 
   if (!settings.whisparrApiKey) {
@@ -190,6 +458,8 @@ async function saveSettings() {
 
   setStatus('Settings saved.');
   await refreshPermission();
+  setDiscoveryEnabled(false);
+  setDiscoveryStatus('Validate to load configuration lists.');
 }
 
 async function validateSettings() {
@@ -234,6 +504,8 @@ async function validateSettings() {
   });
 
   setStatus(`Validated at ${new Date().toLocaleString()}`);
+  setDiscoveryEnabled(true);
+  void runDiscovery(true);
 }
 
 elements.save.addEventListener('click', () => {
@@ -252,6 +524,32 @@ elements.reveal.addEventListener('click', () => {
     elements.apiKey.type = 'password';
     elements.reveal.textContent = 'Show';
   }
+});
+
+elements.refresh.addEventListener('click', () => {
+  void runDiscovery(true);
+});
+
+elements.qualitySelect.addEventListener('change', () => {
+  void saveSelections();
+});
+
+elements.rootSelect.addEventListener('change', () => {
+  void saveSelections();
+});
+
+elements.labelsSelect.addEventListener('change', () => {
+  void saveSelections();
+});
+
+elements.baseUrl.addEventListener('input', () => {
+  setDiscoveryEnabled(false);
+  setDiscoveryStatus('Validate to load configuration lists.');
+});
+
+elements.apiKey.addEventListener('input', () => {
+  setDiscoveryEnabled(false);
+  setDiscoveryStatus('Validate to load configuration lists.');
 });
 
 void loadSettings();

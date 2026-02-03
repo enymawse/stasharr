@@ -36,7 +36,8 @@
         letter-spacing: 0.08em;
         color: #94a3b8;
       }
-      input {
+      input,
+      select {
         padding: 8px 10px;
         border-radius: 8px;
         border: 1px solid #1f2937;
@@ -46,9 +47,13 @@
         text-transform: none;
         letter-spacing: normal;
       }
+      select[multiple] {
+        min-height: 120px;
+      }
       .row {
         display: flex;
         gap: 8px;
+        align-items: center;
       }
       button {
         padding: 8px 12px;
@@ -62,9 +67,17 @@
       button[data-action='reveal'] {
         background: #334155;
       }
+      button[data-action='refresh'] {
+        background: #1f2937;
+      }
       .muted {
         color: #94a3b8;
         font-size: 12px;
+      }
+      .divider {
+        height: 1px;
+        background: #1f2937;
+        margin: 8px 0;
       }
     </style>
   </head>
@@ -93,6 +106,34 @@
         </div>
 
         <p data-permission class="muted">Permission status: unknown.</p>
+      </section>
+
+      <div class="divider"></div>
+
+      <section class="panel">
+        <div class="row">
+          <strong>Configuration lists</strong>
+          <button type="button" data-action="refresh">Refresh lists</button>
+        </div>
+        <p data-discovery-status class="muted">Validate to load configuration lists.</p>
+
+        <label>
+          Quality Profile
+          <select data-field="qualityProfileId" disabled></select>
+          <span data-status="qualityProfiles" class="muted">Not loaded.</span>
+        </label>
+
+        <label>
+          Root Folder
+          <select data-field="rootFolderPath" disabled></select>
+          <span data-status="rootFolders" class="muted">Not loaded.</span>
+        </label>
+
+        <label>
+          Tags
+          <select data-field="labelIds" multiple disabled></select>
+          <span data-status="labels" class="muted">Not loaded.</span>
+        </label>
       </section>
     </main>
     <script type="module" src="options.js"></script>
