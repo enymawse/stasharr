@@ -1,7 +1,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 
-const distDir = resolve(new URL('.', import.meta.url).pathname, '..', 'dist');
+const distRoot = resolve(new URL('.', import.meta.url).pathname, '..', 'dist');
 const forbiddenStrings = ['==UserScript==', 'GM_', 'Violentmonkey', 'Tampermonkey'];
 const forbiddenExtensions = new Set(['.user.js']);
 
@@ -40,11 +40,7 @@ async function walk(dir) {
   }
 }
 
-await walk(distDir);
-
-const manifestPath = resolve(distDir, 'manifest.json');
-const manifestContent = await readFile(manifestPath, 'utf8');
-const manifest = JSON.parse(manifestContent);
+await walk(distRoot);
 
 function collectStrings(value, strings = []) {
   if (typeof value === 'string') {
@@ -61,11 +57,18 @@ function collectStrings(value, strings = []) {
   return strings;
 }
 
-const manifestStrings = collectStrings(manifest);
-const forbiddenPathFragments = ['../', '..\\', '/legacy/', '\\legacy\\'];
-for (const value of manifestStrings) {
-  if (forbiddenPathFragments.some((fragment) => value.includes(fragment))) {
-    failures.push(`Manifest references path outside /extension: ${value}`);
+const manifestTargets = ['chrome', 'firefox'];
+for (const target of manifestTargets) {
+  const manifestPath = resolve(distRoot, target, 'manifest.json');
+  const manifestContent = await readFile(manifestPath, 'utf8');
+  const manifest = JSON.parse(manifestContent);
+
+  const manifestStrings = collectStrings(manifest);
+  const forbiddenPathFragments = ['../', '..\\', '/legacy/', '\\legacy\\'];
+  for (const value of manifestStrings) {
+    if (forbiddenPathFragments.some((fragment) => value.includes(fragment))) {
+      failures.push(`Manifest references path outside /extension: ${value}`);
+    }
   }
 }
 

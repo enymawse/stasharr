@@ -13,7 +13,8 @@
   "content_scripts": [
     {
       "matches": ["https://stashdb.org/*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
   ],
   "options_ui": {

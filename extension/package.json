@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "npm run build:chrome && npm run build:firefox",
+    "build:chrome": "node scripts/build.mjs chrome",
+    "build:firefox": "node scripts/build.mjs firefox",
+    "pack:chrome": "node scripts/pack.mjs chrome",
+    "pack:firefox": "node scripts/pack.mjs firefox",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "npm run typecheck",
     "tripwire": "node scripts/tripwire.mjs"
