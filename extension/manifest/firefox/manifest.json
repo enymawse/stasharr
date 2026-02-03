@@ -7,8 +7,7 @@
     "default_title": "Stasharr"
   },
   "background": {
-    "service_worker": "background/background.js",
-    "type": "module"
+    "scripts": ["background/background-firefox.js"]
   },
   "content_scripts": [
     {

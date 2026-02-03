@@ -4,20 +4,21 @@ const MESSAGE_TYPES_CONTENT = {
 
 type GetConfigStatusRequest = { type: typeof MESSAGE_TYPES_CONTENT.getConfigStatus };
 
-type ExtRuntime = {
+type ContentRuntime = {
   runtime: {
     sendMessage: (message: GetConfigStatusRequest) => Promise<{
       ok: boolean;
       configured?: boolean;
     }>;
     getURL?: (path: string) => string;
+    openOptionsPage?: () => void;
   };
 };
 
 const PANEL_ID = 'stasharr-extension-panel';
 const extContent =
-  (globalThis as typeof globalThis & { browser?: ExtRuntime; chrome?: ExtRuntime }).browser ??
-  (globalThis as typeof globalThis & { chrome?: ExtRuntime }).chrome;
+  (globalThis as typeof globalThis & { browser?: ContentRuntime; chrome?: ContentRuntime }).browser ??
+  (globalThis as typeof globalThis & { chrome?: ContentRuntime }).chrome;
 
 if (!extContent) {
   throw new Error('Extension runtime not available.');
@@ -111,6 +112,11 @@ if (!document.getElementById(PANEL_ID)) {
   openOptions.style.color = '#ffffff';
 
   openOptions.addEventListener('click', async () => {
+    if (extContent.runtime.openOptionsPage) {
+      extContent.runtime.openOptionsPage();
+      return;
+    }
+
     const url = extContent.runtime.getURL
       ? (extContent.runtime.getURL('content/options.html') as string)
       : 'content/options.html';
