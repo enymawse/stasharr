@@ -1,5 +1,5 @@
-const status = document.querySelector('[data-status]');
+const statusEl = document.querySelector('[data-status]');
 
-if (status) {
-  status.textContent = 'Options UI coming soon.';
+if (statusEl instanceof HTMLElement) {
+  statusEl.textContent = 'Options UI coming soon.';
 }
