@@ -5,6 +5,7 @@ const distRoot = resolve(new URL('.', import.meta.url).pathname, '..', 'dist');
 const forbiddenStrings = ['==UserScript==', 'GM_', 'Violentmonkey', 'Tampermonkey'];
 const forbiddenExtensions = new Set(['.user.js']);
 const forbiddenContentTokens = ['api/v3', 'whisparr', 'radarr', 'sonarr', 'http://'];
+const forbiddenOptionsTokens = ['http://', '/api/v3/', 'X-Api-Key'];
 
 const failures = [];
 
@@ -87,6 +88,25 @@ for (const target of manifestTargets) {
     if (content.includes(token)) {
       failures.push(
         `Content bundle contains forbidden token "${token}" in ${contentPath}`,
+      );
+    }
+  }
+}
+
+for (const target of manifestTargets) {
+  const optionsPath = resolve(distRoot, target, 'content', 'options.js');
+  let content;
+  try {
+    content = await readFile(optionsPath, 'utf8');
+  } catch {
+    failures.push(`Missing options bundle: ${optionsPath}`);
+    continue;
+  }
+
+  for (const token of forbiddenOptionsTokens) {
+    if (content.includes(token)) {
+      failures.push(
+        `Options bundle contains forbidden token "${token}" in ${optionsPath}`,
       );
     }
   }
