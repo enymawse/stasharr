@@ -1,3 +1,5 @@
+import { parseStashDbPage } from './pageParser.js';
+
 const MESSAGE_TYPES_CONTENT = {
   getConfigStatus: 'GET_CONFIG_STATUS',
 } as const;
@@ -73,21 +75,20 @@ if (!document.getElementById(PANEL_ID)) {
   panel.appendChild(heading);
 
   const diagnostics = document.createElement('div');
-  const url = window.location.href;
-  const path = window.location.pathname;
-  let pageType = 'other';
-
-  if (path.startsWith('/scenes/')) {
-    pageType = 'scene';
-  } else if (path.startsWith('/studios/')) {
-    pageType = 'studio';
-  } else if (path.startsWith('/performers/')) {
-    pageType = 'performer';
-  }
-
-  diagnostics.textContent = `Diagnostics: ${pageType} • ${url}`;
+  const parsedPage = parseStashDbPage(document, window.location);
+  diagnostics.textContent = `Diagnostics: ${parsedPage.type} • ${parsedPage.url}`;
   diagnostics.style.opacity = '0.85';
   panel.appendChild(diagnostics);
+
+  const parseDetails = document.createElement('div');
+  parseDetails.style.marginTop = '6px';
+  parseDetails.style.fontSize = '11px';
+  parseDetails.style.opacity = '0.9';
+  const idsText =
+    parsedPage.stashIds.length > 0 ? parsedPage.stashIds.join(', ') : 'none';
+  const canonicalText = parsedPage.canonicalUrl ?? 'none';
+  parseDetails.textContent = `Detected: ${parsedPage.type} | IDs: ${idsText} | Canonical: ${canonicalText}`;
+  panel.appendChild(parseDetails);
 
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
