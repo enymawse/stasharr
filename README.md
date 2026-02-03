@@ -8,6 +8,12 @@
 
 **A powerful userscript that transforms StashDB into your content management hub by seamlessly integrating with Whisparr v3+ and Stash applications.**
 
+## Repository Layout
+
+- **Extension (standalone):** `/extension`
+- **Legacy userscript (reference-only):** `/legacy/userscript`  
+  This legacy code is not built or executed by the extension toolchain.
+
 Turn StashDB from a simple database into a comprehensive content management system with one-click downloads, bulk operations, and real-time monitoring—all without leaving your browser.
 
 ## Features
@@ -158,7 +164,7 @@ Navigate to any scene on StashDB to see Stasharr's enhanced interface:
 
 ### Bulk Operations
 
-![Bulk Actions](docs/images/bulk-actions-dropdown.png)
+![Bulk Actions](legacy/userscript/docs/images/bulk-actions-dropdown.png)
 
 On any StashDB page showing multiple scenes, the Stasharr Actions dropdown provides three bulk tools:
 
@@ -245,9 +251,28 @@ If you encounter issues, please [create a bug report](https://github.com/enymaws
 - **Error messages** — From browser console (F12 → Console)
 - **Steps to reproduce** — What you were doing when the issue occurred
 
-## Development
+## Extension Development
 
-Interested in contributing or running your own build? See our [Development Guide](DEVELOPMENT.md) for:
+From repo root:
+
+```bash
+cd extension
+npm ci
+npm run build
+```
+
+Optional checks:
+
+```bash
+npm run lint
+npm run tripwire
+```
+
+## Legacy Userscript Reference
+
+The legacy userscript source is preserved under `/legacy/userscript` for reference only. It is intentionally excluded from the extension build and CI.
+
+Interested in contributing or running your own legacy build? See the legacy guide at [`legacy/userscript/DEVELOPMENT.md`](legacy/userscript/DEVELOPMENT.md) for:
 
 - **Setting up the development environment**
 - **Building from source**
