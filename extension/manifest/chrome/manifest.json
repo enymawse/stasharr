@@ -21,7 +21,7 @@
     "open_in_tab": true
   },
   "permissions": ["storage"],
-  "host_permissions": ["https://stashdb.org/*", "http://*/*", "https://*/*"],
+  "host_permissions": ["https://stashdb.org/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src http: https:; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
   }

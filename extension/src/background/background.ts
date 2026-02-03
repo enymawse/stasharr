@@ -1,51 +1,33 @@
-const MESSAGE_TYPES_BG = {
-  ping: 'PING',
-  fetchJson: 'FETCH_JSON',
-} as const;
+import {
+  MESSAGE_TYPES,
+  type ExtensionRequest,
+  type ExtensionResponse,
+  type FetchJsonResponse,
+  type ValidateConnectionResponse,
+} from '../shared/messages';
+import { getSettings, resetSettings, saveSettings } from '../shared/storage';
 
-type PingRequestBg = { type: typeof MESSAGE_TYPES_BG.ping };
-type PingResponseBg = {
-  ok: true;
-  type: typeof MESSAGE_TYPES_BG.ping;
-  version: string;
-  timestamp: string;
-};
-
-type FetchJsonRequestBg = {
-  type: typeof MESSAGE_TYPES_BG.fetchJson;
-  url: string;
-  method?: string;
-  headers?: Record<string, string>;
-  body?: string;
-};
-
-type FetchJsonResponseBg = {
-  ok: boolean;
-  type: typeof MESSAGE_TYPES_BG.fetchJson;
-  status?: number;
-  json?: unknown;
-  text?: string;
-  error?: string;
-};
-
-type ExtensionRequestBg = PingRequestBg | FetchJsonRequestBg;
-type ExtensionResponseBg = PingResponseBg | FetchJsonResponseBg;
+const MESSAGE_TYPES_BG = MESSAGE_TYPES;
 
 type ExtRuntimeBg = {
   runtime: {
     onMessage: {
       addListener: (
         callback: (
-          request: ExtensionRequestBg,
+          request: ExtensionRequest,
           sender: unknown,
-          sendResponse: (response: ExtensionResponseBg) => void,
+          sendResponse: (response: ExtensionResponse) => void,
         ) => void,
       ) => void;
     };
   };
+  permissions?: {
+    request: (details: { origins: string[] }) => Promise<boolean>;
+    contains: (details: { origins: string[] }) => Promise<boolean>;
+  };
 };
 
-const ext =
+const extCandidate =
   (
     globalThis as typeof globalThis & {
       browser?: ExtRuntimeBg;
@@ -54,15 +36,16 @@ const ext =
   ).browser ??
   (globalThis as typeof globalThis & { chrome?: ExtRuntimeBg }).chrome;
 
-if (!ext) {
+if (!extCandidate) {
   throw new Error('Extension runtime not available.');
 }
+const ext = extCandidate;
 const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
 
 async function handleFetchJson(
-  request: ExtensionRequestBg,
-): Promise<FetchJsonResponseBg> {
+  request: ExtensionRequest,
+): Promise<FetchJsonResponse> {
   if (request.type !== MESSAGE_TYPES_BG.fetchJson) {
     return {
       ok: false,
@@ -129,13 +112,80 @@ async function handleFetchJson(
   }
 }
 
+function normalizeBaseUrl(raw: string): { ok: boolean; value?: string; error?: string } {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return { ok: false, error: 'Base URL is required.' };
+  }
+
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return { ok: false, error: 'Base URL must include a scheme (http or https).' };
+  }
+
+  try {
+    const url = new URL(trimmed);
+    const normalized = `${url.origin}${url.pathname}`.replace(/\/+$/, '');
+    return { ok: true, value: normalized };
+  } catch {
+    return { ok: false, error: 'Base URL is invalid.' };
+  }
+}
+
+async function handleValidateConnection(
+  baseUrl: string,
+  apiKey: string,
+): Promise<ValidateConnectionResponse> {
+  const normalized = normalizeBaseUrl(baseUrl);
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.validateConnection,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  if (!apiKey.trim()) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.validateConnection,
+      error: 'API key is required.',
+    };
+  }
+
+  const targetUrl = `${normalized.value}/api/v3/system/status`;
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: targetUrl,
+    headers: {
+      'X-Api-Key': apiKey.trim(),
+    },
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.validateConnection,
+      status: response.status,
+      error: response.error ?? 'Validation failed.',
+      data: response.json ?? response.text,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.validateConnection,
+    status: response.status,
+    data: response.json ?? response.text,
+  };
+}
+
 ext.runtime.onMessage.addListener(
   (
-    request: ExtensionRequestBg,
+    request: ExtensionRequest,
     _sender: unknown,
-    sendResponse: (response: ExtensionResponseBg) => void,
+    sendResponse: (response: ExtensionResponse) => void,
   ) => {
-    const respond = async (): Promise<ExtensionResponseBg> => {
+    const respond = async (): Promise<ExtensionResponse> => {
       if (request?.type === MESSAGE_TYPES_BG.ping) {
         return {
           ok: true,
@@ -147,6 +197,93 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.fetchJson) {
         return handleFetchJson(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.validateConnection) {
+        return handleValidateConnection(request.baseUrl, request.apiKey);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.getSettings) {
+        const settings = await getSettings();
+        return { ok: true, type: MESSAGE_TYPES_BG.getSettings, settings };
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.getConfigStatus) {
+        const settings = await getSettings();
+        const configured = Boolean(
+          settings.whisparrBaseUrl && settings.whisparrApiKey,
+        );
+        return {
+          ok: true,
+          type: MESSAGE_TYPES_BG.getConfigStatus,
+          configured,
+        };
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.saveSettings) {
+        const settings = await saveSettings(request.settings);
+        return { ok: true, type: MESSAGE_TYPES_BG.saveSettings, settings };
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.resetSettings) {
+        await resetSettings();
+        return { ok: true, type: MESSAGE_TYPES_BG.resetSettings };
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.requestPermission) {
+        if (!ext.permissions?.request) {
+          return {
+            ok: false,
+            type: MESSAGE_TYPES_BG.requestPermission,
+            granted: false,
+            error: 'Permissions API not available.',
+          };
+        }
+        try {
+          const granted = await ext.permissions.request({
+            origins: [request.origin],
+          });
+          return {
+            ok: true,
+            type: MESSAGE_TYPES_BG.requestPermission,
+            granted,
+          };
+        } catch (error) {
+          return {
+            ok: false,
+            type: MESSAGE_TYPES_BG.requestPermission,
+            granted: false,
+            error: (error as Error).message,
+          };
+        }
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.getPermission) {
+        if (!ext.permissions?.contains) {
+          return {
+            ok: false,
+            type: MESSAGE_TYPES_BG.getPermission,
+            granted: false,
+            error: 'Permissions API not available.',
+          };
+        }
+        try {
+          const granted = await ext.permissions.contains({
+            origins: [request.origin],
+          });
+          return {
+            ok: true,
+            type: MESSAGE_TYPES_BG.getPermission,
+            granted,
+          };
+        } catch (error) {
+          return {
+            ok: false,
+            type: MESSAGE_TYPES_BG.getPermission,
+            granted: false,
+            error: (error as Error).message,
+          };
+        }
       }
 
       return {
