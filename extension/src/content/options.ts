@@ -10,6 +10,10 @@ type ExtRuntime = {
       status?: number;
     }>;
   };
+  permissions?: {
+    request: (details: { origins: string[] }) => Promise<boolean>;
+    contains: (details: { origins: string[] }) => Promise<boolean>;
+  };
 };
 
 const extCandidate =
@@ -112,21 +116,19 @@ async function refreshPermission() {
   }
 
   const origin = hostOriginPattern(normalized.value);
-  const response = await ext.runtime.sendMessage({
-    type: MESSAGE_TYPES.getPermission,
-    origin,
-  });
-
-  if (!response.ok) {
-    setPermission(response.error ?? 'Permission check failed.', true);
+  if (!ext.permissions?.contains) {
+    setPermission('Permissions API not available.', true);
     return;
   }
 
-  setPermission(
-    response.granted
-      ? `Permission granted for ${origin}`
-      : `Permission missing for ${origin}`,
-  );
+  try {
+    const granted = await ext.permissions.contains({ origins: [origin] });
+    setPermission(
+      granted ? `Permission granted for ${origin}` : `Permission missing for ${origin}`,
+    );
+  } catch (error) {
+    setPermission((error as Error).message ?? 'Permission check failed.', true);
+  }
 }
 
 async function requestPermission(): Promise<boolean> {
@@ -137,23 +139,26 @@ async function requestPermission(): Promise<boolean> {
   }
 
   const origin = hostOriginPattern(normalized.value);
-  const response = await ext.runtime.sendMessage({
-    type: MESSAGE_TYPES.requestPermission,
-    origin,
-  });
-
-  if (!response.ok) {
-    setPermission(response.error ?? 'Permission request failed.', true);
+  if (!ext.permissions?.request) {
+    setPermission('Permissions API not available.', true);
     return false;
   }
 
-  if (!response.granted) {
-    setPermission(`Permission required to access ${origin}. Grant permission to proceed.`, true);
+  try {
+    const granted = await ext.permissions.request({ origins: [origin] });
+    if (!granted) {
+      setPermission(
+        `Permission required to access ${origin}. Grant permission to proceed.`,
+        true,
+      );
+      return false;
+    }
+    setPermission(`Permission granted for ${origin}`);
+    return true;
+  } catch (error) {
+    setPermission((error as Error).message ?? 'Permission request failed.', true);
     return false;
   }
-
-  setPermission(`Permission granted for ${origin}`);
-  return true;
 }
 
 async function saveSettings() {

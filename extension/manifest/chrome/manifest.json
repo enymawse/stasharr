@@ -23,6 +23,7 @@
   },
   "permissions": ["storage"],
   "host_permissions": ["https://stashdb.org/*"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src http: https:; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
   }
