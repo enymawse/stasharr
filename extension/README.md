@@ -14,6 +14,11 @@ Outputs:
 - `extension/dist/chrome`
 - `extension/dist/firefox`
 
+## Permissions note
+
+- Current host permissions include `http://*/*` to allow LAN test calls from the background script.
+- Task 3 will switch to optional host permissions with explicit user approval.
+
 ## Load unpacked in Chrome
 
 1. Open `chrome://extensions/`.

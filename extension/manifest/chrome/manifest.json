@@ -22,5 +22,5 @@
     "open_in_tab": true
   },
   "permissions": ["storage"],
-  "host_permissions": ["https://stashdb.org/*"]
+  "host_permissions": ["https://stashdb.org/*", "http://*/*"]
 }
