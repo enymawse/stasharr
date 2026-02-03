@@ -1,5 +1,3 @@
-import { parseStashDbPage } from './pageParser.js';
-
 const MESSAGE_TYPES_CONTENT = {
   getConfigStatus: 'GET_CONFIG_STATUS',
 } as const;
@@ -75,7 +73,17 @@ if (!document.getElementById(PANEL_ID)) {
   panel.appendChild(heading);
 
   const diagnostics = document.createElement('div');
-  const parsedPage = parseStashDbPage(document, window.location);
+  const parsedPage = (
+    globalThis as { StasharrPageParser?: { parseStashDbPage: (doc: Document, loc: Location) => { type: string; stashIds: string[]; canonicalUrl: string | null; url: string } } }
+  ).StasharrPageParser?.parseStashDbPage(
+    document,
+    window.location,
+  ) ?? {
+    type: 'other',
+    stashIds: [],
+    canonicalUrl: null,
+    url: window.location.href,
+  };
   diagnostics.textContent = `Diagnostics: ${parsedPage.type} • ${parsedPage.url}`;
   diagnostics.style.opacity = '0.85';
   panel.appendChild(diagnostics);

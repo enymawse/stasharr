@@ -1,6 +1,6 @@
-export type StashDbPageType = 'scene' | 'studio' | 'performer' | 'other';
+type StashDbPageType = 'scene' | 'studio' | 'performer' | 'other';
 
-export type StashDbPageParseResult = {
+type StashDbPageParseResult = {
   type: StashDbPageType;
   stashIds: string[];
   canonicalUrl: string | null;
@@ -44,7 +44,7 @@ function extractSceneIdFromCanonical(
   }
 }
 
-export function parseStashDbPage(
+function parseStashDbPage(
   doc: Document = document,
   locationObj: Location = window.location,
 ): StashDbPageParseResult {
@@ -90,3 +90,7 @@ export function parseStashDbPage(
     url: url.toString(),
   };
 }
+
+// Attach to global for non-module content script usage.
+(globalThis as { StasharrPageParser?: { parseStashDbPage: typeof parseStashDbPage } }).StasharrPageParser =
+  { parseStashDbPage };

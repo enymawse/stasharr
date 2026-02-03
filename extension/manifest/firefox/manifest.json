@@ -12,7 +12,7 @@
   "content_scripts": [
     {
       "matches": ["https://stashdb.org/*"],
-      "js": ["content/content.js"],
+      "js": ["content/pageParser.js", "content/content.js"],
       "run_at": "document_idle"
     }
   ],
