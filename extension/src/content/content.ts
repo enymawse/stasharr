@@ -5,11 +5,16 @@ const MESSAGE_TYPES_CONTENT = {
 type GetConfigStatusRequest = { type: typeof MESSAGE_TYPES_CONTENT.getConfigStatus };
 type GetSettingsRequest = { type: 'GET_SETTINGS' };
 type OpenOptionsPageRequest = { type: 'OPEN_OPTIONS_PAGE' };
+type CheckSceneStatusRequest = { type: 'CHECK_SCENE_STATUS'; stashdbSceneId: string };
 
 type ContentRuntime = {
   runtime: {
     sendMessage: (
-      message: GetConfigStatusRequest | GetSettingsRequest | OpenOptionsPageRequest,
+      message:
+        | GetConfigStatusRequest
+        | GetSettingsRequest
+        | OpenOptionsPageRequest
+        | CheckSceneStatusRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -18,6 +23,11 @@ type ContentRuntime = {
         whisparrApiKey?: string;
         lastValidatedAt?: string;
       };
+      exists?: boolean;
+      whisparrId?: number;
+      title?: string;
+      hasFile?: boolean;
+      error?: string;
     }>;
     getURL?: (path: string) => string;
     openOptionsPage?: () => void;
@@ -78,6 +88,12 @@ function getParsedPage() {
 }
 
 if (!document.getElementById(PANEL_ID)) {
+  const statusCache = new Map<
+    string,
+    { exists: boolean; whisparrId?: number; title?: string; hasFile?: boolean; error?: string }
+  >();
+  const inFlight = new Set<string>();
+
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
   panel.style.position = 'fixed';
@@ -120,6 +136,25 @@ if (!document.getElementById(PANEL_ID)) {
   updateDiagnostics();
   panel.appendChild(parseDetails);
 
+  const sceneStatusRow = document.createElement('div');
+  sceneStatusRow.style.marginTop = '6px';
+  sceneStatusRow.style.fontSize = '11px';
+  sceneStatusRow.style.opacity = '0.9';
+  sceneStatusRow.textContent = 'Scene status: unknown';
+  panel.appendChild(sceneStatusRow);
+
+  const checkStatusButton = document.createElement('button');
+  checkStatusButton.type = 'button';
+  checkStatusButton.textContent = 'Check status';
+  checkStatusButton.style.padding = '6px 10px';
+  checkStatusButton.style.borderRadius = '6px';
+  checkStatusButton.style.border = 'none';
+  checkStatusButton.style.cursor = 'pointer';
+  checkStatusButton.style.background = '#0f766e';
+  checkStatusButton.style.color = '#ffffff';
+  checkStatusButton.style.marginTop = '6px';
+  panel.appendChild(checkStatusButton);
+
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
   inputRow.style.flexDirection = 'column';
@@ -159,6 +194,66 @@ if (!document.getElementById(PANEL_ID)) {
   inputRow.appendChild(openOptions);
   panel.appendChild(inputRow);
 
+  const updateSceneStatus = async (force = false) => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId) {
+      sceneStatusRow.textContent = 'Scene status: unavailable';
+      checkStatusButton.disabled = true;
+      return;
+    }
+
+    checkStatusButton.disabled = false;
+
+    if (!force) {
+      const cached = statusCache.get(sceneId);
+      if (cached) {
+        sceneStatusRow.textContent = cached.exists
+          ? `Scene status: already in Whisparr${cached.hasFile === false ? ' (no file)' : ''}`
+          : 'Scene status: not in Whisparr';
+        return;
+      }
+    }
+
+    if (inFlight.has(sceneId)) {
+      return;
+    }
+
+    inFlight.add(sceneId);
+    sceneStatusRow.textContent = 'Scene status: checking...';
+
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'CHECK_SCENE_STATUS',
+        stashdbSceneId: sceneId,
+      });
+      if (!response.ok) {
+        sceneStatusRow.textContent = `Scene status: error (${response.error ?? 'unknown'})`;
+        statusCache.set(sceneId, { exists: false, error: response.error ?? 'unknown' });
+        return;
+      }
+
+      const exists = Boolean(response.exists);
+      statusCache.set(sceneId, {
+        exists,
+        whisparrId: response.whisparrId,
+        title: response.title,
+        hasFile: response.hasFile,
+      });
+      sceneStatusRow.textContent = exists
+        ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
+        : 'Scene status: not in Whisparr';
+    } catch (error) {
+      sceneStatusRow.textContent = `Scene status: error (${(error as Error).message})`;
+    } finally {
+      inFlight.delete(sceneId);
+    }
+  };
+
+  checkStatusButton.addEventListener('click', () => {
+    void updateSceneStatus(true);
+  });
+
   const updateConfigStatus = async () => {
     try {
       const response = await extContent.runtime.sendMessage({
@@ -187,6 +282,7 @@ if (!document.getElementById(PANEL_ID)) {
   };
 
   void updateConfigStatus();
+  void updateSceneStatus(false);
 
   document.documentElement.appendChild(panel);
 
@@ -195,6 +291,7 @@ if (!document.getElementById(PANEL_ID)) {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
       updateDiagnostics();
+      void updateSceneStatus(false);
     }
   };
 

@@ -11,6 +11,7 @@ const MESSAGE_TYPES = {
   fetchDiscoveryCatalogs: 'FETCH_DISCOVERY_CATALOGS',
   saveSelections: 'SAVE_SELECTIONS',
   openOptionsPage: 'OPEN_OPTIONS_PAGE',
+  checkSceneStatus: 'CHECK_SCENE_STATUS',
 } as const;
 
 type ExtensionSettings = {
@@ -587,6 +588,68 @@ async function handleSaveSelections(request: { type?: string; [key: string]: unk
   return { ok: true, type: MESSAGE_TYPES.saveSelections, selections: toUiSelections(saved.whisparr) };
 }
 
+async function handleCheckSceneStatus(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.checkSceneStatus) {
+    return { ok: false, type: MESSAGE_TYPES.checkSceneStatus, exists: false, error: 'Invalid request type.' };
+  }
+
+  const stashId = String(request.stashdbSceneId ?? '').trim();
+  if (!stashId) {
+    return { ok: false, type: MESSAGE_TYPES.checkSceneStatus, exists: false, error: 'Scene ID is required.' };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, type: MESSAGE_TYPES.checkSceneStatus, exists: false, error: normalized.error ?? 'Invalid base URL.' };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, type: MESSAGE_TYPES.checkSceneStatus, exists: false, error: 'API key is required.' };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, type: MESSAGE_TYPES.checkSceneStatus, exists: false, error: 'Permissions API not available.' };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, type: MESSAGE_TYPES.checkSceneStatus, exists: false, error: `Permission missing for ${origin}` };
+  }
+
+  const response = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie?stashId=${encodeURIComponent(stashId)}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!response.ok) {
+    return { ok: false, type: MESSAGE_TYPES.checkSceneStatus, exists: false, error: response.error ?? 'Lookup failed.' };
+  }
+
+  if (!Array.isArray(response.json)) {
+    return { ok: false, type: MESSAGE_TYPES.checkSceneStatus, exists: false, error: 'Unexpected response payload.' };
+  }
+
+  const first = response.json.find(isRecord);
+  if (!first) {
+    return { ok: true, type: MESSAGE_TYPES.checkSceneStatus, exists: false };
+  }
+
+  const whisparrId = Number(first.id);
+  const title = typeof first.title === 'string' ? first.title : undefined;
+  const hasFile = typeof first.hasFile === 'boolean' ? first.hasFile : undefined;
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.checkSceneStatus,
+    exists: true,
+    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+    title,
+    hasFile,
+  };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -638,6 +701,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.saveSelections) {
       return handleSaveSelections(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.checkSceneStatus) {
+      return handleCheckSceneStatus(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {
