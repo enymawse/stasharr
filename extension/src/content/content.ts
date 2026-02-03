@@ -4,10 +4,13 @@ const MESSAGE_TYPES_CONTENT = {
 
 type GetConfigStatusRequest = { type: typeof MESSAGE_TYPES_CONTENT.getConfigStatus };
 type GetSettingsRequest = { type: 'GET_SETTINGS' };
+type OpenOptionsPageRequest = { type: 'OPEN_OPTIONS_PAGE' };
 
 type ContentRuntime = {
   runtime: {
-    sendMessage: (message: GetConfigStatusRequest | GetSettingsRequest) => Promise<{
+    sendMessage: (
+      message: GetConfigStatusRequest | GetSettingsRequest | OpenOptionsPageRequest,
+    ) => Promise<{
       ok: boolean;
       configured?: boolean;
       settings?: {
@@ -145,10 +148,11 @@ if (!document.getElementById(PANEL_ID)) {
       return;
     }
 
-    const url = extContent.runtime.getURL
-      ? (extContent.runtime.getURL('content/options.html') as string)
-      : 'content/options.html';
-    window.open(url, '_blank', 'noopener,noreferrer');
+    try {
+      await extContent.runtime.sendMessage({ type: 'OPEN_OPTIONS_PAGE' });
+    } catch (error) {
+      console.warn('Open options failed:', error);
+    }
   });
 
   inputRow.appendChild(statusRow);

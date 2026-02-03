@@ -33,6 +33,7 @@ type ExtRuntimeBg = {
         ) => void,
       ) => void;
     };
+    openOptionsPage?: () => void;
   };
   permissions?: {
     request: (details: { origins: string[] }) => Promise<boolean>;
@@ -539,7 +540,7 @@ ext.runtime.onMessage.addListener(
     _sender: unknown,
     sendResponse: (response: ExtensionResponse) => void,
   ) => {
-    const respond = async (): Promise<ExtensionResponse> => {
+  const respond = async (): Promise<ExtensionResponse> => {
       if (request?.type === MESSAGE_TYPES_BG.ping) {
         return {
           ok: true,
@@ -646,6 +647,18 @@ ext.runtime.onMessage.addListener(
             error: (error as Error).message,
           };
         }
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.openOptionsPage) {
+        if (ext.runtime.openOptionsPage) {
+          ext.runtime.openOptionsPage();
+          return { ok: true, type: MESSAGE_TYPES_BG.openOptionsPage };
+        }
+        return {
+          ok: false,
+          type: MESSAGE_TYPES_BG.openOptionsPage,
+          error: 'openOptionsPage not available.',
+        };
       }
 
       return {

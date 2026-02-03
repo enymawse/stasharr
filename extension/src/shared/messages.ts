@@ -10,6 +10,7 @@ export const MESSAGE_TYPES = {
   getPermission: 'GET_PERMISSION',
   fetchDiscoveryCatalogs: 'FETCH_DISCOVERY_CATALOGS',
   saveSelections: 'SAVE_SELECTIONS',
+  openOptionsPage: 'OPEN_OPTIONS_PAGE',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -135,6 +136,13 @@ export type GetPermissionResponse = {
   error?: string;
 };
 
+export type OpenOptionsPageRequest = { type: typeof MESSAGE_TYPES.openOptionsPage };
+export type OpenOptionsPageResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.openOptionsPage;
+  error?: string;
+};
+
 export type SaveSelectionsRequest = {
   type: typeof MESSAGE_TYPES.saveSelections;
   selections: {
@@ -171,7 +179,8 @@ export type ExtensionRequest =
   | RequestPermissionRequest
   | GetPermissionRequest
   | FetchDiscoveryCatalogsRequest
-  | SaveSelectionsRequest;
+  | SaveSelectionsRequest
+  | OpenOptionsPageRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -185,4 +194,5 @@ export type ExtensionResponse =
   | GetPermissionResponse
   | FetchDiscoveryCatalogsResponse
   | SaveSelectionsResponse
+  | OpenOptionsPageResponse
   | { ok: false; type: MessageType; error: string };

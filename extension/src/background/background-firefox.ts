@@ -10,6 +10,7 @@ const MESSAGE_TYPES = {
   getPermission: 'GET_PERMISSION',
   fetchDiscoveryCatalogs: 'FETCH_DISCOVERY_CATALOGS',
   saveSelections: 'SAVE_SELECTIONS',
+  openOptionsPage: 'OPEN_OPTIONS_PAGE',
 } as const;
 
 type ExtensionSettings = {
@@ -54,6 +55,7 @@ type FirefoxRuntime = {
         callback: (request: { type?: string; [key: string]: unknown }, sender: unknown, sendResponse: (response: { [key: string]: unknown }) => void) => void,
       ) => void;
     };
+    openOptionsPage?: () => void;
   };
   storage: { local: StorageArea };
   permissions?: {
@@ -660,6 +662,14 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       } catch (error) {
         return { ok: false, type: MESSAGE_TYPES.getPermission, granted: false, error: (error as Error).message };
       }
+    }
+
+    if (request?.type === MESSAGE_TYPES.openOptionsPage) {
+      if (ext.runtime.openOptionsPage) {
+        ext.runtime.openOptionsPage();
+        return { ok: true, type: MESSAGE_TYPES.openOptionsPage };
+      }
+      return { ok: false, type: MESSAGE_TYPES.openOptionsPage, error: 'openOptionsPage not available.' };
     }
 
     return { ok: false, type: MESSAGE_TYPES.fetchJson, error: 'Unknown message type' };
