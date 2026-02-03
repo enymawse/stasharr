@@ -8,6 +8,8 @@ export const MESSAGE_TYPES = {
   resetSettings: 'RESET_SETTINGS',
   requestPermission: 'REQUEST_PERMISSION',
   getPermission: 'GET_PERMISSION',
+  fetchDiscoveryCatalogs: 'FETCH_DISCOVERY_CATALOGS',
+  saveSelections: 'SAVE_SELECTIONS',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -52,6 +54,58 @@ export type ValidateConnectionResponse = {
   error?: string;
 };
 
+export type DiscoveryKind = 'whisparr';
+
+export type QualityProfileItem = { id: number; name: string };
+export type RootFolderItem = { id?: number; path: string };
+export type TagItem = { id: number; label: string };
+
+export type DiscoveryCatalogs = {
+  qualityProfiles: QualityProfileItem[];
+  rootFolders: RootFolderItem[];
+  tags: TagItem[];
+  fetchedAt?: string;
+};
+
+export type DiscoverySelections = {
+  qualityProfileId: number | null;
+  rootFolderPath: string | null;
+  tagIds: number[];
+};
+
+export type DiscoverySelectionsForUi = {
+  qualityProfileId: number | null;
+  rootFolderPath: string | null;
+  labelIds: number[];
+};
+
+export type FetchDiscoveryCatalogsRequest = {
+  type: typeof MESSAGE_TYPES.fetchDiscoveryCatalogs;
+  kind: DiscoveryKind;
+  force?: boolean;
+  baseUrl?: string;
+  apiKey?: string;
+};
+
+export type FetchDiscoveryCatalogsResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.fetchDiscoveryCatalogs;
+  catalogs?: DiscoveryCatalogs;
+  selections?: DiscoverySelectionsForUi;
+  errors?: {
+    qualityProfiles?: string;
+    rootFolders?: string;
+    tags?: string;
+    permission?: string;
+    settings?: string;
+  };
+  invalidSelections?: {
+    qualityProfileId?: boolean;
+    rootFolderPath?: boolean;
+    labelsRemoved?: number;
+  };
+};
+
 export type GetSettingsRequest = { type: typeof MESSAGE_TYPES.getSettings };
 export type GetConfigStatusRequest = { type: typeof MESSAGE_TYPES.getConfigStatus };
 export type SaveSettingsRequest = {
@@ -81,6 +135,23 @@ export type GetPermissionResponse = {
   error?: string;
 };
 
+export type SaveSelectionsRequest = {
+  type: typeof MESSAGE_TYPES.saveSelections;
+  selections: {
+    kind: DiscoveryKind;
+    qualityProfileId: number | null;
+    rootFolderPath: string | null;
+    labelIds: number[];
+  };
+};
+
+export type SaveSelectionsResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.saveSelections;
+  selections?: DiscoverySelectionsForUi;
+  error?: string;
+};
+
 export type ExtensionSettings = {
   whisparrBaseUrl: string;
   whisparrApiKey: string;
@@ -98,7 +169,9 @@ export type ExtensionRequest =
   | SaveSettingsRequest
   | ResetSettingsRequest
   | RequestPermissionRequest
-  | GetPermissionRequest;
+  | GetPermissionRequest
+  | FetchDiscoveryCatalogsRequest
+  | SaveSelectionsRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -110,4 +183,6 @@ export type ExtensionResponse =
   | { ok: true; type: typeof MESSAGE_TYPES.resetSettings }
   | RequestPermissionResponse
   | GetPermissionResponse
+  | FetchDiscoveryCatalogsResponse
+  | SaveSelectionsResponse
   | { ok: false; type: MessageType; error: string };

@@ -1,4 +1,8 @@
-import type { ExtensionSettings } from './messages.js';
+import type {
+  DiscoverySelections,
+  ExtensionSettings,
+  DiscoveryCatalogs,
+} from './messages.js';
 
 type StorageArea = {
   get: (keys?: string[] | string | null) => Promise<Record<string, unknown>>;
@@ -20,6 +24,19 @@ if (!extCandidate) {
 const ext = extCandidate;
 
 const SETTINGS_KEY = 'stasharrSettings';
+const CATALOGS_KEY = 'stasharrCatalogs';
+const SELECTIONS_KEY = 'stasharrSelections';
+
+type CatalogsState = {
+  whisparr: DiscoveryCatalogs & {
+    baseUrl?: string;
+    apiKeyHash?: string;
+  };
+};
+
+type SelectionsState = {
+  whisparr: DiscoverySelections;
+};
 
 export async function getSettings(): Promise<ExtensionSettings> {
   const result = await ext.storage.local.get(SETTINGS_KEY);
@@ -40,4 +57,61 @@ export async function saveSettings(
 
 export async function resetSettings(): Promise<void> {
   await ext.storage.local.remove(SETTINGS_KEY);
+}
+
+export async function getCatalogs(): Promise<CatalogsState> {
+  const result = await ext.storage.local.get(CATALOGS_KEY);
+  return (result[CATALOGS_KEY] as CatalogsState) ?? {
+    whisparr: {
+      qualityProfiles: [],
+      rootFolders: [],
+      tags: [],
+      fetchedAt: undefined,
+      baseUrl: undefined,
+      apiKeyHash: undefined,
+    },
+  };
+}
+
+export async function saveCatalogs(
+  partial: Partial<CatalogsState>,
+): Promise<CatalogsState> {
+  const current = await getCatalogs();
+  const next = {
+    ...current,
+    ...partial,
+    whisparr: {
+      ...current.whisparr,
+      ...(partial.whisparr ?? {}),
+    },
+  };
+  await ext.storage.local.set({ [CATALOGS_KEY]: next });
+  return next;
+}
+
+export async function getSelections(): Promise<SelectionsState> {
+  const result = await ext.storage.local.get(SELECTIONS_KEY);
+  return (result[SELECTIONS_KEY] as SelectionsState) ?? {
+    whisparr: {
+      qualityProfileId: null,
+      rootFolderPath: null,
+      tagIds: [],
+    },
+  };
+}
+
+export async function saveSelections(
+  partial: Partial<SelectionsState>,
+): Promise<SelectionsState> {
+  const current = await getSelections();
+  const next = {
+    ...current,
+    ...partial,
+    whisparr: {
+      ...current.whisparr,
+      ...(partial.whisparr ?? {}),
+    },
+  };
+  await ext.storage.local.set({ [SELECTIONS_KEY]: next });
+  return next;
 }

@@ -3,9 +3,22 @@ import {
   type ExtensionRequest,
   type ExtensionResponse,
   type FetchJsonResponse,
+  type FetchDiscoveryCatalogsResponse,
+  type SaveSelectionsResponse,
+  type DiscoveryCatalogs,
+  type DiscoverySelections,
+  type DiscoverySelectionsForUi,
   type ValidateConnectionResponse,
 } from '../shared/messages.js';
-import { getSettings, resetSettings, saveSettings } from '../shared/storage.js';
+import {
+  getCatalogs,
+  getSelections,
+  getSettings,
+  resetSettings,
+  saveCatalogs,
+  saveSelections,
+  saveSettings,
+} from '../shared/storage.js';
 
 const MESSAGE_TYPES_BG = MESSAGE_TYPES;
 
@@ -42,6 +55,14 @@ if (!extCandidate) {
 const ext = extCandidate;
 const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
+
+type DiscoveryErrors = {
+  qualityProfiles?: string;
+  rootFolders?: string;
+  tags?: string;
+  permission?: string;
+  settings?: string;
+};
 
 async function handleFetchJson(
   request: ExtensionRequest,
@@ -131,6 +152,167 @@ function normalizeBaseUrl(raw: string): { ok: boolean; value?: string; error?: s
   }
 }
 
+function hostOriginPattern(baseUrl: string): string {
+  const parsed = new URL(baseUrl);
+  return `${parsed.protocol}//${parsed.host}/*`;
+}
+
+function hashValue(input: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${hash >>> 0}`;
+}
+
+function toUiSelections(selections: DiscoverySelections): DiscoverySelectionsForUi {
+  return {
+    qualityProfileId: selections.qualityProfileId,
+    rootFolderPath: selections.rootFolderPath,
+    labelIds: selections.tagIds,
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+async function fetchQualityProfiles(
+  baseUrl: string,
+  apiKey: string,
+): Promise<{ items: DiscoveryCatalogs['qualityProfiles']; error?: string }> {
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${baseUrl}/api/v3/qualityprofile`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!response.ok) {
+    return { items: [], error: response.error ?? 'Quality profiles request failed.' };
+  }
+
+  if (!Array.isArray(response.json)) {
+    return { items: [], error: 'Unexpected quality profiles response.' };
+  }
+
+  const items = response.json
+    .filter(isRecord)
+    .map((item) => {
+      const id = Number(item.id);
+      const name = typeof item.name === 'string' ? item.name.trim() : '';
+      if (!Number.isFinite(id) || !name) return null;
+      return { id, name };
+    })
+    .filter((item): item is { id: number; name: string } => Boolean(item));
+
+  return { items };
+}
+
+async function fetchRootFolders(
+  baseUrl: string,
+  apiKey: string,
+): Promise<{ items: DiscoveryCatalogs['rootFolders']; error?: string }> {
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${baseUrl}/api/v3/rootfolder`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!response.ok) {
+    return { items: [], error: response.error ?? 'Root folders request failed.' };
+  }
+
+  if (!Array.isArray(response.json)) {
+    return { items: [], error: 'Unexpected root folders response.' };
+  }
+
+  const items = response.json
+    .filter(isRecord)
+    .map((item) => {
+      const id =
+        typeof item.id === 'number' || typeof item.id === 'string'
+          ? Number(item.id)
+          : undefined;
+      const path = typeof item.path === 'string' ? item.path.trim() : '';
+      if (!path) return null;
+      return Number.isFinite(id ?? NaN) ? { id: id as number, path } : { path };
+    })
+    .filter((item): item is { id?: number; path: string } => Boolean(item));
+
+  return { items };
+}
+
+async function fetchTags(
+  baseUrl: string,
+  apiKey: string,
+): Promise<{ items: DiscoveryCatalogs['tags']; error?: string }> {
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${baseUrl}/api/v3/tag`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!response.ok) {
+    return { items: [], error: response.error ?? 'Tags request failed.' };
+  }
+
+  if (!Array.isArray(response.json)) {
+    return { items: [], error: 'Unexpected tags response.' };
+  }
+
+  const items = response.json
+    .filter(isRecord)
+    .map((item) => {
+      const id = Number(item.id);
+      const label = typeof item.label === 'string' ? item.label.trim() : '';
+      if (!Number.isFinite(id) || !label) return null;
+      return { id, label };
+    })
+    .filter((item): item is { id: number; label: string } => Boolean(item));
+
+  return { items };
+}
+
+function reconcileSelections(
+  catalogs: DiscoveryCatalogs,
+  selections: DiscoverySelections,
+): { next: DiscoverySelections; invalid: FetchDiscoveryCatalogsResponse['invalidSelections'] } {
+  const invalid: FetchDiscoveryCatalogsResponse['invalidSelections'] = {};
+  const next: DiscoverySelections = {
+    qualityProfileId: selections.qualityProfileId,
+    rootFolderPath: selections.rootFolderPath,
+    tagIds: [...selections.tagIds],
+  };
+
+  if (
+    next.qualityProfileId !== null &&
+    !catalogs.qualityProfiles.some((profile) => profile.id === next.qualityProfileId)
+  ) {
+    next.qualityProfileId = null;
+    invalid.qualityProfileId = true;
+  }
+
+  if (
+    next.rootFolderPath !== null &&
+    !catalogs.rootFolders.some((folder) => folder.path === next.rootFolderPath)
+  ) {
+    next.rootFolderPath = null;
+    invalid.rootFolderPath = true;
+  }
+
+  if (next.tagIds.length > 0) {
+    const allowed = new Set(catalogs.tags.map((item) => item.id));
+    const filtered = next.tagIds.filter((id) => allowed.has(id));
+    if (filtered.length !== next.tagIds.length) {
+      invalid.labelsRemoved = next.tagIds.length - filtered.length;
+      next.tagIds = filtered;
+    }
+  }
+
+  return { next, invalid };
+}
+
 async function handleValidateConnection(
   baseUrl: string,
   apiKey: string,
@@ -176,6 +358,178 @@ async function handleValidateConnection(
     type: MESSAGE_TYPES_BG.validateConnection,
     status: response.status,
     data: response.json ?? response.text,
+  };
+}
+
+async function handleFetchDiscoveryCatalogs(
+  request: ExtensionRequest,
+): Promise<FetchDiscoveryCatalogsResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.fetchDiscoveryCatalogs) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.fetchDiscoveryCatalogs,
+      errors: { settings: 'Invalid request type.' },
+    };
+  }
+
+  if (request.kind !== 'whisparr') {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.fetchDiscoveryCatalogs,
+      errors: { settings: 'Unsupported discovery kind.' },
+    };
+  }
+
+  const errors: DiscoveryErrors = {};
+  const settings = await getSettings();
+  const baseUrlRaw = request.baseUrl ?? settings.whisparrBaseUrl;
+  const apiKeyRaw = request.apiKey ?? settings.whisparrApiKey;
+  const normalized = normalizeBaseUrl(baseUrlRaw ?? '');
+
+  if (!normalized.ok || !normalized.value) {
+    errors.settings = normalized.error ?? 'Invalid base URL.';
+  }
+
+  const apiKey = apiKeyRaw?.trim() ?? '';
+  if (!apiKey) {
+    errors.settings = errors.settings ?? 'API key is required.';
+  }
+
+  const catalogsState = await getCatalogs();
+  const selectionsState = await getSelections();
+  const cached = catalogsState.whisparr;
+
+  if (!errors.settings && normalized.value) {
+    const origin = hostOriginPattern(normalized.value);
+    if (!ext.permissions?.contains) {
+      errors.permission = 'Permissions API not available.';
+    } else {
+      try {
+        const granted = await ext.permissions.contains({ origins: [origin] });
+        if (!granted) {
+          errors.permission = `Permission missing for ${origin}`;
+        }
+      } catch (error) {
+        errors.permission = (error as Error).message;
+      }
+    }
+  }
+
+  const catalogsForUi: DiscoveryCatalogs = {
+    qualityProfiles: cached.qualityProfiles ?? [],
+    rootFolders: cached.rootFolders ?? [],
+    tags: cached.tags ?? [],
+    fetchedAt: cached.fetchedAt,
+  };
+
+  if (!errors.settings && !errors.permission && normalized.value) {
+    const apiKeyHash = hashValue(apiKey);
+    const shouldFetch =
+      Boolean(request.force) ||
+      cached.baseUrl !== normalized.value ||
+      cached.apiKeyHash !== apiKeyHash ||
+      !cached.fetchedAt;
+
+    if (shouldFetch) {
+      const [qualityResult, rootResult, tagsResult] = await Promise.all([
+        fetchQualityProfiles(normalized.value, apiKey),
+        fetchRootFolders(normalized.value, apiKey),
+        fetchTags(normalized.value, apiKey),
+      ]);
+
+      if (qualityResult.error) {
+        errors.qualityProfiles = qualityResult.error;
+      }
+      if (rootResult.error) {
+        errors.rootFolders = rootResult.error;
+      }
+      if (tagsResult.error) {
+        errors.tags = tagsResult.error;
+      }
+
+      catalogsForUi.qualityProfiles = qualityResult.error
+        ? cached.qualityProfiles
+        : qualityResult.items;
+      catalogsForUi.rootFolders = rootResult.error ? cached.rootFolders : rootResult.items;
+      catalogsForUi.tags = tagsResult.error ? cached.tags : tagsResult.items;
+      catalogsForUi.fetchedAt = new Date().toISOString();
+
+      await saveCatalogs({
+        whisparr: {
+          ...catalogsForUi,
+          baseUrl: normalized.value,
+          apiKeyHash,
+        },
+      });
+    }
+  }
+
+  const reconciled = reconcileSelections(catalogsForUi, selectionsState.whisparr);
+  if (
+    reconciled.next.qualityProfileId !== selectionsState.whisparr.qualityProfileId ||
+    reconciled.next.rootFolderPath !== selectionsState.whisparr.rootFolderPath ||
+    reconciled.next.tagIds.join(',') !== selectionsState.whisparr.tagIds.join(',')
+  ) {
+    await saveSelections({ whisparr: reconciled.next });
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.fetchDiscoveryCatalogs,
+    catalogs: catalogsForUi,
+    selections: toUiSelections(reconciled.next),
+    errors: Object.keys(errors).length > 0 ? errors : undefined,
+    invalidSelections:
+      reconciled.invalid && Object.keys(reconciled.invalid).length > 0
+        ? reconciled.invalid
+        : undefined,
+  };
+}
+
+async function handleSaveSelections(
+  request: ExtensionRequest,
+): Promise<SaveSelectionsResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.saveSelections) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.saveSelections,
+      error: 'Invalid request type.',
+    };
+  }
+
+  if (request.selections?.kind !== 'whisparr') {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.saveSelections,
+      error: 'Unsupported selection kind.',
+    };
+  }
+
+  const catalogsState = await getCatalogs();
+  const catalogs = catalogsState.whisparr;
+  const qualityProfileId = request.selections.qualityProfileId;
+  const rootFolderPath = request.selections.rootFolderPath;
+  const labelIds = request.selections.labelIds ?? [];
+
+  const next: DiscoverySelections = {
+    qualityProfileId:
+      qualityProfileId !== null &&
+      catalogs.qualityProfiles.some((item) => item.id === qualityProfileId)
+        ? qualityProfileId
+        : null,
+    rootFolderPath:
+      rootFolderPath !== null &&
+      catalogs.rootFolders.some((item) => item.path === rootFolderPath)
+        ? rootFolderPath
+        : null,
+    tagIds: labelIds.filter((id) => catalogs.tags.some((item) => item.id === id)),
+  };
+
+  const saved = await saveSelections({ whisparr: next });
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.saveSelections,
+    selections: toUiSelections(saved.whisparr),
   };
 }
 
@@ -228,6 +582,14 @@ ext.runtime.onMessage.addListener(
       if (request?.type === MESSAGE_TYPES_BG.resetSettings) {
         await resetSettings();
         return { ok: true, type: MESSAGE_TYPES_BG.resetSettings };
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.fetchDiscoveryCatalogs) {
+        return handleFetchDiscoveryCatalogs(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.saveSelections) {
+        return handleSaveSelections(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {
