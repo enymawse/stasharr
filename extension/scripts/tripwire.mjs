@@ -4,6 +4,7 @@ import { resolve, extname } from 'node:path';
 const distRoot = resolve(new URL('.', import.meta.url).pathname, '..', 'dist');
 const forbiddenStrings = ['==UserScript==', 'GM_', 'Violentmonkey', 'Tampermonkey'];
 const forbiddenExtensions = new Set(['.user.js']);
+const forbiddenContentTokens = ['api/v3', 'whisparr', 'radarr', 'sonarr', 'http://'];
 
 const failures = [];
 
@@ -68,6 +69,25 @@ for (const target of manifestTargets) {
   for (const value of manifestStrings) {
     if (forbiddenPathFragments.some((fragment) => value.includes(fragment))) {
       failures.push(`Manifest references path outside /extension: ${value}`);
+    }
+  }
+}
+
+for (const target of manifestTargets) {
+  const contentPath = resolve(distRoot, target, 'content.js');
+  let content;
+  try {
+    content = await readFile(contentPath, 'utf8');
+  } catch {
+    failures.push(`Missing content bundle: ${contentPath}`);
+    continue;
+  }
+
+  for (const token of forbiddenContentTokens) {
+    if (content.includes(token)) {
+      failures.push(
+        `Content bundle contains forbidden token "${token}" in ${contentPath}`,
+      );
     }
   }
 }
