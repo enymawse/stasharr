@@ -1,4 +1,8 @@
-import { MESSAGE_TYPES, type GetConfigStatusRequest } from '../shared/messages';
+const MESSAGE_TYPES_CONTENT = {
+  getConfigStatus: 'GET_CONFIG_STATUS',
+} as const;
+
+type GetConfigStatusRequest = { type: typeof MESSAGE_TYPES_CONTENT.getConfigStatus };
 
 type ExtRuntime = {
   runtime: {
@@ -118,7 +122,7 @@ if (!document.getElementById(PANEL_ID)) {
   panel.appendChild(inputRow);
 
   extContent.runtime
-    .sendMessage({ type: MESSAGE_TYPES.getConfigStatus })
+    .sendMessage({ type: MESSAGE_TYPES_CONTENT.getConfigStatus })
     .then((response) => {
       if (response.ok && response.configured) {
         statusRow.textContent = 'Config: configured';

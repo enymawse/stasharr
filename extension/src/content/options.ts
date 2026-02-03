@@ -1,4 +1,4 @@
-import { MESSAGE_TYPES, type ExtensionSettings } from '../shared/messages';
+import { MESSAGE_TYPES, type ExtensionSettings } from '../shared/messages.js';
 
 type ExtRuntime = {
   runtime: {

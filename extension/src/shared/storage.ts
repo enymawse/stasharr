@@ -1,4 +1,4 @@
-import type { ExtensionSettings } from './messages';
+import type { ExtensionSettings } from './messages.js';
 
 type StorageArea = {
   get: (keys?: string[] | string | null) => Promise<Record<string, unknown>>;

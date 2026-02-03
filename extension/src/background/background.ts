@@ -4,8 +4,8 @@ import {
   type ExtensionResponse,
   type FetchJsonResponse,
   type ValidateConnectionResponse,
-} from '../shared/messages';
-import { getSettings, resetSettings, saveSettings } from '../shared/storage';
+} from '../shared/messages.js';
+import { getSettings, resetSettings, saveSettings } from '../shared/storage.js';
 
 const MESSAGE_TYPES_BG = MESSAGE_TYPES;
 
