@@ -8,7 +8,6 @@
   },
   "background": {
     "service_worker": "background.js",
-    "type": "module",
     "scripts": ["background.js"]
   },
   "content_scripts": [
@@ -23,7 +22,7 @@
     "open_in_tab": true
   },
   "permissions": ["storage"],
-  "host_permissions": ["https://stashdb.org/*", "http://*/*"],
+  "host_permissions": ["https://stashdb.org/*", "http://*/*", "https://*/*"],
   "browser_specific_settings": {
     "gecko": {
       "id": "stasharr@example.com",

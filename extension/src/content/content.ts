@@ -1,17 +1,59 @@
-import { MESSAGE_TYPES, type ExtensionRequest, type FetchJsonResponse } from './shared/messages';
+const MESSAGE_TYPES_CONTENT = {
+  ping: 'PING',
+  fetchJson: 'FETCH_JSON',
+} as const;
+
+type FetchJsonRequest = {
+  type: typeof MESSAGE_TYPES_CONTENT.fetchJson;
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+};
+
+type FetchJsonResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES_CONTENT.fetchJson;
+  status?: number;
+  json?: unknown;
+  text?: string;
+  error?: string;
+};
 
 type ExtRuntime = {
   runtime: {
-    sendMessage: (message: ExtensionRequest) => Promise<FetchJsonResponse>;
+    sendMessage: (message: FetchJsonRequest) => Promise<FetchJsonResponse>;
   };
 };
 
 const PANEL_ID = 'stasharr-extension-panel';
-const ext = (globalThis as typeof globalThis & { browser?: ExtRuntime; chrome?: ExtRuntime }).browser ??
+const extContent =
+  (globalThis as typeof globalThis & { browser?: ExtRuntime; chrome?: ExtRuntime }).browser ??
   (globalThis as typeof globalThis & { chrome?: ExtRuntime }).chrome;
 
-if (!ext) {
+if (!extContent) {
   throw new Error('Extension runtime not available.');
+}
+
+const __DEV__ = true;
+
+if (__DEV__) {
+  const forbiddenMessage =
+    'Networking is forbidden in content scripts; use background messaging.';
+  if (typeof globalThis.fetch === 'function') {
+    globalThis.fetch = (..._args) => {
+      throw new Error(forbiddenMessage);
+    };
+  }
+
+  if (typeof globalThis.XMLHttpRequest === 'function') {
+    const OriginalXHR = globalThis.XMLHttpRequest;
+    globalThis.XMLHttpRequest = class extends OriginalXHR {
+      open(): void {
+        throw new Error(forbiddenMessage);
+      }
+    };
+  }
 }
 
 function truncate(value: string, max = 300) {
@@ -66,8 +108,8 @@ if (!document.getElementById(PANEL_ID)) {
 
   const urlInput = document.createElement('input');
   urlInput.type = 'text';
-  urlInput.placeholder = 'http://127.0.0.1:6969/api/v3/system/status';
-  urlInput.value = 'http://127.0.0.1:6969/api/v3/system/status';
+  urlInput.placeholder = 'LAN API URL (background only)';
+  urlInput.value = '';
   urlInput.style.padding = '6px 8px';
   urlInput.style.borderRadius = '6px';
   urlInput.style.border = '1px solid rgba(255,255,255,0.2)';
@@ -107,8 +149,8 @@ if (!document.getElementById(PANEL_ID)) {
       headers['X-Api-Key'] = apiKeyInput.value.trim();
     }
 
-    const response = (await ext.runtime.sendMessage({
-      type: MESSAGE_TYPES.fetchJson,
+    const response = (await extContent.runtime.sendMessage({
+      type: MESSAGE_TYPES_CONTENT.fetchJson,
       url: urlInput.value.trim(),
       headers,
     })) as FetchJsonResponse;
