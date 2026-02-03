@@ -50,6 +50,24 @@ function truncate(value: string, max = 300) {
   return `${value.slice(0, max)}…`;
 }
 
+function getParsedPage() {
+  return (
+    globalThis as {
+      StasharrPageParser?: {
+        parseStashDbPage: (
+          doc: Document,
+          loc: Location,
+        ) => { type: string; stashIds: string[]; canonicalUrl: string | null; url: string };
+      };
+    }
+  ).StasharrPageParser?.parseStashDbPage(document, window.location) ?? {
+    type: 'other',
+    stashIds: [],
+    canonicalUrl: null,
+    url: window.location.href,
+  };
+}
+
 if (!document.getElementById(PANEL_ID)) {
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
@@ -73,18 +91,8 @@ if (!document.getElementById(PANEL_ID)) {
   panel.appendChild(heading);
 
   const diagnostics = document.createElement('div');
-  const parsedPage = (
-    globalThis as { StasharrPageParser?: { parseStashDbPage: (doc: Document, loc: Location) => { type: string; stashIds: string[]; canonicalUrl: string | null; url: string } } }
-  ).StasharrPageParser?.parseStashDbPage(
-    document,
-    window.location,
-  ) ?? {
-    type: 'other',
-    stashIds: [],
-    canonicalUrl: null,
-    url: window.location.href,
-  };
-  diagnostics.textContent = `Diagnostics: ${parsedPage.type} • ${parsedPage.url}`;
+  let parsedPage = getParsedPage();
+  diagnostics.textContent = `Diagnostics: ${parsedPage.type} • ${truncate(parsedPage.url, 140)}`;
   diagnostics.style.opacity = '0.85';
   panel.appendChild(diagnostics);
 
@@ -92,10 +100,15 @@ if (!document.getElementById(PANEL_ID)) {
   parseDetails.style.marginTop = '6px';
   parseDetails.style.fontSize = '11px';
   parseDetails.style.opacity = '0.9';
-  const idsText =
-    parsedPage.stashIds.length > 0 ? parsedPage.stashIds.join(', ') : 'none';
-  const canonicalText = parsedPage.canonicalUrl ?? 'none';
-  parseDetails.textContent = `Detected: ${parsedPage.type} | IDs: ${idsText} | Canonical: ${canonicalText}`;
+  const updateDiagnostics = () => {
+    parsedPage = getParsedPage();
+    const idsText =
+      parsedPage.stashIds.length > 0 ? parsedPage.stashIds.join(', ') : 'none';
+    const canonicalText = parsedPage.canonicalUrl ?? 'none';
+    diagnostics.textContent = `Diagnostics: ${parsedPage.type} • ${truncate(parsedPage.url, 140)}`;
+    parseDetails.textContent = `Detected: ${parsedPage.type} | IDs: ${idsText} | Canonical: ${canonicalText}`;
+  };
+  updateDiagnostics();
   panel.appendChild(parseDetails);
 
   const inputRow = document.createElement('div');
@@ -150,4 +163,15 @@ if (!document.getElementById(PANEL_ID)) {
     });
 
   document.documentElement.appendChild(panel);
+
+  let lastUrl = window.location.href;
+  const checkNavigation = () => {
+    if (window.location.href !== lastUrl) {
+      lastUrl = window.location.href;
+      updateDiagnostics();
+    }
+  };
+
+  window.addEventListener('popstate', checkNavigation);
+  window.setInterval(checkNavigation, 500);
 }
