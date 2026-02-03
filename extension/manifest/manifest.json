@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Stasharr Extension",
+  "version": "0.1.0",
+  "description": "Standalone Stasharr browser extension.",
+  "action": {
+    "default_title": "Stasharr"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://stashdb.org/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://stashdb.org/*"]
+}
