@@ -24,12 +24,5 @@ await execFileAsync('tsc', ['-p', 'tsconfig.json', '--outDir', distDir], { cwd: 
 await cp(resolve(rootDir, 'manifest', target, 'manifest.json'), resolve(distDir, 'manifest.json'));
 await cp(
   resolve(rootDir, 'src', 'content', 'options.html'),
-  resolve(distDir, 'options.html'),
+  resolve(distDir, 'content', 'options.html'),
 );
-
-await cp(
-  resolve(distDir, 'background', 'background.js'),
-  resolve(distDir, 'background.js'),
-);
-await cp(resolve(distDir, 'content', 'content.js'), resolve(distDir, 'content.js'));
-await cp(resolve(distDir, 'content', 'options.js'), resolve(distDir, 'options.js'));

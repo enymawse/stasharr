@@ -74,7 +74,7 @@ for (const target of manifestTargets) {
 }
 
 for (const target of manifestTargets) {
-  const contentPath = resolve(distRoot, target, 'content.js');
+  const contentPath = resolve(distRoot, target, 'content', 'content.js');
   let content;
   try {
     content = await readFile(contentPath, 'utf8');

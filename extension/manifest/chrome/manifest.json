@@ -7,17 +7,17 @@
     "default_title": "Stasharr"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background/background.js"
   },
   "content_scripts": [
     {
       "matches": ["https://stashdb.org/*"],
-      "js": ["content.js"],
+      "js": ["content/content.js"],
       "run_at": "document_idle"
     }
   ],
   "options_ui": {
-    "page": "options.html",
+    "page": "content/options.html",
     "open_in_tab": true
   },
   "permissions": ["storage"],
