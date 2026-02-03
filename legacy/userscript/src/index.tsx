@@ -145,3 +145,4 @@ import { Config } from './models/Config';
     !!document.querySelector('.scenes-list'),
   );
 })();
+// REFERENCE ONLY. DO NOT BUNDLE OR EXECUTE.
