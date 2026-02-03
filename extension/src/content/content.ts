@@ -239,6 +239,22 @@ if (!document.getElementById(PANEL_ID)) {
 
   let currentMonitorState: boolean | null = null;
 
+  const applyActionState = (sceneId?: string) => {
+    if (!sceneId) {
+      addSceneButton.disabled = true;
+      monitorToggle.disabled = true;
+      return;
+    }
+    const cached = statusCache.get(sceneId);
+    if (cached?.exists) {
+      addSceneButton.disabled = true;
+      monitorToggle.disabled = false;
+      return;
+    }
+    addSceneButton.disabled = readiness !== 'validated';
+    monitorToggle.disabled = true;
+  };
+
   const updateSceneStatus = async (force = false) => {
     const current = getParsedPage();
     const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
@@ -252,8 +268,7 @@ if (!document.getElementById(PANEL_ID)) {
     }
 
     checkStatusButton.disabled = false;
-    addSceneButton.disabled = readiness !== 'validated';
-    monitorToggle.disabled = true;
+    applyActionState(sceneId);
 
     if (!force) {
       const cached = statusCache.get(sceneId);
@@ -313,8 +328,7 @@ if (!document.getElementById(PANEL_ID)) {
           monitorToggle.textContent = currentMonitorState ? 'Unmonitor' : 'Monitor';
         }
       } else {
-        addSceneButton.disabled = readiness !== 'validated';
-        monitorToggle.disabled = true;
+        applyActionState(sceneId);
         currentMonitorState = null;
       }
     } catch (error) {
@@ -446,7 +460,7 @@ if (!document.getElementById(PANEL_ID)) {
       const validatedAt = new Date(response.settings.lastValidatedAt);
       statusRow.textContent = `Config: validated ${validatedAt.toLocaleString()}`;
       readiness = 'validated';
-      addSceneButton.disabled = false;
+      applyActionState(getParsedPage().stashIds[0]);
     } catch {
       statusRow.textContent = 'Config: unavailable';
       readiness = 'unconfigured';
