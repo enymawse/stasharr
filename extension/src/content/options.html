@@ -4,11 +4,96 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Stasharr Options</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      main {
+        max-width: 520px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 20px;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #111827;
+        padding: 16px;
+        border-radius: 12px;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #94a3b8;
+      }
+      input {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #1f2937;
+        background: #0b1220;
+        color: #e2e8f0;
+        font-size: 14px;
+        text-transform: none;
+        letter-spacing: normal;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      button {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        background: #2563eb;
+        color: #fff;
+        font-weight: 600;
+      }
+      button[data-action='reveal'] {
+        background: #334155;
+      }
+      .muted {
+        color: #94a3b8;
+        font-size: 12px;
+      }
+    </style>
   </head>
   <body>
     <main>
       <h1>Stasharr Options</h1>
       <p data-status>Loading...</p>
+
+      <section class="panel">
+        <label>
+          Whisparr Base URL
+          <input data-field="whisparrBaseUrl" type="text" placeholder="whisparr.lan:6969" />
+        </label>
+
+        <label>
+          API Key
+          <div class="row">
+            <input data-field="whisparrApiKey" type="password" placeholder="API key" />
+            <button type="button" data-action="reveal">Show</button>
+          </div>
+        </label>
+
+        <div class="row">
+          <button type="button" data-action="save">Save</button>
+          <button type="button" data-action="validate">Validate</button>
+        </div>
+
+        <p data-permission class="muted">Permission status: unknown.</p>
+      </section>
     </main>
     <script type="module" src="options.js"></script>
   </body>

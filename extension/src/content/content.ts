@@ -1,28 +1,12 @@
-const MESSAGE_TYPES_CONTENT = {
-  ping: 'PING',
-  fetchJson: 'FETCH_JSON',
-} as const;
-
-type FetchJsonRequest = {
-  type: typeof MESSAGE_TYPES_CONTENT.fetchJson;
-  url: string;
-  method?: string;
-  headers?: Record<string, string>;
-  body?: string;
-};
-
-type FetchJsonResponse = {
-  ok: boolean;
-  type: typeof MESSAGE_TYPES_CONTENT.fetchJson;
-  status?: number;
-  json?: unknown;
-  text?: string;
-  error?: string;
-};
+import { MESSAGE_TYPES, type GetConfigStatusRequest } from '../shared/messages';
 
 type ExtRuntime = {
   runtime: {
-    sendMessage: (message: FetchJsonRequest) => Promise<FetchJsonResponse>;
+    sendMessage: (message: GetConfigStatusRequest) => Promise<{
+      ok: boolean;
+      configured?: boolean;
+    }>;
+    getURL?: (path: string) => string;
   };
 };
 
@@ -106,75 +90,45 @@ if (!document.getElementById(PANEL_ID)) {
   inputRow.style.gap = '6px';
   inputRow.style.marginTop = '8px';
 
-  const urlInput = document.createElement('input');
-  urlInput.type = 'text';
-  urlInput.placeholder = 'LAN API URL (background only)';
-  urlInput.value = '';
-  urlInput.style.padding = '6px 8px';
-  urlInput.style.borderRadius = '6px';
-  urlInput.style.border = '1px solid rgba(255,255,255,0.2)';
-  urlInput.style.background = 'rgba(255,255,255,0.08)';
-  urlInput.style.color = '#f5f5f5';
+  const statusRow = document.createElement('div');
+  statusRow.style.marginTop = '8px';
+  statusRow.style.fontSize = '11px';
+  statusRow.style.opacity = '0.9';
+  statusRow.textContent = 'Config: checking...';
 
-  const apiKeyInput = document.createElement('input');
-  apiKeyInput.type = 'password';
-  apiKeyInput.placeholder = 'API key (optional)';
-  apiKeyInput.style.padding = '6px 8px';
-  apiKeyInput.style.borderRadius = '6px';
-  apiKeyInput.style.border = '1px solid rgba(255,255,255,0.2)';
-  apiKeyInput.style.background = 'rgba(255,255,255,0.08)';
-  apiKeyInput.style.color = '#f5f5f5';
+  const openOptions = document.createElement('button');
+  openOptions.type = 'button';
+  openOptions.textContent = 'Open Options';
+  openOptions.style.padding = '6px 10px';
+  openOptions.style.borderRadius = '6px';
+  openOptions.style.border = 'none';
+  openOptions.style.cursor = 'pointer';
+  openOptions.style.background = '#1f2937';
+  openOptions.style.color = '#ffffff';
 
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.textContent = 'Test Fetch (background)';
-  button.style.padding = '6px 10px';
-  button.style.borderRadius = '6px';
-  button.style.border = 'none';
-  button.style.cursor = 'pointer';
-  button.style.background = '#3b82f6';
-  button.style.color = '#ffffff';
-
-  const results = document.createElement('div');
-  results.style.marginTop = '6px';
-  results.style.fontSize = '11px';
-  results.style.opacity = '0.9';
-  results.textContent = 'Results: awaiting request.';
-
-  button.addEventListener('click', async () => {
-    results.textContent = 'Results: sending request...';
-
-    const headers: Record<string, string> = {};
-    if (apiKeyInput.value.trim().length > 0) {
-      headers['X-Api-Key'] = apiKeyInput.value.trim();
-    }
-
-    const response = (await extContent.runtime.sendMessage({
-      type: MESSAGE_TYPES_CONTENT.fetchJson,
-      url: urlInput.value.trim(),
-      headers,
-    })) as FetchJsonResponse;
-
-    if (!response) {
-      results.textContent = 'Results: no response from background.';
-      return;
-    }
-
-    const status = response.status ? `status ${response.status}` : 'status unknown';
-    if (response.ok) {
-      const body = response.json ? JSON.stringify(response.json) : response.text ?? '';
-      results.textContent = `Results: ok (${status}) • ${truncate(body)}`;
-    } else {
-      const body = response.text ? ` • ${truncate(response.text)}` : '';
-      results.textContent = `Results: error (${status}) • ${response.error ?? 'unknown'}${body}`;
-    }
+  openOptions.addEventListener('click', async () => {
+    const url = extContent.runtime.getURL
+      ? (extContent.runtime.getURL('content/options.html') as string)
+      : 'content/options.html';
+    window.open(url, '_blank', 'noopener,noreferrer');
   });
 
-  inputRow.appendChild(urlInput);
-  inputRow.appendChild(apiKeyInput);
-  inputRow.appendChild(button);
-  inputRow.appendChild(results);
+  inputRow.appendChild(statusRow);
+  inputRow.appendChild(openOptions);
   panel.appendChild(inputRow);
+
+  extContent.runtime
+    .sendMessage({ type: MESSAGE_TYPES.getConfigStatus })
+    .then((response) => {
+      if (response.ok && response.configured) {
+        statusRow.textContent = 'Config: configured';
+      } else {
+        statusRow.textContent = 'Config: not configured';
+      }
+    })
+    .catch(() => {
+      statusRow.textContent = 'Config: unavailable';
+    });
 
   document.documentElement.appendChild(panel);
 }
