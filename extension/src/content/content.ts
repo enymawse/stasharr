@@ -3,12 +3,18 @@ const MESSAGE_TYPES_CONTENT = {
 } as const;
 
 type GetConfigStatusRequest = { type: typeof MESSAGE_TYPES_CONTENT.getConfigStatus };
+type GetSettingsRequest = { type: 'GET_SETTINGS' };
 
 type ContentRuntime = {
   runtime: {
-    sendMessage: (message: GetConfigStatusRequest) => Promise<{
+    sendMessage: (message: GetConfigStatusRequest | GetSettingsRequest) => Promise<{
       ok: boolean;
       configured?: boolean;
+      settings?: {
+        whisparrBaseUrl?: string;
+        whisparrApiKey?: string;
+        lastValidatedAt?: string;
+      };
     }>;
     getURL?: (path: string) => string;
     openOptionsPage?: () => void;
@@ -149,18 +155,34 @@ if (!document.getElementById(PANEL_ID)) {
   inputRow.appendChild(openOptions);
   panel.appendChild(inputRow);
 
-  extContent.runtime
-    .sendMessage({ type: MESSAGE_TYPES_CONTENT.getConfigStatus })
-    .then((response) => {
-      if (response.ok && response.configured) {
-        statusRow.textContent = 'Config: configured';
-      } else {
-        statusRow.textContent = 'Config: not configured';
+  const updateConfigStatus = async () => {
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'GET_SETTINGS',
+      });
+      if (!response.ok || !response.settings) {
+        statusRow.textContent = 'Config: unavailable';
+        return;
       }
-    })
-    .catch(() => {
+      const baseUrl = response.settings.whisparrBaseUrl?.trim() ?? '';
+      const apiKey = response.settings.whisparrApiKey?.trim() ?? '';
+      const configured = Boolean(baseUrl && apiKey);
+      if (!configured) {
+        statusRow.textContent = 'Config: not configured';
+        return;
+      }
+      if (!response.settings.lastValidatedAt) {
+        statusRow.textContent = 'Config: configured (not validated)';
+        return;
+      }
+      const validatedAt = new Date(response.settings.lastValidatedAt);
+      statusRow.textContent = `Config: validated ${validatedAt.toLocaleString()}`;
+    } catch {
       statusRow.textContent = 'Config: unavailable';
-    });
+    }
+  };
+
+  void updateConfigStatus();
 
   document.documentElement.appendChild(panel);
 
