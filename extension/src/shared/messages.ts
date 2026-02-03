@@ -12,6 +12,7 @@ export const MESSAGE_TYPES = {
   saveSelections: 'SAVE_SELECTIONS',
   openOptionsPage: 'OPEN_OPTIONS_PAGE',
   checkSceneStatus: 'CHECK_SCENE_STATUS',
+  addScene: 'ADD_SCENE',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -159,6 +160,18 @@ export type CheckSceneStatusResponse = {
   error?: string;
 };
 
+export type AddSceneRequest = {
+  type: typeof MESSAGE_TYPES.addScene;
+  stashdbSceneId: string;
+};
+
+export type AddSceneResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.addScene;
+  whisparrId?: number;
+  error?: string;
+};
+
 export type SaveSelectionsRequest = {
   type: typeof MESSAGE_TYPES.saveSelections;
   selections: {
@@ -197,7 +210,8 @@ export type ExtensionRequest =
   | FetchDiscoveryCatalogsRequest
   | SaveSelectionsRequest
   | OpenOptionsPageRequest
-  | CheckSceneStatusRequest;
+  | CheckSceneStatusRequest
+  | AddSceneRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -213,4 +227,5 @@ export type ExtensionResponse =
   | SaveSelectionsResponse
   | OpenOptionsPageResponse
   | CheckSceneStatusResponse
+  | AddSceneResponse
   | { ok: false; type: MessageType; error: string };

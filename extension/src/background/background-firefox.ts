@@ -12,6 +12,7 @@ const MESSAGE_TYPES = {
   saveSelections: 'SAVE_SELECTIONS',
   openOptionsPage: 'OPEN_OPTIONS_PAGE',
   checkSceneStatus: 'CHECK_SCENE_STATUS',
+  addScene: 'ADD_SCENE',
 } as const;
 
 type ExtensionSettings = {
@@ -389,6 +390,28 @@ function normalizedBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, '');
 }
 
+async function fetchSceneLookup(baseUrl: string, apiKey: string, stashId: string) {
+  const response = await handleFetchJson({
+    url: `${baseUrl}/api/v3/lookup/scene?term=stash:${encodeURIComponent(stashId)}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!response.ok) {
+    return { error: response.error ?? 'Lookup failed.' };
+  }
+
+  if (!Array.isArray(response.json) || response.json.length === 0) {
+    return { error: 'Scene not found in lookup.' };
+  }
+
+  const first = response.json.find(isRecord);
+  if (!first || !isRecord(first.movie)) {
+    return { error: 'Lookup payload missing movie.' };
+  }
+
+  return { scene: first.movie };
+}
+
 function reconcileSelections(catalogs: DiscoveryCatalogs, selections: DiscoverySelections) {
   const invalid: { qualityProfileId?: boolean; rootFolderPath?: boolean; labelsRemoved?: number } = {};
   const next: DiscoverySelections = {
@@ -650,6 +673,90 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
   };
 }
 
+async function handleAddScene(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.addScene) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: 'Invalid request type.' };
+  }
+
+  const stashId = String(request.stashdbSceneId ?? '').trim();
+  if (!stashId) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: 'Scene ID is required.' };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: normalized.error ?? 'Invalid base URL.' };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: 'API key is required.' };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: 'Permissions API not available.' };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: `Permission missing for ${origin}` };
+  }
+
+  const selections = await getSelections();
+  const qualityProfileId = selections.whisparr.qualityProfileId;
+  const rootFolderPath = selections.whisparr.rootFolderPath;
+  if (!qualityProfileId || !rootFolderPath) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: 'Missing quality profile or root folder selection.' };
+  }
+
+  const lookup = await fetchSceneLookup(normalized.value, apiKey, stashId);
+  if (!lookup.scene) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: lookup.error ?? 'Lookup failed.' };
+  }
+
+  const foreignId = typeof lookup.scene.foreignId === 'string' ? lookup.scene.foreignId : `stash:${stashId}`;
+  const title = typeof lookup.scene.title === 'string' ? lookup.scene.title : undefined;
+
+  const payload = {
+    foreignId,
+    title,
+    qualityProfileId,
+    rootFolderPath,
+    tags: selections.whisparr.tagIds ?? [],
+    searchForMovie: true,
+  };
+
+  const response = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie`,
+    method: 'POST',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return { ok: false, type: MESSAGE_TYPES.addScene, error: 'Unauthorized (check API key).' };
+    }
+    if (status === 400) {
+      return { ok: false, type: MESSAGE_TYPES.addScene, error: 'Validation failed (check selections).' };
+    }
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: response.error ?? `HTTP ${status}` };
+  }
+
+  if (!isRecord(response.json)) {
+    return { ok: false, type: MESSAGE_TYPES.addScene, error: 'Unexpected response payload.' };
+  }
+
+  const whisparrId = Number(response.json.id);
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.addScene,
+    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+  };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -705,6 +812,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.checkSceneStatus) {
       return handleCheckSceneStatus(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.addScene) {
+      return handleAddScene(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {

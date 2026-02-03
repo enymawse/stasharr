@@ -6,6 +6,7 @@ type GetConfigStatusRequest = { type: typeof MESSAGE_TYPES_CONTENT.getConfigStat
 type GetSettingsRequest = { type: 'GET_SETTINGS' };
 type OpenOptionsPageRequest = { type: 'OPEN_OPTIONS_PAGE' };
 type CheckSceneStatusRequest = { type: 'CHECK_SCENE_STATUS'; stashdbSceneId: string };
+type AddSceneRequest = { type: 'ADD_SCENE'; stashdbSceneId: string };
 
 type ContentRuntime = {
   runtime: {
@@ -14,7 +15,8 @@ type ContentRuntime = {
         | GetConfigStatusRequest
         | GetSettingsRequest
         | OpenOptionsPageRequest
-        | CheckSceneStatusRequest,
+        | CheckSceneStatusRequest
+        | AddSceneRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -143,6 +145,12 @@ if (!document.getElementById(PANEL_ID)) {
   sceneStatusRow.textContent = 'Scene status: unknown';
   panel.appendChild(sceneStatusRow);
 
+  const actionRow = document.createElement('div');
+  actionRow.style.display = 'flex';
+  actionRow.style.gap = '6px';
+  actionRow.style.marginTop = '6px';
+  panel.appendChild(actionRow);
+
   const checkStatusButton = document.createElement('button');
   checkStatusButton.type = 'button';
   checkStatusButton.textContent = 'Check status';
@@ -152,8 +160,19 @@ if (!document.getElementById(PANEL_ID)) {
   checkStatusButton.style.cursor = 'pointer';
   checkStatusButton.style.background = '#0f766e';
   checkStatusButton.style.color = '#ffffff';
-  checkStatusButton.style.marginTop = '6px';
-  panel.appendChild(checkStatusButton);
+  actionRow.appendChild(checkStatusButton);
+
+  const addSceneButton = document.createElement('button');
+  addSceneButton.type = 'button';
+  addSceneButton.textContent = 'Add to Whisparr';
+  addSceneButton.style.padding = '6px 10px';
+  addSceneButton.style.borderRadius = '6px';
+  addSceneButton.style.border = 'none';
+  addSceneButton.style.cursor = 'pointer';
+  addSceneButton.style.background = '#2563eb';
+  addSceneButton.style.color = '#ffffff';
+  addSceneButton.disabled = true;
+  actionRow.appendChild(addSceneButton);
 
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
@@ -194,16 +213,20 @@ if (!document.getElementById(PANEL_ID)) {
   inputRow.appendChild(openOptions);
   panel.appendChild(inputRow);
 
+  let readiness: 'unconfigured' | 'configured' | 'validated' = 'unconfigured';
+
   const updateSceneStatus = async (force = false) => {
     const current = getParsedPage();
     const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
     if (!sceneId) {
       sceneStatusRow.textContent = 'Scene status: unavailable';
       checkStatusButton.disabled = true;
+      addSceneButton.disabled = true;
       return;
     }
 
     checkStatusButton.disabled = false;
+    addSceneButton.disabled = readiness !== 'validated';
 
     if (!force) {
       const cached = statusCache.get(sceneId);
@@ -211,6 +234,9 @@ if (!document.getElementById(PANEL_ID)) {
         sceneStatusRow.textContent = cached.exists
           ? `Scene status: already in Whisparr${cached.hasFile === false ? ' (no file)' : ''}`
           : 'Scene status: not in Whisparr';
+        if (cached.exists) {
+          addSceneButton.disabled = true;
+        }
         return;
       }
     }
@@ -243,6 +269,11 @@ if (!document.getElementById(PANEL_ID)) {
       sceneStatusRow.textContent = exists
         ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
         : 'Scene status: not in Whisparr';
+      if (exists) {
+        addSceneButton.disabled = true;
+      } else {
+        addSceneButton.disabled = readiness !== 'validated';
+      }
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: error (${(error as Error).message})`;
     } finally {
@@ -250,8 +281,47 @@ if (!document.getElementById(PANEL_ID)) {
     }
   };
 
+  const addScene = async () => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId) {
+      sceneStatusRow.textContent = 'Scene status: unavailable';
+      return;
+    }
+    if (readiness !== 'validated') {
+      sceneStatusRow.textContent = 'Scene status: config not validated';
+      return;
+    }
+    addSceneButton.disabled = true;
+    sceneStatusRow.textContent = 'Scene status: adding...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'ADD_SCENE',
+        stashdbSceneId: sceneId,
+      });
+      if (!response.ok) {
+        sceneStatusRow.textContent = `Scene status: add failed (${response.error ?? 'unknown'})`;
+        addSceneButton.disabled = false;
+        return;
+      }
+      statusCache.set(sceneId, {
+        exists: true,
+        whisparrId: response.whisparrId,
+      });
+      sceneStatusRow.textContent = 'Scene status: already in Whisparr';
+      addSceneButton.disabled = true;
+    } catch (error) {
+      sceneStatusRow.textContent = `Scene status: add failed (${(error as Error).message})`;
+      addSceneButton.disabled = false;
+    }
+  };
+
   checkStatusButton.addEventListener('click', () => {
     void updateSceneStatus(true);
+  });
+
+  addSceneButton.addEventListener('click', () => {
+    void addScene();
   });
 
   const updateConfigStatus = async () => {
@@ -261,6 +331,8 @@ if (!document.getElementById(PANEL_ID)) {
       });
       if (!response.ok || !response.settings) {
         statusRow.textContent = 'Config: unavailable';
+        readiness = 'unconfigured';
+        addSceneButton.disabled = true;
         return;
       }
       const baseUrl = response.settings.whisparrBaseUrl?.trim() ?? '';
@@ -268,16 +340,24 @@ if (!document.getElementById(PANEL_ID)) {
       const configured = Boolean(baseUrl && apiKey);
       if (!configured) {
         statusRow.textContent = 'Config: not configured';
+        readiness = 'unconfigured';
+        addSceneButton.disabled = true;
         return;
       }
       if (!response.settings.lastValidatedAt) {
         statusRow.textContent = 'Config: configured (not validated)';
+        readiness = 'configured';
+        addSceneButton.disabled = true;
         return;
       }
       const validatedAt = new Date(response.settings.lastValidatedAt);
       statusRow.textContent = `Config: validated ${validatedAt.toLocaleString()}`;
+      readiness = 'validated';
+      addSceneButton.disabled = false;
     } catch {
       statusRow.textContent = 'Config: unavailable';
+      readiness = 'unconfigured';
+      addSceneButton.disabled = true;
     }
   };
 
