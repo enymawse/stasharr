@@ -74,6 +74,17 @@ function truncate(value: string, max = 300) {
   return `${value.slice(0, max)}…`;
 }
 
+function applyDisabledStyles(button: HTMLButtonElement, disabled: boolean) {
+  button.disabled = disabled;
+  if (disabled) {
+    button.style.opacity = '0.55';
+    button.style.cursor = 'not-allowed';
+  } else {
+    button.style.opacity = '1';
+    button.style.cursor = 'pointer';
+  }
+}
+
 function getParsedPage() {
   return (
     globalThis as {
@@ -181,7 +192,7 @@ if (!document.getElementById(PANEL_ID)) {
   addSceneButton.style.cursor = 'pointer';
   addSceneButton.style.background = '#2563eb';
   addSceneButton.style.color = '#ffffff';
-  addSceneButton.disabled = true;
+  applyDisabledStyles(addSceneButton, true);
   actionRow.appendChild(addSceneButton);
 
   const monitorToggle = document.createElement('button');
@@ -193,7 +204,7 @@ if (!document.getElementById(PANEL_ID)) {
   monitorToggle.style.cursor = 'pointer';
   monitorToggle.style.background = '#7c3aed';
   monitorToggle.style.color = '#ffffff';
-  monitorToggle.disabled = true;
+  applyDisabledStyles(monitorToggle, true);
   actionRow.appendChild(monitorToggle);
 
   const inputRow = document.createElement('div');
@@ -241,18 +252,18 @@ if (!document.getElementById(PANEL_ID)) {
 
   const applyActionState = (sceneId?: string) => {
     if (!sceneId) {
-      addSceneButton.disabled = true;
-      monitorToggle.disabled = true;
+      applyDisabledStyles(addSceneButton, true);
+      applyDisabledStyles(monitorToggle, true);
       return;
     }
     const cached = statusCache.get(sceneId);
     if (cached?.exists) {
-      addSceneButton.disabled = true;
-      monitorToggle.disabled = false;
+      applyDisabledStyles(addSceneButton, true);
+      applyDisabledStyles(monitorToggle, false);
       return;
     }
-    addSceneButton.disabled = readiness !== 'validated';
-    monitorToggle.disabled = true;
+    applyDisabledStyles(addSceneButton, readiness !== 'validated');
+    applyDisabledStyles(monitorToggle, true);
   };
 
   const updateSceneStatus = async (force = false) => {
@@ -261,8 +272,8 @@ if (!document.getElementById(PANEL_ID)) {
     if (!sceneId) {
       sceneStatusRow.textContent = 'Scene status: unavailable';
       checkStatusButton.disabled = true;
-      addSceneButton.disabled = true;
-      monitorToggle.disabled = true;
+      applyDisabledStyles(addSceneButton, true);
+      applyDisabledStyles(monitorToggle, true);
       currentMonitorState = null;
       return;
     }
@@ -277,14 +288,14 @@ if (!document.getElementById(PANEL_ID)) {
           ? `Scene status: already in Whisparr${cached.hasFile === false ? ' (no file)' : ''}`
           : 'Scene status: not in Whisparr';
         if (cached.exists) {
-          addSceneButton.disabled = true;
-          monitorToggle.disabled = false;
+          applyDisabledStyles(addSceneButton, true);
+          applyDisabledStyles(monitorToggle, false);
           if (typeof cached.monitored === 'boolean') {
             currentMonitorState = cached.monitored;
             monitorToggle.textContent = cached.monitored ? 'Unmonitor' : 'Monitor';
           }
         } else {
-          monitorToggle.disabled = true;
+          applyDisabledStyles(monitorToggle, true);
         }
         return;
       }
@@ -320,8 +331,8 @@ if (!document.getElementById(PANEL_ID)) {
         ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
         : 'Scene status: not in Whisparr';
       if (exists) {
-        addSceneButton.disabled = true;
-        monitorToggle.disabled = false;
+        applyDisabledStyles(addSceneButton, true);
+        applyDisabledStyles(monitorToggle, false);
         currentMonitorState =
           typeof response.monitored === 'boolean' ? response.monitored : null;
         if (currentMonitorState !== null) {
@@ -349,7 +360,7 @@ if (!document.getElementById(PANEL_ID)) {
       sceneStatusRow.textContent = 'Scene status: config not validated';
       return;
     }
-    addSceneButton.disabled = true;
+    applyDisabledStyles(addSceneButton, true);
     sceneStatusRow.textContent = 'Scene status: adding...';
     try {
       const response = await extContent.runtime.sendMessage({
@@ -358,7 +369,7 @@ if (!document.getElementById(PANEL_ID)) {
       });
       if (!response.ok) {
         sceneStatusRow.textContent = `Scene status: add failed (${response.error ?? 'unknown'})`;
-        addSceneButton.disabled = false;
+        applyDisabledStyles(addSceneButton, false);
         return;
       }
       statusCache.set(sceneId, {
@@ -368,11 +379,11 @@ if (!document.getElementById(PANEL_ID)) {
       currentMonitorState = true;
       monitorToggle.textContent = 'Unmonitor';
       sceneStatusRow.textContent = 'Scene status: already in Whisparr';
-      addSceneButton.disabled = true;
-      monitorToggle.disabled = false;
+      applyDisabledStyles(addSceneButton, true);
+      applyDisabledStyles(monitorToggle, false);
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: add failed (${(error as Error).message})`;
-      addSceneButton.disabled = false;
+      applyDisabledStyles(addSceneButton, false);
     }
   };
 
@@ -385,7 +396,7 @@ if (!document.getElementById(PANEL_ID)) {
     const cached = statusCache.get(sceneId);
     if (!cached?.exists || !cached.whisparrId) {
       sceneStatusRow.textContent = 'Scene status: not in Whisparr';
-      monitorToggle.disabled = true;
+      applyDisabledStyles(monitorToggle, true);
       return;
     }
     if (currentMonitorState === null) {
@@ -393,7 +404,7 @@ if (!document.getElementById(PANEL_ID)) {
       return;
     }
     const nextState = !currentMonitorState;
-    monitorToggle.disabled = true;
+    applyDisabledStyles(monitorToggle, true);
     sceneStatusRow.textContent = nextState ? 'Scene status: enabling monitor...' : 'Scene status: disabling monitor...';
     try {
       const response = await extContent.runtime.sendMessage({
@@ -403,7 +414,7 @@ if (!document.getElementById(PANEL_ID)) {
       });
       if (!response.ok) {
         sceneStatusRow.textContent = `Scene status: monitor update failed (${response.error ?? 'unknown'})`;
-        monitorToggle.disabled = false;
+        applyDisabledStyles(monitorToggle, false);
         return;
       }
       const monitored =
@@ -411,11 +422,11 @@ if (!document.getElementById(PANEL_ID)) {
       currentMonitorState = monitored;
       cached.monitored = monitored;
       monitorToggle.textContent = monitored ? 'Unmonitor' : 'Monitor';
-      monitorToggle.disabled = false;
+      applyDisabledStyles(monitorToggle, false);
       sceneStatusRow.textContent = 'Scene status: already in Whisparr';
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: monitor update failed (${(error as Error).message})`;
-      monitorToggle.disabled = false;
+      applyDisabledStyles(monitorToggle, false);
     }
   };
 
@@ -439,7 +450,7 @@ if (!document.getElementById(PANEL_ID)) {
       if (!response.ok || !response.settings) {
         statusRow.textContent = 'Config: unavailable';
         readiness = 'unconfigured';
-        addSceneButton.disabled = true;
+        applyDisabledStyles(addSceneButton, true);
         return;
       }
       const baseUrl = response.settings.whisparrBaseUrl?.trim() ?? '';
@@ -448,13 +459,13 @@ if (!document.getElementById(PANEL_ID)) {
       if (!configured) {
         statusRow.textContent = 'Config: not configured';
         readiness = 'unconfigured';
-        addSceneButton.disabled = true;
+        applyDisabledStyles(addSceneButton, true);
         return;
       }
       if (!response.settings.lastValidatedAt) {
         statusRow.textContent = 'Config: configured (not validated)';
         readiness = 'configured';
-        addSceneButton.disabled = true;
+        applyDisabledStyles(addSceneButton, true);
         return;
       }
       const validatedAt = new Date(response.settings.lastValidatedAt);
@@ -464,7 +475,7 @@ if (!document.getElementById(PANEL_ID)) {
     } catch {
       statusRow.textContent = 'Config: unavailable';
       readiness = 'unconfigured';
-      addSceneButton.disabled = true;
+      applyDisabledStyles(addSceneButton, true);
     }
   };
 
