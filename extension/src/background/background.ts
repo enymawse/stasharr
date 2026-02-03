@@ -13,6 +13,7 @@ import {
   type AddSceneResponse,
   type SetMonitorStateResponse,
   type UpdateTagsResponse,
+  type UpdateQualityProfileResponse,
 } from '../shared/messages.js';
 import {
   getCatalogs,
@@ -963,6 +964,135 @@ async function handleUpdateTags(
   };
 }
 
+async function handleUpdateQualityProfile(
+  request: ExtensionRequest,
+): Promise<UpdateQualityProfileResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.updateQualityProfile) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: 'Whisparr ID is required.',
+    };
+  }
+
+  const qualityProfileId = Number(request.qualityProfileId);
+  if (!Number.isFinite(qualityProfileId) || qualityProfileId <= 0) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: 'Quality profile is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const existingResponse = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!existingResponse.ok || !isRecord(existingResponse.json)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: existingResponse.error ?? 'Failed to fetch Whisparr scene.',
+    };
+  }
+
+  const build = buildUpdatePayload(existingResponse.json, {
+    id: whisparrId,
+    qualityProfileId,
+  });
+  if (!build.payload) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: build.error ?? 'Whisparr scene missing required fields.',
+    };
+  }
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(build.payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.updateQualityProfile,
+        error: 'Unauthorized (check API key).',
+      };
+    }
+    if (status === 400) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.updateQualityProfile,
+        error: 'Validation failed (check profile).',
+      };
+    }
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateQualityProfile,
+      error: response.error ?? `HTTP ${status}`,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.updateQualityProfile,
+    qualityProfileId,
+  };
+}
+
 async function handleCheckSceneStatus(
   request: ExtensionRequest,
 ): Promise<CheckSceneStatusResponse> {
@@ -1065,6 +1195,7 @@ async function handleCheckSceneStatus(
   const monitored =
     typeof first.monitored === 'boolean' ? first.monitored : undefined;
   const tagIds = normalizeTags(first.tags);
+  const qualityProfileId = Number(first.qualityProfileId);
 
   return {
     ok: true,
@@ -1075,6 +1206,9 @@ async function handleCheckSceneStatus(
     hasFile,
     monitored,
     tagIds,
+    qualityProfileId: Number.isFinite(qualityProfileId)
+      ? qualityProfileId
+      : undefined,
   };
 }
 
@@ -1198,6 +1332,10 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.updateTags) {
         return handleUpdateTags(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.updateQualityProfile) {
+        return handleUpdateQualityProfile(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {

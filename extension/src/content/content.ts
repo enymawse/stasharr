@@ -10,6 +10,11 @@ type AddSceneRequest = { type: 'ADD_SCENE'; stashdbSceneId: string };
 type SetMonitorStateRequest = { type: 'SET_MONITOR_STATE'; whisparrId: number; monitored: boolean };
 type FetchDiscoveryCatalogsRequest = { type: 'FETCH_DISCOVERY_CATALOGS'; kind: 'whisparr'; force?: boolean };
 type UpdateTagsRequest = { type: 'UPDATE_TAGS'; whisparrId: number; tagIds: number[] };
+type UpdateQualityProfileRequest = {
+  type: 'UPDATE_QUALITY_PROFILE';
+  whisparrId: number;
+  qualityProfileId: number;
+};
 
 type ContentRuntime = {
   runtime: {
@@ -22,7 +27,8 @@ type ContentRuntime = {
         | AddSceneRequest
         | SetMonitorStateRequest
         | FetchDiscoveryCatalogsRequest
-        | UpdateTagsRequest,
+        | UpdateTagsRequest
+        | UpdateQualityProfileRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -32,9 +38,11 @@ type ContentRuntime = {
         lastValidatedAt?: string;
       };
       catalogs?: {
+        qualityProfiles?: Array<{ id: number; name: string }>;
         tags?: Array<{ id: number; label: string }>;
       };
       tagIds?: number[];
+      qualityProfileId?: number;
       exists?: boolean;
       whisparrId?: number;
       title?: string;
@@ -121,12 +129,15 @@ if (!document.getElementById(PANEL_ID)) {
       hasFile?: boolean;
       monitored?: boolean;
       tagIds?: number[];
+      qualityProfileId?: number;
       error?: string;
     }
   >();
   const inFlight = new Set<string>();
   const tagUpdateInFlight = new Set<string>();
+  const qualityProfileUpdateInFlight = new Set<string>();
   let tagCatalog: Array<{ id: number; label: string }> = [];
+  let qualityProfileCatalog: Array<{ id: number; name: string }> = [];
 
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
@@ -218,6 +229,46 @@ if (!document.getElementById(PANEL_ID)) {
   applyDisabledStyles(monitorToggle, true);
   actionRow.appendChild(monitorToggle);
 
+  const qualityRow = document.createElement('div');
+  qualityRow.style.marginTop = '8px';
+  qualityRow.style.display = 'flex';
+  qualityRow.style.flexDirection = 'column';
+  qualityRow.style.gap = '6px';
+  panel.appendChild(qualityRow);
+
+  const qualityLabel = document.createElement('div');
+  qualityLabel.textContent = 'Quality profile';
+  qualityLabel.style.fontSize = '11px';
+  qualityLabel.style.opacity = '0.8';
+  qualityRow.appendChild(qualityLabel);
+
+  const qualitySelect = document.createElement('select');
+  qualitySelect.style.padding = '6px';
+  qualitySelect.style.borderRadius = '6px';
+  qualitySelect.style.border = '1px solid #1f2937';
+  qualitySelect.style.background = '#0b1220';
+  qualitySelect.style.color = '#e2e8f0';
+  qualitySelect.disabled = true;
+  qualityRow.appendChild(qualitySelect);
+
+  const qualityStatus = document.createElement('div');
+  qualityStatus.style.fontSize = '11px';
+  qualityStatus.style.opacity = '0.8';
+  qualityStatus.textContent = 'Quality: unavailable';
+  qualityRow.appendChild(qualityStatus);
+
+  const updateQualityButton = document.createElement('button');
+  updateQualityButton.type = 'button';
+  updateQualityButton.textContent = 'Update quality';
+  updateQualityButton.style.padding = '6px 10px';
+  updateQualityButton.style.borderRadius = '6px';
+  updateQualityButton.style.border = 'none';
+  updateQualityButton.style.cursor = 'pointer';
+  updateQualityButton.style.background = '#f59e0b';
+  updateQualityButton.style.color = '#111827';
+  applyDisabledStyles(updateQualityButton, true);
+  qualityRow.appendChild(updateQualityButton);
+
   const tagsRow = document.createElement('div');
   tagsRow.style.marginTop = '8px';
   tagsRow.style.display = 'flex';
@@ -303,6 +354,39 @@ if (!document.getElementById(PANEL_ID)) {
 
   let currentMonitorState: boolean | null = null;
 
+  const renderQualityOptions = (selectedId?: number) => {
+    qualitySelect.innerHTML = '';
+    for (const profile of qualityProfileCatalog) {
+      const option = document.createElement('option');
+      option.value = String(profile.id);
+      option.textContent = profile.name;
+      option.selected = selectedId === profile.id;
+      qualitySelect.appendChild(option);
+    }
+  };
+
+  const updateQualityControls = (sceneId?: string) => {
+    const cached = sceneId ? statusCache.get(sceneId) : undefined;
+    const exists = Boolean(cached?.exists);
+    const selectedId = cached?.qualityProfileId;
+    if (qualityProfileCatalog.length === 0) {
+      qualityStatus.textContent = 'Quality: unavailable';
+      applyDisabledStyles(updateQualityButton, true);
+      qualitySelect.disabled = true;
+      return;
+    }
+    renderQualityOptions(selectedId);
+    if (!exists) {
+      qualityStatus.textContent = 'Quality: scene not in Whisparr';
+      applyDisabledStyles(updateQualityButton, true);
+      qualitySelect.disabled = true;
+      return;
+    }
+    qualitySelect.disabled = false;
+    applyDisabledStyles(updateQualityButton, false);
+    qualityStatus.textContent = 'Quality: ready';
+  };
+
   const renderTagOptions = (selectedIds: number[]) => {
     tagsSelect.innerHTML = '';
     for (const tag of tagCatalog) {
@@ -336,18 +420,26 @@ if (!document.getElementById(PANEL_ID)) {
     tagsStatus.textContent = 'Tags: ready';
   };
 
-  const loadTagCatalog = async () => {
+  const loadCatalogs = async () => {
     try {
       const response = await extContent.runtime.sendMessage({
         type: 'FETCH_DISCOVERY_CATALOGS',
         kind: 'whisparr',
       });
-      if (response.ok && response.catalogs?.tags) {
-        tagCatalog = response.catalogs.tags;
-        updateTagControls(getParsedPage().stashIds[0]);
+      if (response.ok && response.catalogs) {
+        if (response.catalogs.tags) {
+          tagCatalog = response.catalogs.tags;
+        }
+        if (response.catalogs.qualityProfiles) {
+          qualityProfileCatalog = response.catalogs.qualityProfiles;
+        }
+        const sceneId = getParsedPage().stashIds[0];
+        updateQualityControls(sceneId);
+        updateTagControls(sceneId);
       }
     } catch {
       tagsStatus.textContent = 'Tags: unavailable';
+      qualityStatus.textContent = 'Quality: unavailable';
     }
   };
 
@@ -375,6 +467,9 @@ if (!document.getElementById(PANEL_ID)) {
       checkStatusButton.disabled = true;
       applyDisabledStyles(addSceneButton, true);
       applyDisabledStyles(monitorToggle, true);
+      qualitySelect.disabled = true;
+      applyDisabledStyles(updateQualityButton, true);
+      qualityStatus.textContent = 'Quality: unavailable';
       currentMonitorState = null;
       return;
     }
@@ -398,6 +493,7 @@ if (!document.getElementById(PANEL_ID)) {
         } else {
           applyDisabledStyles(monitorToggle, true);
         }
+        updateQualityControls(sceneId);
         updateTagControls(sceneId);
         return;
       }
@@ -429,6 +525,7 @@ if (!document.getElementById(PANEL_ID)) {
         hasFile: response.hasFile,
         monitored: response.monitored,
         tagIds: response.tagIds,
+        qualityProfileId: response.qualityProfileId,
       });
       sceneStatusRow.textContent = exists
         ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
@@ -445,6 +542,7 @@ if (!document.getElementById(PANEL_ID)) {
         applyActionState(sceneId);
         currentMonitorState = null;
       }
+      updateQualityControls(sceneId);
       updateTagControls(sceneId);
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: error (${(error as Error).message})`;
@@ -485,7 +583,9 @@ if (!document.getElementById(PANEL_ID)) {
       sceneStatusRow.textContent = 'Scene status: already in Whisparr';
       applyDisabledStyles(addSceneButton, true);
       applyDisabledStyles(monitorToggle, false);
+      updateQualityControls(sceneId);
       updateTagControls(sceneId);
+      void updateSceneStatus(true);
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: add failed (${(error as Error).message})`;
       applyDisabledStyles(addSceneButton, false);
@@ -532,6 +632,50 @@ if (!document.getElementById(PANEL_ID)) {
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: monitor update failed (${(error as Error).message})`;
       applyDisabledStyles(monitorToggle, false);
+    }
+  };
+
+  const updateQualityProfile = async () => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId) return;
+    const cached = statusCache.get(sceneId);
+    if (!cached?.exists || !cached.whisparrId) {
+      qualityStatus.textContent = 'Quality: scene not in Whisparr';
+      applyDisabledStyles(updateQualityButton, true);
+      return;
+    }
+    if (qualityProfileUpdateInFlight.has(sceneId)) {
+      return;
+    }
+    const selectedId = Number(qualitySelect.value);
+    if (!Number.isFinite(selectedId) || selectedId <= 0) {
+      qualityStatus.textContent = 'Quality: select a profile';
+      applyDisabledStyles(updateQualityButton, true);
+      return;
+    }
+    qualityProfileUpdateInFlight.add(sceneId);
+    applyDisabledStyles(updateQualityButton, true);
+    qualityStatus.textContent = 'Quality: updating...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'UPDATE_QUALITY_PROFILE',
+        whisparrId: cached.whisparrId,
+        qualityProfileId: selectedId,
+      });
+      if (!response.ok) {
+        qualityStatus.textContent = `Quality: update failed (${response.error ?? 'unknown'})`;
+        applyDisabledStyles(updateQualityButton, false);
+        return;
+      }
+      cached.qualityProfileId = response.qualityProfileId ?? selectedId;
+      qualityStatus.textContent = 'Quality: updated';
+      applyDisabledStyles(updateQualityButton, false);
+    } catch (error) {
+      qualityStatus.textContent = `Quality: update failed (${(error as Error).message})`;
+      applyDisabledStyles(updateQualityButton, false);
+    } finally {
+      qualityProfileUpdateInFlight.delete(sceneId);
     }
   };
 
@@ -588,6 +732,14 @@ if (!document.getElementById(PANEL_ID)) {
     void updateMonitorState();
   });
 
+  qualitySelect.addEventListener('change', () => {
+    applyDisabledStyles(updateQualityButton, false);
+  });
+
+  updateQualityButton.addEventListener('click', () => {
+    void updateQualityProfile();
+  });
+
   tagsSelect.addEventListener('change', () => {
     applyDisabledStyles(updateTagsButton, false);
   });
@@ -635,7 +787,7 @@ if (!document.getElementById(PANEL_ID)) {
 
   void updateConfigStatus();
   void updateSceneStatus(false);
-  void loadTagCatalog();
+  void loadCatalogs();
 
   document.documentElement.appendChild(panel);
 

@@ -15,6 +15,7 @@ export const MESSAGE_TYPES = {
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
   updateTags: 'UPDATE_TAGS',
+  updateQualityProfile: 'UPDATE_QUALITY_PROFILE',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -161,6 +162,7 @@ export type CheckSceneStatusResponse = {
   hasFile?: boolean;
   monitored?: boolean;
   tagIds?: number[];
+  qualityProfileId?: number;
   error?: string;
 };
 
@@ -199,6 +201,19 @@ export type UpdateTagsResponse = {
   ok: boolean;
   type: typeof MESSAGE_TYPES.updateTags;
   tagIds?: number[];
+  error?: string;
+};
+
+export type UpdateQualityProfileRequest = {
+  type: typeof MESSAGE_TYPES.updateQualityProfile;
+  whisparrId: number;
+  qualityProfileId: number;
+};
+
+export type UpdateQualityProfileResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.updateQualityProfile;
+  qualityProfileId?: number;
   error?: string;
 };
 
@@ -243,7 +258,8 @@ export type ExtensionRequest =
   | CheckSceneStatusRequest
   | AddSceneRequest
   | SetMonitorStateRequest
-  | UpdateTagsRequest;
+  | UpdateTagsRequest
+  | UpdateQualityProfileRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -262,4 +278,5 @@ export type ExtensionResponse =
   | AddSceneResponse
   | SetMonitorStateResponse
   | UpdateTagsResponse
+  | UpdateQualityProfileResponse
   | { ok: false; type: MessageType; error: string };

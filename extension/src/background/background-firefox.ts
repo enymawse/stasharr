@@ -13,6 +13,7 @@ const MESSAGE_TYPES = {
   openOptionsPage: 'OPEN_OPTIONS_PAGE',
   checkSceneStatus: 'CHECK_SCENE_STATUS',
   updateTags: 'UPDATE_TAGS',
+  updateQualityProfile: 'UPDATE_QUALITY_PROFILE',
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
 } as const;
@@ -401,7 +402,7 @@ function normalizeTags(value: unknown): number[] {
 
 function buildUpdatePayload(
   existing: Record<string, unknown>,
-  overrides: { id: number; monitored?: boolean; tags?: number[] },
+  overrides: { id: number; monitored?: boolean; tags?: number[]; qualityProfileId?: number },
 ): { payload?: Record<string, unknown>; error?: string } {
   const { id, ...rest } = overrides;
   const qualityProfileId = Number(existing.qualityProfileId);
@@ -701,6 +702,7 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
   const hasFile = typeof first.hasFile === 'boolean' ? first.hasFile : undefined;
   const monitored = typeof first.monitored === 'boolean' ? first.monitored : undefined;
   const tagIds = normalizeTags(first.tags);
+  const qualityProfileId = Number(first.qualityProfileId);
 
   return {
     ok: true,
@@ -711,6 +713,7 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
     hasFile,
     monitored,
     tagIds,
+    qualityProfileId: Number.isFinite(qualityProfileId) ? qualityProfileId : undefined,
   };
 }
 
@@ -947,6 +950,79 @@ async function handleUpdateTags(request: { type?: string; [key: string]: unknown
   return { ok: true, type: MESSAGE_TYPES.updateTags, tagIds };
 }
 
+async function handleUpdateQualityProfile(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.updateQualityProfile) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: 'Invalid request type.' };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: 'Whisparr ID is required.' };
+  }
+
+  const qualityProfileId = Number(request.qualityProfileId);
+  if (!Number.isFinite(qualityProfileId) || qualityProfileId <= 0) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: 'Quality profile is required.' };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: normalized.error ?? 'Invalid base URL.' };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: 'API key is required.' };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: 'Permissions API not available.' };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: `Permission missing for ${origin}` };
+  }
+
+  const existingResponse = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!existingResponse.ok || !isRecord(existingResponse.json)) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: existingResponse.error ?? 'Failed to fetch Whisparr scene.' };
+  }
+
+  const build = buildUpdatePayload(existingResponse.json as Record<string, unknown>, {
+    id: whisparrId,
+    qualityProfileId,
+  });
+  if (!build.payload) {
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: build.error ?? 'Whisparr scene missing required fields.' };
+  }
+
+  const response = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(build.payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: 'Unauthorized (check API key).' };
+    }
+    if (status === 400) {
+      return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: 'Validation failed (check profile).' };
+    }
+    return { ok: false, type: MESSAGE_TYPES.updateQualityProfile, error: response.error ?? `HTTP ${status}` };
+  }
+
+  return { ok: true, type: MESSAGE_TYPES.updateQualityProfile, qualityProfileId };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -1014,6 +1090,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.updateTags) {
       return handleUpdateTags(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.updateQualityProfile) {
+      return handleUpdateQualityProfile(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {
