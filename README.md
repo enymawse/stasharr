@@ -65,7 +65,6 @@ Turn StashDB from a simple database into a comprehensive content management syst
 ### Quick Install
 
 1. **Install browser extension:**
-
    - [Tampermonkey](https://www.tampermonkey.net/) (recommended)
    - [Violentmonkey](https://violentmonkey.github.io/) (alternative)
 
@@ -253,6 +252,28 @@ Interested in contributing or running your own build? See our [Development Guide
 - **Building from source**
 - **Contributing guidelines**
 - **Architecture overview**
+
+### Extension dev quickstart
+
+The browser extension lives in `extension/` and uses a dual-manifest approach:
+`manifest.chrome.json` (Chrome MV3) and `manifest.firefox.json` (Firefox MV3 with
+`browser_specific_settings`). The build script copies the right manifest into each output
+folder as `manifest.json`.
+
+```bash
+npm run build:extension
+```
+
+Outputs:
+
+- `dist/extension/chrome` → load with **Chrome** “Load unpacked”
+- `dist/extension/firefox` → load with **Firefox** `about:debugging` temporary add-on
+
+To rebuild during development:
+
+```bash
+npm run dev:extension
+```
 
 ### Tech Stack
 

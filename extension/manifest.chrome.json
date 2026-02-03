@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Stasharr Extension",
+  "version": "0.0.0",
+  "description": "Minimal Stasharr extension shell for StashDB.",
+  "content_scripts": [
+    {
+      "matches": ["https://stashdb.org/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

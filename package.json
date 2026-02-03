@@ -5,8 +5,12 @@
   "main": "stasharr.js",
   "scripts": {
     "build": "NODE_ENV=production webpack --config webpack.config.js --mode production",
+    "build:extension": "node scripts/build-extension.mjs",
+    "build:extension:chrome": "node scripts/build-extension.mjs --target=chrome",
+    "build:extension:firefox": "node scripts/build-extension.mjs --target=firefox",
     "prepare": "husky",
     "dev": "NODE_ENV=development webpack serve --config webpack.config.js",
+    "dev:extension": "node scripts/build-extension.mjs",
     "lint": "eslint . --fix",
     "preversion": "",
     "version": "npm run build",
