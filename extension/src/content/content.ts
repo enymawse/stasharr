@@ -7,6 +7,7 @@ type GetSettingsRequest = { type: 'GET_SETTINGS' };
 type OpenOptionsPageRequest = { type: 'OPEN_OPTIONS_PAGE' };
 type CheckSceneStatusRequest = { type: 'CHECK_SCENE_STATUS'; stashdbSceneId: string };
 type AddSceneRequest = { type: 'ADD_SCENE'; stashdbSceneId: string };
+type SetMonitorStateRequest = { type: 'SET_MONITOR_STATE'; whisparrId: number; monitored: boolean };
 
 type ContentRuntime = {
   runtime: {
@@ -16,7 +17,8 @@ type ContentRuntime = {
         | GetSettingsRequest
         | OpenOptionsPageRequest
         | CheckSceneStatusRequest
-        | AddSceneRequest,
+        | AddSceneRequest
+        | SetMonitorStateRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -29,6 +31,7 @@ type ContentRuntime = {
       whisparrId?: number;
       title?: string;
       hasFile?: boolean;
+      monitored?: boolean;
       error?: string;
     }>;
     getURL?: (path: string) => string;
@@ -92,7 +95,14 @@ function getParsedPage() {
 if (!document.getElementById(PANEL_ID)) {
   const statusCache = new Map<
     string,
-    { exists: boolean; whisparrId?: number; title?: string; hasFile?: boolean; error?: string }
+    {
+      exists: boolean;
+      whisparrId?: number;
+      title?: string;
+      hasFile?: boolean;
+      monitored?: boolean;
+      error?: string;
+    }
   >();
   const inFlight = new Set<string>();
 
@@ -174,6 +184,18 @@ if (!document.getElementById(PANEL_ID)) {
   addSceneButton.disabled = true;
   actionRow.appendChild(addSceneButton);
 
+  const monitorToggle = document.createElement('button');
+  monitorToggle.type = 'button';
+  monitorToggle.textContent = 'Monitor';
+  monitorToggle.style.padding = '6px 10px';
+  monitorToggle.style.borderRadius = '6px';
+  monitorToggle.style.border = 'none';
+  monitorToggle.style.cursor = 'pointer';
+  monitorToggle.style.background = '#7c3aed';
+  monitorToggle.style.color = '#ffffff';
+  monitorToggle.disabled = true;
+  actionRow.appendChild(monitorToggle);
+
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
   inputRow.style.flexDirection = 'column';
@@ -215,6 +237,8 @@ if (!document.getElementById(PANEL_ID)) {
 
   let readiness: 'unconfigured' | 'configured' | 'validated' = 'unconfigured';
 
+  let currentMonitorState: boolean | null = null;
+
   const updateSceneStatus = async (force = false) => {
     const current = getParsedPage();
     const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
@@ -222,11 +246,14 @@ if (!document.getElementById(PANEL_ID)) {
       sceneStatusRow.textContent = 'Scene status: unavailable';
       checkStatusButton.disabled = true;
       addSceneButton.disabled = true;
+      monitorToggle.disabled = true;
+      currentMonitorState = null;
       return;
     }
 
     checkStatusButton.disabled = false;
     addSceneButton.disabled = readiness !== 'validated';
+    monitorToggle.disabled = true;
 
     if (!force) {
       const cached = statusCache.get(sceneId);
@@ -236,6 +263,11 @@ if (!document.getElementById(PANEL_ID)) {
           : 'Scene status: not in Whisparr';
         if (cached.exists) {
           addSceneButton.disabled = true;
+          monitorToggle.disabled = false;
+          if (typeof cached.monitored === 'boolean') {
+            currentMonitorState = cached.monitored;
+            monitorToggle.textContent = cached.monitored ? 'Unmonitor' : 'Monitor';
+          }
         }
         return;
       }
@@ -265,14 +297,23 @@ if (!document.getElementById(PANEL_ID)) {
         whisparrId: response.whisparrId,
         title: response.title,
         hasFile: response.hasFile,
+        monitored: response.monitored,
       });
       sceneStatusRow.textContent = exists
         ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
         : 'Scene status: not in Whisparr';
       if (exists) {
         addSceneButton.disabled = true;
+        monitorToggle.disabled = false;
+        currentMonitorState =
+          typeof response.monitored === 'boolean' ? response.monitored : null;
+        if (currentMonitorState !== null) {
+          monitorToggle.textContent = currentMonitorState ? 'Unmonitor' : 'Monitor';
+        }
       } else {
         addSceneButton.disabled = readiness !== 'validated';
+        monitorToggle.disabled = true;
+        currentMonitorState = null;
       }
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: error (${(error as Error).message})`;
@@ -308,11 +349,57 @@ if (!document.getElementById(PANEL_ID)) {
         exists: true,
         whisparrId: response.whisparrId,
       });
+      currentMonitorState = true;
+      monitorToggle.textContent = 'Unmonitor';
       sceneStatusRow.textContent = 'Scene status: already in Whisparr';
       addSceneButton.disabled = true;
+      monitorToggle.disabled = false;
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: add failed (${(error as Error).message})`;
       addSceneButton.disabled = false;
+    }
+  };
+
+  const updateMonitorState = async () => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId) {
+      return;
+    }
+    const cached = statusCache.get(sceneId);
+    if (!cached?.exists || !cached.whisparrId) {
+      sceneStatusRow.textContent = 'Scene status: not in Whisparr';
+      monitorToggle.disabled = true;
+      return;
+    }
+    if (currentMonitorState === null) {
+      sceneStatusRow.textContent = 'Scene status: monitor state unknown';
+      return;
+    }
+    const nextState = !currentMonitorState;
+    monitorToggle.disabled = true;
+    sceneStatusRow.textContent = nextState ? 'Scene status: enabling monitor...' : 'Scene status: disabling monitor...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'SET_MONITOR_STATE',
+        whisparrId: cached.whisparrId,
+        monitored: nextState,
+      });
+      if (!response.ok) {
+        sceneStatusRow.textContent = `Scene status: monitor update failed (${response.error ?? 'unknown'})`;
+        monitorToggle.disabled = false;
+        return;
+      }
+      const monitored =
+        typeof response.monitored === 'boolean' ? response.monitored : nextState;
+      currentMonitorState = monitored;
+      cached.monitored = monitored;
+      monitorToggle.textContent = monitored ? 'Unmonitor' : 'Monitor';
+      monitorToggle.disabled = false;
+      sceneStatusRow.textContent = 'Scene status: already in Whisparr';
+    } catch (error) {
+      sceneStatusRow.textContent = `Scene status: monitor update failed (${(error as Error).message})`;
+      monitorToggle.disabled = false;
     }
   };
 
@@ -322,6 +409,10 @@ if (!document.getElementById(PANEL_ID)) {
 
   addSceneButton.addEventListener('click', () => {
     void addScene();
+  });
+
+  monitorToggle.addEventListener('click', () => {
+    void updateMonitorState();
   });
 
   const updateConfigStatus = async () => {

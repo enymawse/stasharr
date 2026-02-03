@@ -13,6 +13,7 @@ const MESSAGE_TYPES = {
   openOptionsPage: 'OPEN_OPTIONS_PAGE',
   checkSceneStatus: 'CHECK_SCENE_STATUS',
   addScene: 'ADD_SCENE',
+  setMonitorState: 'SET_MONITOR_STATE',
 } as const;
 
 type ExtensionSettings = {
@@ -662,6 +663,7 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
   const whisparrId = Number(first.id);
   const title = typeof first.title === 'string' ? first.title : undefined;
   const hasFile = typeof first.hasFile === 'boolean' ? first.hasFile : undefined;
+  const monitored = typeof first.monitored === 'boolean' ? first.monitored : undefined;
 
   return {
     ok: true,
@@ -670,6 +672,7 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
     whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
     title,
     hasFile,
+    monitored,
   };
 }
 
@@ -757,6 +760,62 @@ async function handleAddScene(request: { type?: string; [key: string]: unknown }
   };
 }
 
+async function handleSetMonitorState(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.setMonitorState) {
+    return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: false, error: 'Invalid request type.' };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: false, error: 'Whisparr ID is required.' };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: false, error: normalized.error ?? 'Invalid base URL.' };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: false, error: 'API key is required.' };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: false, error: 'Permissions API not available.' };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: false, error: `Permission missing for ${origin}` };
+  }
+
+  const payload = {
+    id: whisparrId,
+    monitored: Boolean(request.monitored),
+  };
+
+  const response = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: Boolean(request.monitored), error: 'Unauthorized (check API key).' };
+    }
+    if (status === 400) {
+      return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: Boolean(request.monitored), error: 'Validation failed.' };
+    }
+    return { ok: false, type: MESSAGE_TYPES.setMonitorState, monitored: Boolean(request.monitored), error: response.error ?? `HTTP ${status}` };
+  }
+
+  return { ok: true, type: MESSAGE_TYPES.setMonitorState, monitored: Boolean(request.monitored) };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -816,6 +875,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.addScene) {
       return handleAddScene(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.setMonitorState) {
+      return handleSetMonitorState(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {

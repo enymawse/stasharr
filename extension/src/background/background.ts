@@ -11,6 +11,7 @@ import {
   type ValidateConnectionResponse,
   type CheckSceneStatusResponse,
   type AddSceneResponse,
+  type SetMonitorStateResponse,
 } from '../shared/messages.js';
 import {
   getCatalogs,
@@ -74,6 +75,11 @@ type AddScenePayload = {
   searchForMovie: boolean;
   foreignId: string;
   title?: string;
+};
+
+type UpdateScenePayload = {
+  id: number;
+  monitored: boolean;
 };
 
 async function handleFetchJson(
@@ -662,6 +668,114 @@ async function handleAddScene(
   };
 }
 
+async function handleSetMonitorState(
+  request: ExtensionRequest,
+): Promise<SetMonitorStateResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.setMonitorState) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.setMonitorState,
+      monitored: false,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.setMonitorState,
+      monitored: false,
+      error: 'Whisparr ID is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.setMonitorState,
+      monitored: false,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.setMonitorState,
+      monitored: false,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.setMonitorState,
+      monitored: false,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.setMonitorState,
+      monitored: false,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const payload: UpdateScenePayload = {
+    id: whisparrId,
+    monitored: Boolean(request.monitored),
+  };
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.setMonitorState,
+        monitored: Boolean(request.monitored),
+        error: 'Unauthorized (check API key).',
+      };
+    }
+    if (status === 400) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.setMonitorState,
+        monitored: Boolean(request.monitored),
+        error: 'Validation failed.',
+      };
+    }
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.setMonitorState,
+      monitored: Boolean(request.monitored),
+      error: response.error ?? `HTTP ${status}`,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.setMonitorState,
+    monitored: Boolean(request.monitored),
+  };
+}
+
 async function handleCheckSceneStatus(
   request: ExtensionRequest,
 ): Promise<CheckSceneStatusResponse> {
@@ -761,6 +875,8 @@ async function handleCheckSceneStatus(
   const title = typeof first.title === 'string' ? first.title : undefined;
   const hasFile =
     typeof first.hasFile === 'boolean' ? first.hasFile : undefined;
+  const monitored =
+    typeof first.monitored === 'boolean' ? first.monitored : undefined;
 
   return {
     ok: true,
@@ -769,6 +885,7 @@ async function handleCheckSceneStatus(
     whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
     title,
     hasFile,
+    monitored,
   };
 }
 
@@ -884,6 +1001,10 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.addScene) {
         return handleAddScene(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.setMonitorState) {
+        return handleSetMonitorState(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {

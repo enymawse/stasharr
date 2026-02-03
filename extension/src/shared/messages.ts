@@ -13,6 +13,7 @@ export const MESSAGE_TYPES = {
   openOptionsPage: 'OPEN_OPTIONS_PAGE',
   checkSceneStatus: 'CHECK_SCENE_STATUS',
   addScene: 'ADD_SCENE',
+  setMonitorState: 'SET_MONITOR_STATE',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -157,6 +158,7 @@ export type CheckSceneStatusResponse = {
   whisparrId?: number;
   title?: string;
   hasFile?: boolean;
+  monitored?: boolean;
   error?: string;
 };
 
@@ -169,6 +171,19 @@ export type AddSceneResponse = {
   ok: boolean;
   type: typeof MESSAGE_TYPES.addScene;
   whisparrId?: number;
+  error?: string;
+};
+
+export type SetMonitorStateRequest = {
+  type: typeof MESSAGE_TYPES.setMonitorState;
+  whisparrId: number;
+  monitored: boolean;
+};
+
+export type SetMonitorStateResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.setMonitorState;
+  monitored: boolean;
   error?: string;
 };
 
@@ -211,7 +226,8 @@ export type ExtensionRequest =
   | SaveSelectionsRequest
   | OpenOptionsPageRequest
   | CheckSceneStatusRequest
-  | AddSceneRequest;
+  | AddSceneRequest
+  | SetMonitorStateRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -228,4 +244,5 @@ export type ExtensionResponse =
   | OpenOptionsPageResponse
   | CheckSceneStatusResponse
   | AddSceneResponse
+  | SetMonitorStateResponse
   | { ok: false; type: MessageType; error: string };
