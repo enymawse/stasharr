@@ -14,6 +14,7 @@ export const MESSAGE_TYPES = {
   checkSceneStatus: 'CHECK_SCENE_STATUS',
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
+  updateTags: 'UPDATE_TAGS',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -159,6 +160,7 @@ export type CheckSceneStatusResponse = {
   title?: string;
   hasFile?: boolean;
   monitored?: boolean;
+  tagIds?: number[];
   error?: string;
 };
 
@@ -184,6 +186,19 @@ export type SetMonitorStateResponse = {
   ok: boolean;
   type: typeof MESSAGE_TYPES.setMonitorState;
   monitored: boolean;
+  error?: string;
+};
+
+export type UpdateTagsRequest = {
+  type: typeof MESSAGE_TYPES.updateTags;
+  whisparrId: number;
+  tagIds: number[];
+};
+
+export type UpdateTagsResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.updateTags;
+  tagIds?: number[];
   error?: string;
 };
 
@@ -227,7 +242,8 @@ export type ExtensionRequest =
   | OpenOptionsPageRequest
   | CheckSceneStatusRequest
   | AddSceneRequest
-  | SetMonitorStateRequest;
+  | SetMonitorStateRequest
+  | UpdateTagsRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -245,4 +261,5 @@ export type ExtensionResponse =
   | CheckSceneStatusResponse
   | AddSceneResponse
   | SetMonitorStateResponse
+  | UpdateTagsResponse
   | { ok: false; type: MessageType; error: string };

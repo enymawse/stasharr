@@ -12,6 +12,7 @@ const MESSAGE_TYPES = {
   saveSelections: 'SAVE_SELECTIONS',
   openOptionsPage: 'OPEN_OPTIONS_PAGE',
   checkSceneStatus: 'CHECK_SCENE_STATUS',
+  updateTags: 'UPDATE_TAGS',
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
 } as const;
@@ -391,6 +392,41 @@ function normalizedBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, '');
 }
 
+function normalizeTags(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((tag) => Number(tag))
+    .filter((tag) => Number.isFinite(tag));
+}
+
+function buildUpdatePayload(
+  existing: Record<string, unknown>,
+  overrides: { id: number; monitored?: boolean; tags?: number[] },
+): { payload?: Record<string, unknown>; error?: string } {
+  const { id, ...rest } = overrides;
+  const qualityProfileId = Number(existing.qualityProfileId);
+  const rootFolderPath =
+    typeof existing.rootFolderPath === 'string' ? existing.rootFolderPath : '';
+  const path = typeof existing.path === 'string' ? existing.path : undefined;
+  if (!Number.isFinite(qualityProfileId) || !rootFolderPath) {
+    return { error: 'Whisparr scene missing required fields.' };
+  }
+
+  return {
+    payload: {
+      id,
+      monitored: Boolean(existing.monitored),
+      qualityProfileId,
+      rootFolderPath,
+      tags: normalizeTags(existing.tags),
+      title: typeof existing.title === 'string' ? existing.title : undefined,
+      year: Number.isFinite(Number(existing.year)) ? Number(existing.year) : undefined,
+      path,
+      ...rest,
+    },
+  };
+}
+
 async function fetchSceneLookup(baseUrl: string, apiKey: string, stashId: string) {
   const response = await handleFetchJson({
     url: `${baseUrl}/api/v3/lookup/scene?term=stash:${encodeURIComponent(stashId)}`,
@@ -664,6 +700,7 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
   const title = typeof first.title === 'string' ? first.title : undefined;
   const hasFile = typeof first.hasFile === 'boolean' ? first.hasFile : undefined;
   const monitored = typeof first.monitored === 'boolean' ? first.monitored : undefined;
+  const tagIds = normalizeTags(first.tags);
 
   return {
     ok: true,
@@ -673,6 +710,7 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
     title,
     hasFile,
     monitored,
+    tagIds,
   };
 }
 
@@ -805,37 +843,24 @@ async function handleSetMonitorState(request: { type?: string; [key: string]: un
   }
 
   const existing = existingResponse.json as Record<string, unknown>;
-  const qualityProfileId = Number(existing.qualityProfileId);
-  const rootFolderPath =
-    typeof existing.rootFolderPath === 'string' ? existing.rootFolderPath : '';
-  const path = typeof existing.path === 'string' ? existing.path : undefined;
-  if (!Number.isFinite(qualityProfileId) || !rootFolderPath) {
+  const build = buildUpdatePayload(existing, {
+    id: whisparrId,
+    monitored: Boolean(request.monitored),
+  });
+  if (!build.payload) {
     return {
       ok: false,
       type: MESSAGE_TYPES.setMonitorState,
       monitored: Boolean(request.monitored),
-      error: 'Whisparr scene missing required fields.',
+      error: build.error ?? 'Whisparr scene missing required fields.',
     };
   }
-
-  const payload = {
-    id: whisparrId,
-    monitored: Boolean(request.monitored),
-    qualityProfileId,
-    rootFolderPath,
-    tags: Array.isArray(existing.tags)
-      ? existing.tags.filter((tag) => Number.isFinite(Number(tag))).map((tag) => Number(tag))
-      : undefined,
-    title: typeof existing.title === 'string' ? existing.title : undefined,
-    year: Number.isFinite(Number(existing.year)) ? Number(existing.year) : undefined,
-    path,
-  };
 
   const response = await handleFetchJson({
     url: `${normalized.value}/api/v3/movie/${whisparrId}`,
     method: 'PUT',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(build.payload),
   });
 
   if (!response.ok) {
@@ -850,6 +875,76 @@ async function handleSetMonitorState(request: { type?: string; [key: string]: un
   }
 
   return { ok: true, type: MESSAGE_TYPES.setMonitorState, monitored: Boolean(request.monitored) };
+}
+
+async function handleUpdateTags(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.updateTags) {
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: 'Invalid request type.' };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: 'Whisparr ID is required.' };
+  }
+
+  const tagIds = normalizeTags(request.tagIds);
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: normalized.error ?? 'Invalid base URL.' };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: 'API key is required.' };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: 'Permissions API not available.' };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: `Permission missing for ${origin}` };
+  }
+
+  const existingResponse = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!existingResponse.ok || !isRecord(existingResponse.json)) {
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: existingResponse.error ?? 'Failed to fetch Whisparr scene.' };
+  }
+
+  const build = buildUpdatePayload(existingResponse.json as Record<string, unknown>, {
+    id: whisparrId,
+    tags: tagIds,
+  });
+  if (!build.payload) {
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: build.error ?? 'Whisparr scene missing required fields.' };
+  }
+
+  const response = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(build.payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return { ok: false, type: MESSAGE_TYPES.updateTags, error: 'Unauthorized (check API key).' };
+    }
+    if (status === 400) {
+      return { ok: false, type: MESSAGE_TYPES.updateTags, error: 'Validation failed (check tags).' };
+    }
+    return { ok: false, type: MESSAGE_TYPES.updateTags, error: response.error ?? `HTTP ${status}` };
+  }
+
+  return { ok: true, type: MESSAGE_TYPES.updateTags, tagIds };
 }
 
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
@@ -915,6 +1010,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.setMonitorState) {
       return handleSetMonitorState(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.updateTags) {
+      return handleUpdateTags(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {

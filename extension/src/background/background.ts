@@ -12,6 +12,7 @@ import {
   type CheckSceneStatusResponse,
   type AddSceneResponse,
   type SetMonitorStateResponse,
+  type UpdateTagsResponse,
 } from '../shared/messages.js';
 import {
   getCatalogs,
@@ -335,6 +336,40 @@ function reconcileSelections(
   }
 
   return { next, invalid };
+}
+
+function normalizeTags(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((tag) => Number(tag))
+    .filter((tag) => Number.isFinite(tag));
+}
+
+function buildUpdatePayload(
+  existing: Record<string, unknown>,
+  overrides: Partial<UpdateScenePayload>,
+): { payload?: UpdateScenePayload; error?: string } {
+  const qualityProfileId = Number(existing.qualityProfileId);
+  const rootFolderPath =
+    typeof existing.rootFolderPath === 'string' ? existing.rootFolderPath : '';
+  const path = typeof existing.path === 'string' ? existing.path : undefined;
+  if (!Number.isFinite(qualityProfileId) || !rootFolderPath) {
+    return { error: 'Whisparr scene missing required fields.' };
+  }
+
+  return {
+    payload: {
+      id: Number(existing.id),
+      monitored: Boolean(existing.monitored),
+      qualityProfileId,
+      rootFolderPath,
+      tags: normalizeTags(existing.tags),
+      title: typeof existing.title === 'string' ? existing.title : undefined,
+      year: Number.isFinite(Number(existing.year)) ? Number(existing.year) : undefined,
+      path,
+      ...overrides,
+    },
+  };
 }
 
 async function handleValidateConnection(
@@ -752,38 +787,25 @@ async function handleSetMonitorState(
   }
 
   const existing = existingResponse.json;
-  const qualityProfileId = Number(existing.qualityProfileId);
-  const rootFolderPath =
-    typeof existing.rootFolderPath === 'string' ? existing.rootFolderPath : '';
-  const path = typeof existing.path === 'string' ? existing.path : undefined;
-  if (!Number.isFinite(qualityProfileId) || !rootFolderPath) {
+  const build = buildUpdatePayload(existing, {
+    id: whisparrId,
+    monitored: Boolean(request.monitored),
+  });
+  if (!build.payload) {
     return {
       ok: false,
       type: MESSAGE_TYPES_BG.setMonitorState,
       monitored: Boolean(request.monitored),
-      error: 'Whisparr scene missing required fields.',
+      error: build.error ?? 'Whisparr scene missing required fields.',
     };
   }
-
-  const payload: UpdateScenePayload = {
-    id: whisparrId,
-    monitored: Boolean(request.monitored),
-    qualityProfileId,
-    rootFolderPath,
-    tags: Array.isArray(existing.tags)
-      ? existing.tags.filter((tag) => Number.isFinite(Number(tag))).map((tag) => Number(tag))
-      : undefined,
-    title: typeof existing.title === 'string' ? existing.title : undefined,
-    year: Number.isFinite(Number(existing.year)) ? Number(existing.year) : undefined,
-    path,
-  };
 
   const response = await handleFetchJson({
     type: MESSAGE_TYPES_BG.fetchJson,
     url: `${normalized.value}/api/v3/movie/${whisparrId}`,
     method: 'PUT',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(build.payload),
   });
 
   if (!response.ok) {
@@ -816,6 +838,128 @@ async function handleSetMonitorState(
     ok: true,
     type: MESSAGE_TYPES_BG.setMonitorState,
     monitored: Boolean(request.monitored),
+  };
+}
+
+async function handleUpdateTags(
+  request: ExtensionRequest,
+): Promise<UpdateTagsResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.updateTags) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: 'Whisparr ID is required.',
+    };
+  }
+
+  const tagIds = normalizeTags(request.tagIds);
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const existingResponse = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!existingResponse.ok || !isRecord(existingResponse.json)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: existingResponse.error ?? 'Failed to fetch Whisparr scene.',
+    };
+  }
+
+  const build = buildUpdatePayload(existingResponse.json, {
+    id: whisparrId,
+    tags: tagIds,
+  });
+  if (!build.payload) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: build.error ?? 'Whisparr scene missing required fields.',
+    };
+  }
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(build.payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.updateTags,
+        error: 'Unauthorized (check API key).',
+      };
+    }
+    if (status === 400) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.updateTags,
+        error: 'Validation failed (check tags).',
+      };
+    }
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.updateTags,
+      error: response.error ?? `HTTP ${status}`,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.updateTags,
+    tagIds,
   };
 }
 
@@ -920,6 +1064,7 @@ async function handleCheckSceneStatus(
     typeof first.hasFile === 'boolean' ? first.hasFile : undefined;
   const monitored =
     typeof first.monitored === 'boolean' ? first.monitored : undefined;
+  const tagIds = normalizeTags(first.tags);
 
   return {
     ok: true,
@@ -929,6 +1074,7 @@ async function handleCheckSceneStatus(
     title,
     hasFile,
     monitored,
+    tagIds,
   };
 }
 
@@ -1048,6 +1194,10 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.setMonitorState) {
         return handleSetMonitorState(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.updateTags) {
+        return handleUpdateTags(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {

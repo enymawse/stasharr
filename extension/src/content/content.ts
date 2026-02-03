@@ -8,6 +8,8 @@ type OpenOptionsPageRequest = { type: 'OPEN_OPTIONS_PAGE' };
 type CheckSceneStatusRequest = { type: 'CHECK_SCENE_STATUS'; stashdbSceneId: string };
 type AddSceneRequest = { type: 'ADD_SCENE'; stashdbSceneId: string };
 type SetMonitorStateRequest = { type: 'SET_MONITOR_STATE'; whisparrId: number; monitored: boolean };
+type FetchDiscoveryCatalogsRequest = { type: 'FETCH_DISCOVERY_CATALOGS'; kind: 'whisparr'; force?: boolean };
+type UpdateTagsRequest = { type: 'UPDATE_TAGS'; whisparrId: number; tagIds: number[] };
 
 type ContentRuntime = {
   runtime: {
@@ -18,7 +20,9 @@ type ContentRuntime = {
         | OpenOptionsPageRequest
         | CheckSceneStatusRequest
         | AddSceneRequest
-        | SetMonitorStateRequest,
+        | SetMonitorStateRequest
+        | FetchDiscoveryCatalogsRequest
+        | UpdateTagsRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -27,6 +31,10 @@ type ContentRuntime = {
         whisparrApiKey?: string;
         lastValidatedAt?: string;
       };
+      catalogs?: {
+        tags?: Array<{ id: number; label: string }>;
+      };
+      tagIds?: number[];
       exists?: boolean;
       whisparrId?: number;
       title?: string;
@@ -112,10 +120,13 @@ if (!document.getElementById(PANEL_ID)) {
       title?: string;
       hasFile?: boolean;
       monitored?: boolean;
+      tagIds?: number[];
       error?: string;
     }
   >();
   const inFlight = new Set<string>();
+  const tagUpdateInFlight = new Set<string>();
+  let tagCatalog: Array<{ id: number; label: string }> = [];
 
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
@@ -207,6 +218,48 @@ if (!document.getElementById(PANEL_ID)) {
   applyDisabledStyles(monitorToggle, true);
   actionRow.appendChild(monitorToggle);
 
+  const tagsRow = document.createElement('div');
+  tagsRow.style.marginTop = '8px';
+  tagsRow.style.display = 'flex';
+  tagsRow.style.flexDirection = 'column';
+  tagsRow.style.gap = '6px';
+  panel.appendChild(tagsRow);
+
+  const tagsLabel = document.createElement('div');
+  tagsLabel.textContent = 'Tags';
+  tagsLabel.style.fontSize = '11px';
+  tagsLabel.style.opacity = '0.8';
+  tagsRow.appendChild(tagsLabel);
+
+  const tagsSelect = document.createElement('select');
+  tagsSelect.multiple = true;
+  tagsSelect.style.padding = '6px';
+  tagsSelect.style.borderRadius = '6px';
+  tagsSelect.style.border = '1px solid #1f2937';
+  tagsSelect.style.background = '#0b1220';
+  tagsSelect.style.color = '#e2e8f0';
+  tagsSelect.style.minHeight = '90px';
+  tagsSelect.disabled = true;
+  tagsRow.appendChild(tagsSelect);
+
+  const tagsStatus = document.createElement('div');
+  tagsStatus.style.fontSize = '11px';
+  tagsStatus.style.opacity = '0.8';
+  tagsStatus.textContent = 'Tags: unavailable';
+  tagsRow.appendChild(tagsStatus);
+
+  const updateTagsButton = document.createElement('button');
+  updateTagsButton.type = 'button';
+  updateTagsButton.textContent = 'Update tags';
+  updateTagsButton.style.padding = '6px 10px';
+  updateTagsButton.style.borderRadius = '6px';
+  updateTagsButton.style.border = 'none';
+  updateTagsButton.style.cursor = 'pointer';
+  updateTagsButton.style.background = '#0ea5e9';
+  updateTagsButton.style.color = '#ffffff';
+  applyDisabledStyles(updateTagsButton, true);
+  tagsRow.appendChild(updateTagsButton);
+
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
   inputRow.style.flexDirection = 'column';
@@ -249,6 +302,54 @@ if (!document.getElementById(PANEL_ID)) {
   let readiness: 'unconfigured' | 'configured' | 'validated' = 'unconfigured';
 
   let currentMonitorState: boolean | null = null;
+
+  const renderTagOptions = (selectedIds: number[]) => {
+    tagsSelect.innerHTML = '';
+    for (const tag of tagCatalog) {
+      const option = document.createElement('option');
+      option.value = String(tag.id);
+      option.textContent = tag.label;
+      option.selected = selectedIds.includes(tag.id);
+      tagsSelect.appendChild(option);
+    }
+  };
+
+  const updateTagControls = (sceneId?: string) => {
+    const cached = sceneId ? statusCache.get(sceneId) : undefined;
+    const exists = Boolean(cached?.exists);
+    const selectedIds = cached?.tagIds ?? [];
+    if (tagCatalog.length === 0) {
+      tagsStatus.textContent = 'Tags: unavailable';
+      applyDisabledStyles(updateTagsButton, true);
+      tagsSelect.disabled = true;
+      return;
+    }
+    renderTagOptions(selectedIds);
+    if (!exists) {
+      tagsStatus.textContent = 'Tags: scene not in Whisparr';
+      applyDisabledStyles(updateTagsButton, true);
+      tagsSelect.disabled = true;
+      return;
+    }
+    tagsSelect.disabled = false;
+    applyDisabledStyles(updateTagsButton, false);
+    tagsStatus.textContent = 'Tags: ready';
+  };
+
+  const loadTagCatalog = async () => {
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'FETCH_DISCOVERY_CATALOGS',
+        kind: 'whisparr',
+      });
+      if (response.ok && response.catalogs?.tags) {
+        tagCatalog = response.catalogs.tags;
+        updateTagControls(getParsedPage().stashIds[0]);
+      }
+    } catch {
+      tagsStatus.textContent = 'Tags: unavailable';
+    }
+  };
 
   const applyActionState = (sceneId?: string) => {
     if (!sceneId) {
@@ -297,6 +398,7 @@ if (!document.getElementById(PANEL_ID)) {
         } else {
           applyDisabledStyles(monitorToggle, true);
         }
+        updateTagControls(sceneId);
         return;
       }
     }
@@ -326,6 +428,7 @@ if (!document.getElementById(PANEL_ID)) {
         title: response.title,
         hasFile: response.hasFile,
         monitored: response.monitored,
+        tagIds: response.tagIds,
       });
       sceneStatusRow.textContent = exists
         ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
@@ -342,6 +445,7 @@ if (!document.getElementById(PANEL_ID)) {
         applyActionState(sceneId);
         currentMonitorState = null;
       }
+      updateTagControls(sceneId);
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: error (${(error as Error).message})`;
     } finally {
@@ -381,6 +485,7 @@ if (!document.getElementById(PANEL_ID)) {
       sceneStatusRow.textContent = 'Scene status: already in Whisparr';
       applyDisabledStyles(addSceneButton, true);
       applyDisabledStyles(monitorToggle, false);
+      updateTagControls(sceneId);
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: add failed (${(error as Error).message})`;
       applyDisabledStyles(addSceneButton, false);
@@ -430,6 +535,47 @@ if (!document.getElementById(PANEL_ID)) {
     }
   };
 
+  const updateTags = async () => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId) return;
+    const cached = statusCache.get(sceneId);
+    if (!cached?.exists || !cached.whisparrId) {
+      tagsStatus.textContent = 'Tags: scene not in Whisparr';
+      applyDisabledStyles(updateTagsButton, true);
+      return;
+    }
+    if (tagUpdateInFlight.has(sceneId)) {
+      return;
+    }
+    tagUpdateInFlight.add(sceneId);
+    applyDisabledStyles(updateTagsButton, true);
+    tagsStatus.textContent = 'Tags: updating...';
+    try {
+      const selectedIds = Array.from(tagsSelect.selectedOptions)
+        .map((opt) => Number(opt.value))
+        .filter((val) => Number.isFinite(val));
+      const response = await extContent.runtime.sendMessage({
+        type: 'UPDATE_TAGS',
+        whisparrId: cached.whisparrId,
+        tagIds: selectedIds,
+      });
+      if (!response.ok) {
+        tagsStatus.textContent = `Tags: update failed (${response.error ?? 'unknown'})`;
+        applyDisabledStyles(updateTagsButton, false);
+        return;
+      }
+      cached.tagIds = response.tagIds ?? selectedIds;
+      tagsStatus.textContent = 'Tags: updated';
+      applyDisabledStyles(updateTagsButton, false);
+    } catch (error) {
+      tagsStatus.textContent = `Tags: update failed (${(error as Error).message})`;
+      applyDisabledStyles(updateTagsButton, false);
+    } finally {
+      tagUpdateInFlight.delete(sceneId);
+    }
+  };
+
   checkStatusButton.addEventListener('click', () => {
     void updateSceneStatus(true);
   });
@@ -440,6 +586,14 @@ if (!document.getElementById(PANEL_ID)) {
 
   monitorToggle.addEventListener('click', () => {
     void updateMonitorState();
+  });
+
+  tagsSelect.addEventListener('change', () => {
+    applyDisabledStyles(updateTagsButton, false);
+  });
+
+  updateTagsButton.addEventListener('click', () => {
+    void updateTags();
   });
 
   const updateConfigStatus = async () => {
@@ -481,6 +635,7 @@ if (!document.getElementById(PANEL_ID)) {
 
   void updateConfigStatus();
   void updateSceneStatus(false);
+  void loadTagCatalog();
 
   document.documentElement.appendChild(panel);
 
