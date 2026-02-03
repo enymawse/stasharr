@@ -18,11 +18,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install extension dependencies
+        run: cd extension && npm ci
 
-      - name: Run Linter
-        run: npm run lint
+      - name: Build extension
+        run: cd extension && npm run build
 
-      - name: Build Project
-        run: npm run build
+      - name: Run extension tripwire
+        run: cd extension && npm run tripwire

@@ -17,11 +17,14 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install extension dependencies
+        run: cd extension && npm ci
 
-      - name: Build project
-        run: npm run build
+      - name: Build extension
+        run: cd extension && npm run build
+
+      - name: Run extension tripwire
+        run: cd extension && npm run tripwire
 
       - name: Run release-please
         uses: googleapis/release-please-action@v4
@@ -29,11 +32,17 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_PLEASE_STASHARR }}
           release-type: node
+          path: extension
+
+      - name: Package extension artifact
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          cd extension/dist
+          zip -r ../stasharr-extension.zip .
 
       - name: Upload Release Artifact
         if: ${{ steps.release.outputs.release_created }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_STASHARR }}
         run: |
-          gh release upload ${{ steps.release.outputs.tag_name }} ./dist/stasharr.user.js
-          gh release upload ${{ steps.release.outputs.tag_name }} ./dist/stasharr.meta.js
+          gh release upload ${{ steps.release.outputs.tag_name }} ./extension/stasharr-extension.zip
