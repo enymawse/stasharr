@@ -1,7 +1,18 @@
-import { MESSAGE_TYPES, type FetchJsonResponse } from './shared/messages';
+import { MESSAGE_TYPES, type ExtensionRequest, type FetchJsonResponse } from './shared/messages';
+
+type ExtRuntime = {
+  runtime: {
+    sendMessage: (message: ExtensionRequest) => Promise<FetchJsonResponse>;
+  };
+};
 
 const PANEL_ID = 'stasharr-extension-panel';
-const ext = (globalThis as typeof globalThis & { browser?: typeof chrome }).browser ?? chrome;
+const ext = (globalThis as typeof globalThis & { browser?: ExtRuntime; chrome?: ExtRuntime }).browser ??
+  (globalThis as typeof globalThis & { chrome?: ExtRuntime }).chrome;
+
+if (!ext) {
+  throw new Error('Extension runtime not available.');
+}
 
 function truncate(value: string, max = 300) {
   if (value.length <= max) return value;

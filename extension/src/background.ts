@@ -5,7 +5,27 @@ import {
   type FetchJsonResponse,
 } from './shared/messages';
 
-const ext = (globalThis as typeof globalThis & { browser?: typeof chrome }).browser ?? chrome;
+type ExtRuntime = {
+  runtime: {
+    onMessage: {
+      addListener: (
+        callback: (
+          request: ExtensionRequest,
+          sender: unknown,
+          sendResponse: (response: ExtensionResponse) => void,
+        ) => void,
+      ) => void;
+    };
+    sendMessage: (message: ExtensionRequest) => Promise<ExtensionResponse>;
+  };
+};
+
+const ext = (globalThis as typeof globalThis & { browser?: ExtRuntime; chrome?: ExtRuntime }).browser ??
+  (globalThis as typeof globalThis & { chrome?: ExtRuntime }).chrome;
+
+if (!ext) {
+  throw new Error('Extension runtime not available.');
+}
 const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
 
@@ -68,7 +88,7 @@ async function handleFetchJson(request: ExtensionRequest): Promise<FetchJsonResp
   }
 }
 
-ext.runtime.onMessage.addListener((request: ExtensionRequest, _sender, sendResponse) => {
+ext.runtime.onMessage.addListener((request: ExtensionRequest, _sender: unknown, sendResponse: (response: ExtensionResponse) => void) => {
   const respond = async (): Promise<ExtensionResponse> => {
     if (request?.type === MESSAGE_TYPES.ping) {
       return {
