@@ -921,41 +921,102 @@ class SceneCardObserver {
     container.style.display = 'flex';
     container.style.gap = '6px';
     container.style.alignItems = 'center';
-    container.style.padding = '6px 8px';
-    container.style.borderTop = '1px solid rgba(148, 163, 184, 0.2)';
-    container.style.borderBottom = '1px solid rgba(148, 163, 184, 0.2)';
-    container.style.background = 'rgba(15, 23, 42, 0.04)';
+    container.style.padding = '6px 10px';
+    container.style.borderTop = '1px solid rgba(148, 163, 184, 0.25)';
+    container.style.borderBottom = '1px solid rgba(148, 163, 184, 0.25)';
+    container.style.background = 'rgba(15, 23, 42, 0.06)';
     container.style.color = '#0f172a';
     container.style.fontSize = '11px';
 
     const badge = document.createElement('span');
     badge.textContent = 'Stasharr';
     badge.style.fontWeight = '600';
+    badge.style.letterSpacing = '0.02em';
     container.appendChild(badge);
 
     const status = document.createElement('span');
-    status.textContent = 'unknown';
-    status.style.opacity = '0.85';
+    status.textContent = 'Not in Whisparr';
+    status.style.opacity = '0.8';
+    status.style.marginLeft = '2px';
     container.appendChild(status);
+
+    const statusIcon = document.createElement('span');
+    statusIcon.setAttribute('aria-hidden', 'true');
+    statusIcon.style.display = 'inline-flex';
+    statusIcon.style.alignItems = 'center';
+    statusIcon.style.justifyContent = 'center';
+    statusIcon.style.width = '16px';
+    statusIcon.style.height = '16px';
+    statusIcon.style.color = '#0ea5e9';
+    container.appendChild(statusIcon);
 
     const actionButton = document.createElement('button');
     actionButton.type = 'button';
-    actionButton.textContent = '+';
-    actionButton.style.border = 'none';
-    actionButton.style.borderRadius = '4px';
-    actionButton.style.padding = '2px 6px';
+    actionButton.setAttribute('aria-label', 'Add to Whisparr');
+    actionButton.style.border = '1px solid rgba(148, 163, 184, 0.5)';
+    actionButton.style.borderRadius = '999px';
+    actionButton.style.padding = '2px 8px';
     actionButton.style.cursor = 'pointer';
-    actionButton.style.background = '#22c55e';
-    actionButton.style.color = '#0b1220';
+    actionButton.style.background = '#f8fafc';
+    actionButton.style.color = '#0f172a';
+    actionButton.style.fontSize = '12px';
+    actionButton.style.lineHeight = '1';
+    actionButton.style.display = 'inline-flex';
+    actionButton.style.alignItems = 'center';
+    actionButton.style.justifyContent = 'center';
+    actionButton.style.gap = '4px';
+    actionButton.innerHTML = '<i class="fa-solid fa-download" aria-hidden="true"></i>';
     container.appendChild(actionButton);
+
+    const setStatus = (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => {
+      switch (state) {
+        case 'loading':
+          status.textContent = 'Adding...';
+          statusIcon.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+          statusIcon.style.color = '#0ea5e9';
+          actionButton.disabled = true;
+          actionButton.style.opacity = '0.6';
+          return;
+        case 'in':
+          status.textContent = 'In Whisparr';
+          statusIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+          statusIcon.style.color = '#16a34a';
+          actionButton.disabled = true;
+          actionButton.style.opacity = '0.6';
+          return;
+        case 'excluded':
+          status.textContent = 'Excluded';
+          statusIcon.innerHTML = '<i class="fa-solid fa-ban"></i>';
+          statusIcon.style.color = '#ef4444';
+          actionButton.disabled = true;
+          actionButton.style.opacity = '0.6';
+          return;
+        case 'error':
+          status.textContent = 'Error';
+          statusIcon.innerHTML = '<i class="fa-solid fa-ban"></i>';
+          statusIcon.style.color = '#ef4444';
+          actionButton.disabled = false;
+          actionButton.style.opacity = '1';
+          return;
+        case 'out':
+        default:
+          status.textContent = 'Not in Whisparr';
+          statusIcon.innerHTML = '<i class="fa-solid fa-download"></i>';
+          statusIcon.style.color = '#0ea5e9';
+          actionButton.disabled = false;
+          actionButton.style.opacity = '1';
+      }
+    };
+
+    setStatus('out');
 
     actionButton.addEventListener('click', async (event) => {
       event.preventDefault();
       event.stopPropagation();
-      status.textContent = 'clicked';
+      setStatus('loading');
       const runtime = extContent?.runtime;
       if (!runtime) {
-        status.textContent = 'error';
+        setStatus('error');
         return;
       }
       try {
@@ -965,9 +1026,9 @@ class SceneCardObserver {
           sceneUrl: scene.sceneUrl,
           action: 'stub_add',
         });
-        status.textContent = response.ok ? 'ok' : 'error';
+        setStatus(response.ok ? 'in' : 'error');
       } catch {
-        status.textContent = 'error';
+        setStatus('error');
       }
     });
 
