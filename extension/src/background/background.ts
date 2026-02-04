@@ -1452,13 +1452,14 @@ async function handleSceneCardSetExcluded(
     return { ok: true, type: MESSAGE_TYPES_BG.sceneCardSetExcluded, excluded: false };
   }
 
+  let createdExclusionId: number | undefined;
   if (excluded) {
     const createResponse = await handleFetchJson({
       type: MESSAGE_TYPES_BG.fetchJson,
       url: `${normalized.value}/api/v3/exclusions`,
       method: 'POST',
       headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ foreignId: sceneId, type: 'scene', reason: 'manual' }),
+      body: JSON.stringify({ foreignId: sceneId, movieTitle: sceneId, movieYear: 1 }),
     });
 
     if (!createResponse.ok) {
@@ -1482,6 +1483,10 @@ async function handleSceneCardSetExcluded(
         type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
         error: { code: `http_${status}`, message: createResponse.error ?? `HTTP ${status}` },
       };
+    }
+    if (createResponse.json && isRecord(createResponse.json)) {
+      const parsedId = Number(createResponse.json.id);
+      createdExclusionId = Number.isFinite(parsedId) ? parsedId : undefined;
     }
   } else if (existing.exclusionId) {
     const deleteResponse = await handleFetchJson({
@@ -1510,6 +1515,7 @@ async function handleSceneCardSetExcluded(
 
   const updatedExcluded = excluded;
   const cached = sceneCardStatusCache.get(sceneId);
+  const exclusionId = updatedExcluded ? existing.exclusionId ?? createdExclusionId : undefined;
   sceneCardStatusCache.set(sceneId, {
     exists: cached?.exists ?? false,
     whisparrId: cached?.whisparrId,
@@ -1517,7 +1523,7 @@ async function handleSceneCardSetExcluded(
     tagIds: cached?.tagIds,
     hasFile: cached?.hasFile,
     excluded: updatedExcluded,
-    exclusionId: updatedExcluded ? existing.exclusionId : undefined,
+    exclusionId,
     fetchedAt: Date.now(),
   });
 
