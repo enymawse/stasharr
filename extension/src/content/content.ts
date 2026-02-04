@@ -858,7 +858,7 @@ class SceneCardObserver {
         card.dataset.stasharrAugmented = 'true';
         continue;
       }
-      const injected = this.injectControls(card, scene);
+      const injected = this.injectControls(card, scene, anchor);
       if (injected) {
         card.dataset.stasharrAugmented = 'true';
         this.injectedByCard.set(card, injected);
@@ -915,7 +915,7 @@ class SceneCardObserver {
     return null;
   }
 
-  private injectControls(card: HTMLElement, scene: SceneCardData) {
+  private injectControls(card: HTMLElement, scene: SceneCardData, anchor: HTMLAnchorElement) {
     const container = document.createElement('div');
     container.className = 'stasharr-scene-card';
     container.style.display = 'flex';
@@ -928,15 +928,29 @@ class SceneCardObserver {
     container.style.color = '#0f172a';
     container.style.fontSize = '11px';
 
+    const statusOverlay = document.createElement('div');
+    statusOverlay.className = 'stasharr-scene-card-status';
+    statusOverlay.style.position = 'absolute';
+    statusOverlay.style.top = '6px';
+    statusOverlay.style.right = '6px';
+    statusOverlay.style.display = 'inline-flex';
+    statusOverlay.style.alignItems = 'center';
+    statusOverlay.style.justifyContent = 'center';
+    statusOverlay.style.width = '22px';
+    statusOverlay.style.height = '22px';
+    statusOverlay.style.borderRadius = '999px';
+    statusOverlay.style.background = 'rgba(15, 23, 42, 0.8)';
+    statusOverlay.style.color = '#0ea5e9';
+    statusOverlay.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.35)';
+
     const statusIcon = document.createElement('span');
     statusIcon.setAttribute('aria-hidden', 'true');
     statusIcon.style.display = 'inline-flex';
     statusIcon.style.alignItems = 'center';
     statusIcon.style.justifyContent = 'center';
-    statusIcon.style.width = '16px';
-    statusIcon.style.height = '16px';
-    statusIcon.style.color = '#0ea5e9';
-    container.appendChild(statusIcon);
+    statusIcon.style.width = '14px';
+    statusIcon.style.height = '14px';
+    statusOverlay.appendChild(statusIcon);
 
     const actionButton = document.createElement('button');
     actionButton.type = 'button';
@@ -1047,6 +1061,20 @@ class SceneCardObserver {
         setStatus('error');
       }
     });
+
+    const imageAnchor =
+      card.querySelector<HTMLAnchorElement>('a.SceneCard-image') ?? anchor;
+    if (imageAnchor) {
+      const computed = window.getComputedStyle(imageAnchor);
+      if (computed.position === 'static') {
+        imageAnchor.style.position = 'relative';
+      }
+      if (!imageAnchor.querySelector('.stasharr-scene-card-status')) {
+        imageAnchor.appendChild(statusOverlay);
+      }
+    } else {
+      container.insertBefore(statusOverlay, container.firstChild);
+    }
 
     const footer =
       card.querySelector('.card-footer') ??
