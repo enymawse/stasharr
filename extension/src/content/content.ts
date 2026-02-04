@@ -933,8 +933,10 @@ if (!document.getElementById(PANEL_ID)) {
   const checkNavigation = () => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
+      statusCache.clear();
+      inFlight.clear();
       updateDiagnostics();
-      void updateSceneStatus(false);
+      void updateSceneStatus(true);
     }
   };
 
