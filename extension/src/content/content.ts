@@ -1322,9 +1322,13 @@ class SceneCardObserver {
       }
       const missing = this.missingBySceneId.get(result.sceneId);
       if (missing) {
-        if (result.exists && result.hasFile === false) {
+        if (result.exists) {
           missing.wrap.style.display = 'inline-flex';
-          missing.setState('idle');
+          if (result.hasFile === false) {
+            missing.setState('idle');
+          } else {
+            missing.setState('success');
+          }
         } else {
           missing.wrap.style.display = 'none';
         }
