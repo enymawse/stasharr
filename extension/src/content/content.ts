@@ -1103,10 +1103,14 @@ class SceneCardObserver {
     excludeButton.style.color = '#ffffff';
     excludeButton.style.fontSize = '12px';
     excludeButton.style.lineHeight = '1';
-    excludeButton.style.display = 'none';
+    excludeButton.style.display = 'inline-flex';
     excludeButton.style.alignItems = 'center';
     excludeButton.style.justifyContent = 'center';
     excludeButton.innerHTML = this.renderIcon('ban');
+    excludeButton.disabled = true;
+    excludeButton.style.opacity = '0.6';
+    excludeButton.setAttribute('aria-label', 'Exclusion status loading');
+    excludeButton.title = 'Exclusion status loading';
     container.appendChild(excludeButton);
 
     const setStatus = (
