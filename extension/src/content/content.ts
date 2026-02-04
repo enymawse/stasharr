@@ -252,6 +252,12 @@ if (!document.getElementById(PANEL_ID)) {
   applyDisabledStyles(addSceneButton, true);
   actionRow.appendChild(addSceneButton);
 
+  const monitorRow = document.createElement('div');
+  monitorRow.style.display = 'flex';
+  monitorRow.style.gap = '6px';
+  monitorRow.style.marginTop = '6px';
+  panel.appendChild(monitorRow);
+
   const monitorToggle = document.createElement('button');
   monitorToggle.type = 'button';
   monitorToggle.textContent = 'Monitor';
@@ -262,7 +268,7 @@ if (!document.getElementById(PANEL_ID)) {
   monitorToggle.style.background = '#7c3aed';
   monitorToggle.style.color = '#ffffff';
   applyDisabledStyles(monitorToggle, true);
-  actionRow.appendChild(monitorToggle);
+  monitorRow.appendChild(monitorToggle);
 
   const excludeToggle = document.createElement('button');
   excludeToggle.type = 'button';
@@ -274,7 +280,7 @@ if (!document.getElementById(PANEL_ID)) {
   excludeToggle.style.background = '#ef4444';
   excludeToggle.style.color = '#ffffff';
   applyDisabledStyles(excludeToggle, true);
-  actionRow.appendChild(excludeToggle);
+  monitorRow.appendChild(excludeToggle);
 
   const qualityRow = document.createElement('div');
   qualityRow.style.marginTop = '8px';
