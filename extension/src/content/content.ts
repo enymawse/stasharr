@@ -728,11 +728,14 @@ if (!document.getElementById(PANEL_ID)) {
       return;
     }
     try {
+      const headerTitle =
+        document.querySelector<HTMLHeadingElement>('.card-header h3 span')?.textContent?.trim() ??
+        document.querySelector<HTMLHeadingElement>('.card-header h3')?.textContent?.trim();
       const response = await runtime.sendMessage({
         type: 'SCENE_CARD_SET_EXCLUDED',
         sceneId,
         excluded: nextExcluded,
-        movieTitle: cached?.title,
+        movieTitle: headerTitle || cached?.title,
         movieYear: undefined,
       });
       if (!response.ok) {
