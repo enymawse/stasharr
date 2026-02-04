@@ -281,7 +281,7 @@ export type SceneCardTriggerSearchResponse = {
 
 export type SceneCardSetExcludedRequest = {
   type: typeof MESSAGE_TYPES.sceneCardSetExcluded;
-  whisparrId: number;
+  sceneId: string;
   excluded: boolean;
 };
 

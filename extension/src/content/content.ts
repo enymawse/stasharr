@@ -1214,16 +1214,24 @@ class SceneCardObserver {
       } else {
         missingWrap.style.display = 'none';
       }
+      excludeButton.style.display = 'inline-flex';
+      setExcludeState('idle', Boolean(cachedStatus.excluded));
       if (cachedStatus.exists) {
-        excludeButton.style.display = 'inline-flex';
-        setExcludeState('idle', Boolean(cachedStatus.excluded));
+        excludeButton.disabled = true;
+        excludeButton.style.opacity = '0.6';
+        excludeButton.setAttribute(
+          'aria-label',
+          cachedStatus.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)',
+        );
+        excludeButton.title = cachedStatus.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)';
+      } else {
+        excludeButton.disabled = false;
+        excludeButton.style.opacity = '1';
         excludeButton.setAttribute(
           'aria-label',
           cachedStatus.excluded ? 'Remove exclusion' : 'Exclude from Whisparr',
         );
         excludeButton.title = cachedStatus.excluded ? 'Remove exclusion' : 'Exclude from Whisparr';
-      } else {
-        excludeButton.style.display = 'none';
       }
     }
 
@@ -1424,7 +1432,7 @@ class SceneCardObserver {
     for (const result of results) {
       const action = this.actionBySceneId.get(result.sceneId);
       if (action) {
-        if (result.exists && result.excluded) {
+        if (result.excluded) {
           action.setStatus('excluded');
         } else if (result.exists && result.hasFile === false) {
           action.setStatus('missing');
@@ -1452,13 +1460,23 @@ class SceneCardObserver {
         if (result.exists) {
           exclude.button.style.display = 'inline-flex';
           exclude.setState('idle', Boolean(result.excluded));
+          exclude.button.disabled = true;
+          exclude.button.style.opacity = '0.6';
+          exclude.button.setAttribute(
+            'aria-label',
+            result.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)',
+          );
+          exclude.button.title = result.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)';
+        } else {
+          exclude.button.style.display = 'inline-flex';
+          exclude.button.disabled = false;
+          exclude.button.style.opacity = '1';
+          exclude.setState('idle', Boolean(result.excluded));
           exclude.button.setAttribute(
             'aria-label',
             result.excluded ? 'Remove exclusion' : 'Exclude from Whisparr',
           );
           exclude.button.title = result.excluded ? 'Remove exclusion' : 'Exclude from Whisparr';
-        } else {
-          exclude.button.style.display = 'none';
         }
       }
     }

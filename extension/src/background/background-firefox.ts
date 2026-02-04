@@ -59,6 +59,7 @@ type SceneCardStatusEntry = {
   tagIds?: number[];
   hasFile?: boolean;
   excluded?: boolean;
+  exclusionId?: number;
   fetchedAt: number;
 };
 
@@ -1139,8 +1140,14 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
 
     const first = response.json.find(isRecord);
     if (!first) {
-      sceneCardStatusCache.set(sceneId, { exists: false, fetchedAt: now });
-      results.push({ sceneId, exists: false });
+      const excluded = await fetchExclusionState(normalized.value, apiKey, sceneId);
+      sceneCardStatusCache.set(sceneId, {
+        exists: false,
+        excluded: excluded.excluded,
+        exclusionId: excluded.exclusionId,
+        fetchedAt: now,
+      });
+      results.push({ sceneId, exists: false, excluded: excluded.excluded });
       continue;
     }
 
@@ -1325,10 +1332,10 @@ async function handleSceneCardSetExcluded(request: { type?: string; [key: string
     return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'invalid_request', message: 'Invalid request type.' } };
   }
 
-  const whisparrId = Number(request.whisparrId);
+  const sceneId = typeof request.sceneId === 'string' ? request.sceneId.trim() : '';
   const excluded = Boolean(request.excluded);
-  if (!Number.isFinite(whisparrId)) {
-    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'missing_id', message: 'Whisparr ID is required.' } };
+  if (!sceneId) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'missing_id', message: 'Scene ID is required.' } };
   }
 
   const settings = await getSettings();
@@ -1351,62 +1358,77 @@ async function handleSceneCardSetExcluded(request: { type?: string; [key: string
     return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'permission_missing', message: `Permission missing for ${origin}` } };
   }
 
-  const existingResponse = await handleFetchJson({
-    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
-    headers: { 'X-Api-Key': apiKey },
-  });
-
-  if (!existingResponse.ok || !isRecord(existingResponse.json)) {
-    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'lookup_failed', message: existingResponse.error ?? 'Failed to fetch Whisparr scene.' } };
+  const existing = await fetchExclusionState(normalized.value, apiKey, sceneId);
+  if (excluded && existing.excluded) {
+    return { ok: true, type: MESSAGE_TYPES.sceneCardSetExcluded, excluded: true };
+  }
+  if (!excluded && !existing.excluded) {
+    return { ok: true, type: MESSAGE_TYPES.sceneCardSetExcluded, excluded: false };
   }
 
-  const currentMonitored =
-    typeof existingResponse.json.monitored === 'boolean'
-      ? existingResponse.json.monitored
-      : undefined;
-  const desiredMonitored = !excluded;
-  if (typeof currentMonitored === 'boolean' && currentMonitored === desiredMonitored) {
-    return { ok: true, type: MESSAGE_TYPES.sceneCardSetExcluded, excluded };
-  }
+  if (excluded) {
+    const createResponse = await handleFetchJson({
+      url: `${normalized.value}/api/v3/exclusions`,
+      method: 'POST',
+      headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ foreignId: sceneId, type: 'scene', reason: 'manual' }),
+    });
 
-  const build = buildUpdatePayload(existingResponse.json as Record<string, unknown>, {
-    id: whisparrId,
-    monitored: desiredMonitored,
-  });
-  if (!build.payload) {
-    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'invalid_payload', message: build.error ?? 'Whisparr scene missing required fields.' } };
-  }
-
-  const response = await handleFetchJson({
-    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
-    method: 'PUT',
-    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify(build.payload),
-  });
-
-  if (!response.ok) {
-    const status = response.status ?? 0;
-    if (status === 401 || status === 403) {
-      return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'unauthorized', message: 'Unauthorized (check API key).' } };
+    if (!createResponse.ok) {
+      const status = createResponse.status ?? 0;
+      if (status === 401 || status === 403) {
+        return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'unauthorized', message: 'Unauthorized (check API key).' } };
+      }
+      if (status === 400) {
+        return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'validation', message: 'Validation failed (check exclusion).' } };
+      }
+      return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: `http_${status}`, message: createResponse.error ?? `HTTP ${status}` } };
     }
-    if (status === 400) {
-      return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'validation', message: 'Validation failed (check Whisparr item).' } };
-    }
-    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: `http_${status}`, message: response.error ?? `HTTP ${status}` } };
-  }
+  } else if (existing.exclusionId) {
+    const deleteResponse = await handleFetchJson({
+      url: `${normalized.value}/api/v3/exclusions/${existing.exclusionId}`,
+      method: 'DELETE',
+      headers: { 'X-Api-Key': apiKey },
+    });
 
-  for (const [sceneId, entry] of sceneCardStatusCache.entries()) {
-    if (entry.whisparrId === whisparrId) {
-      sceneCardStatusCache.set(sceneId, {
-        ...entry,
-        excluded,
-        monitored: desiredMonitored,
-        fetchedAt: Date.now(),
-      });
+    if (!deleteResponse.ok) {
+      const status = deleteResponse.status ?? 0;
+      if (status === 401 || status === 403) {
+        return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'unauthorized', message: 'Unauthorized (check API key).' } };
+      }
+      return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: `http_${status}`, message: deleteResponse.error ?? `HTTP ${status}` } };
     }
   }
+
+  const cached = sceneCardStatusCache.get(sceneId);
+  sceneCardStatusCache.set(sceneId, {
+    exists: cached?.exists ?? false,
+    whisparrId: cached?.whisparrId,
+    monitored: cached?.monitored,
+    tagIds: cached?.tagIds,
+    hasFile: cached?.hasFile,
+    excluded,
+    exclusionId: excluded ? existing.exclusionId : undefined,
+    fetchedAt: Date.now(),
+  });
 
   return { ok: true, type: MESSAGE_TYPES.sceneCardSetExcluded, excluded };
+}
+
+async function fetchExclusionState(baseUrl: string, apiKey: string, sceneId: string) {
+  const response = await handleFetchJson({
+    url: `${baseUrl}/api/v3/exclusions?stashId=${encodeURIComponent(sceneId)}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+  if (!response.ok || !Array.isArray(response.json)) {
+    return { excluded: false, exclusionId: undefined as number | undefined };
+  }
+  const match = response.json.find(isRecord);
+  if (!match) {
+    return { excluded: false, exclusionId: undefined as number | undefined };
+  }
+  const exclusionId = Number(match.id);
+  return { excluded: true, exclusionId: Number.isFinite(exclusionId) ? exclusionId : undefined };
 }
 
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
