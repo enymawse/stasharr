@@ -283,6 +283,8 @@ export type SceneCardSetExcludedRequest = {
   type: typeof MESSAGE_TYPES.sceneCardSetExcluded;
   sceneId: string;
   excluded: boolean;
+  movieTitle?: string;
+  movieYear?: number;
 };
 
 export type SceneCardSetExcludedResponse = {

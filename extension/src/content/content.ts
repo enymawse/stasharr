@@ -32,6 +32,8 @@ type SceneCardSetExcludedRequest = {
   type: 'SCENE_CARD_SET_EXCLUDED';
   sceneId: string;
   excluded: boolean;
+  movieTitle?: string;
+  movieYear?: number;
 };
 
 type ContentRuntime = {
@@ -837,6 +839,7 @@ if (!document.getElementById(PANEL_ID)) {
 }
 
 type SceneCardData = { sceneId: string; sceneUrl: string };
+type SceneCardMeta = { sceneId: string; sceneUrl: string; title?: string; year?: number };
 
 class SceneCardObserver {
   // Dev checklist: missing indicator renders for hasFile=false, search triggers background, UI shows loading/success/error.
@@ -852,6 +855,8 @@ class SceneCardObserver {
       tagIds?: number[];
       hasFile?: boolean;
       excluded?: boolean;
+      title?: string;
+      year?: number;
     }
   >();
   private statusIconBySceneId = new Map<string, HTMLElement>();
@@ -878,7 +883,7 @@ class SceneCardObserver {
       setState: (state: 'idle' | 'loading' | 'success' | 'error') => void;
     }
   >();
-  private statusQueue = new Map<string, { sceneId: string; sceneUrl: string }>();
+  private statusQueue = new Map<string, SceneCardMeta>();
   private statusDebounceHandle: number | null = null;
   private statusInFlight = false;
 
@@ -927,6 +932,12 @@ class SceneCardObserver {
         card.dataset.stasharrAugmented = 'true';
         this.injectedByCard.set(card, injected);
       }
+      const cached = this.statusBySceneId.get(scene.sceneId) ?? { exists: false };
+      this.statusBySceneId.set(scene.sceneId, {
+        ...cached,
+        title: scene.title ?? cached.title,
+        year: scene.year ?? cached.year,
+      });
       this.enqueueStatus(scene);
     }
   }
@@ -940,7 +951,7 @@ class SceneCardObserver {
     }
   }
 
-  private extractScene(anchor: HTMLAnchorElement): SceneCardData | null {
+  private extractScene(anchor: HTMLAnchorElement): SceneCardMeta | null {
     const href = anchor.getAttribute('href');
     if (!href) return null;
     let url: URL;
@@ -951,7 +962,27 @@ class SceneCardObserver {
     }
     const match = url.pathname.match(/^\/scenes\/([^/?#]+)/);
     if (!match) return null;
-    return { sceneId: match[1], sceneUrl: url.toString() };
+    const card = this.findCardContainer(anchor);
+    let title: string | undefined;
+    let year: number | undefined;
+    if (card) {
+      const titleEl =
+        card.querySelector<HTMLHeadingElement>('.card-footer h6') ??
+        card.querySelector<HTMLAnchorElement>('.card-footer a[title]') ??
+        card.querySelector<HTMLAnchorElement>('.card-footer a');
+      const rawTitle =
+        titleEl?.getAttribute('title')?.trim() || titleEl?.textContent?.trim();
+      if (rawTitle) {
+        title = rawTitle;
+      }
+      const yearEl = card.querySelector<HTMLDivElement>('.card-footer strong');
+      const rawYear = yearEl?.textContent?.trim();
+      const yearMatch = rawYear?.match(/^(\d{4})/);
+      if (yearMatch) {
+        year = Number(yearMatch[1]);
+      }
+    }
+    return { sceneId: match[1], sceneUrl: url.toString(), title, year };
   }
 
   private findCardContainer(anchor: HTMLAnchorElement): HTMLElement | null {
@@ -980,7 +1011,7 @@ class SceneCardObserver {
     return null;
   }
 
-  private injectControls(card: HTMLElement, scene: SceneCardData, anchor: HTMLAnchorElement) {
+  private injectControls(card: HTMLElement, scene: SceneCardMeta, anchor: HTMLAnchorElement) {
     const container = document.createElement('div');
     container.className = 'stasharr-scene-card';
     container.style.display = 'flex';
@@ -1259,7 +1290,7 @@ class SceneCardObserver {
     searchButton.addEventListener('click', async (event) => {
       event.preventDefault();
       event.stopPropagation();
-      const cached = this.statusBySceneId.get(scene.sceneId);
+    const cached = this.statusBySceneId.get(scene.sceneId);
       if (!cached?.whisparrId) {
         setMissingState('error');
         return;
@@ -1305,6 +1336,8 @@ class SceneCardObserver {
           type: 'SCENE_CARD_SET_EXCLUDED',
           sceneId: scene.sceneId,
           excluded: nextExcluded,
+          movieTitle: cached?.title ?? scene.title,
+          movieYear: cached?.year ?? scene.year,
         });
         if (!response.ok) {
           setExcludeState('error', Boolean(cached?.excluded));
@@ -1369,7 +1402,7 @@ class SceneCardObserver {
     return container;
   }
 
-  private enqueueStatus(scene: SceneCardData) {
+  private enqueueStatus(scene: SceneCardMeta) {
     if (this.statusBySceneId.has(scene.sceneId)) {
       return;
     }
@@ -1407,6 +1440,7 @@ class SceneCardObserver {
         return;
       }
       for (const result of response.results) {
+        const existing = this.statusBySceneId.get(result.sceneId);
         this.statusBySceneId.set(result.sceneId, {
           exists: result.exists,
           whisparrId: result.whisparrId,
@@ -1414,6 +1448,8 @@ class SceneCardObserver {
           tagIds: result.tagIds,
           hasFile: result.hasFile,
           excluded: result.excluded,
+          title: existing?.title,
+          year: existing?.year,
         });
       }
       this.applyStatusResults(response.results);

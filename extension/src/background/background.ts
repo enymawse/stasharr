@@ -1399,6 +1399,8 @@ async function handleSceneCardSetExcluded(
   }
 
   const sceneId = request.sceneId?.trim();
+  const movieTitle = request.movieTitle?.trim();
+  const movieYear = Number.isFinite(Number(request.movieYear)) ? Number(request.movieYear) : undefined;
   const excluded = Boolean(request.excluded);
   if (!sceneId) {
     return {
@@ -1459,7 +1461,11 @@ async function handleSceneCardSetExcluded(
       url: `${normalized.value}/api/v3/exclusions`,
       method: 'POST',
       headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ foreignId: sceneId, movieTitle: sceneId, movieYear: 1 }),
+      body: JSON.stringify({
+        foreignId: sceneId,
+        movieTitle: movieTitle || sceneId,
+        movieYear: movieYear ?? 1,
+      }),
     });
 
     if (!createResponse.ok) {

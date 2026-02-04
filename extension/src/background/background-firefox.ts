@@ -1333,6 +1333,8 @@ async function handleSceneCardSetExcluded(request: { type?: string; [key: string
   }
 
   const sceneId = typeof request.sceneId === 'string' ? request.sceneId.trim() : '';
+  const movieTitle = typeof request.movieTitle === 'string' ? request.movieTitle.trim() : '';
+  const movieYear = Number.isFinite(Number(request.movieYear)) ? Number(request.movieYear) : undefined;
   const excluded = Boolean(request.excluded);
   if (!sceneId) {
     return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'missing_id', message: 'Scene ID is required.' } };
@@ -1372,7 +1374,11 @@ async function handleSceneCardSetExcluded(request: { type?: string; [key: string
       url: `${normalized.value}/api/v3/exclusions`,
       method: 'POST',
       headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ foreignId: sceneId, movieTitle: sceneId, movieYear: 1 }),
+      body: JSON.stringify({
+        foreignId: sceneId,
+        movieTitle: movieTitle || sceneId,
+        movieYear: movieYear ?? 1,
+      }),
     });
 
     if (!createResponse.ok) {
