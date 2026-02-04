@@ -24,6 +24,10 @@ type SceneCardAddRequest = {
   sceneId: string;
   sceneUrl: string;
 };
+type SceneCardTriggerSearchRequest = {
+  type: 'SCENE_CARD_TRIGGER_SEARCH';
+  whisparrId: number;
+};
 
 type ContentRuntime = {
   runtime: {
@@ -39,7 +43,8 @@ type ContentRuntime = {
         | UpdateTagsRequest
         | UpdateQualityProfileRequest
         | SceneCardsCheckStatusRequest
-        | SceneCardAddRequest,
+        | SceneCardAddRequest
+        | SceneCardTriggerSearchRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -66,6 +71,7 @@ type ContentRuntime = {
         whisparrId?: number;
         monitored?: boolean;
         tagIds?: number[];
+        hasFile?: boolean;
       }>;
     }>;
     getURL?: (path: string) => string;
@@ -825,6 +831,7 @@ if (!document.getElementById(PANEL_ID)) {
 type SceneCardData = { sceneId: string; sceneUrl: string };
 
 class SceneCardObserver {
+  // Dev checklist: missing indicator renders for hasFile=false, search triggers background, UI shows loading/success/error.
   private observer: MutationObserver | null = null;
   private debounceHandle: number | null = null;
   private injectedByCard = new Map<HTMLElement, HTMLElement>();
@@ -835,6 +842,7 @@ class SceneCardObserver {
       whisparrId?: number;
       monitored?: boolean;
       tagIds?: number[];
+      hasFile?: boolean;
     }
   >();
   private statusIconBySceneId = new Map<string, HTMLElement>();
@@ -843,6 +851,13 @@ class SceneCardObserver {
     {
       button: HTMLButtonElement;
       setStatus: (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => void;
+    }
+  >();
+  private missingBySceneId = new Map<
+    string,
+    {
+      wrap: HTMLElement;
+      setState: (state: 'idle' | 'loading' | 'success' | 'error') => void;
     }
   >();
   private statusQueue = new Map<string, { sceneId: string; sceneUrl: string }>();
@@ -1002,6 +1017,42 @@ class SceneCardObserver {
     actionButton.innerHTML = this.renderIcon('download');
     container.appendChild(actionButton);
 
+    const missingWrap = document.createElement('div');
+    missingWrap.dataset.stasharrMissing = 'true';
+    missingWrap.style.display = 'none';
+    missingWrap.style.alignItems = 'center';
+    missingWrap.style.gap = '4px';
+    container.appendChild(missingWrap);
+
+    const missingIcon = document.createElement('span');
+    missingIcon.setAttribute('aria-hidden', 'true');
+    missingIcon.style.display = 'inline-flex';
+    missingIcon.style.alignItems = 'center';
+    missingIcon.style.justifyContent = 'center';
+    missingIcon.style.width = '14px';
+    missingIcon.style.height = '14px';
+    missingIcon.style.color = '#f59e0b';
+    missingIcon.innerHTML = this.renderIcon('warning');
+    missingWrap.appendChild(missingIcon);
+
+    const searchButton = document.createElement('button');
+    searchButton.type = 'button';
+    searchButton.setAttribute('aria-label', 'Trigger Whisparr search');
+    searchButton.title = 'Trigger Whisparr search';
+    searchButton.style.border = '1px solid rgba(148, 163, 184, 0.5)';
+    searchButton.style.borderRadius = '999px';
+    searchButton.style.padding = '2px 8px';
+    searchButton.style.cursor = 'pointer';
+    searchButton.style.background = '#f8fafc';
+    searchButton.style.color = '#0f172a';
+    searchButton.style.fontSize = '12px';
+    searchButton.style.lineHeight = '1';
+    searchButton.style.display = 'inline-flex';
+    searchButton.style.alignItems = 'center';
+    searchButton.style.justifyContent = 'center';
+    searchButton.innerHTML = this.renderIcon('refresh');
+    missingWrap.appendChild(searchButton);
+
     const setStatus = (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => {
       switch (state) {
         case 'loading':
@@ -1042,10 +1093,41 @@ class SceneCardObserver {
       }
     };
 
+    const setMissingState = (state: 'idle' | 'loading' | 'success' | 'error') => {
+      switch (state) {
+        case 'loading':
+          searchButton.disabled = true;
+          searchButton.style.opacity = '0.6';
+          searchButton.innerHTML = this.renderIcon('spinner', true);
+          return;
+        case 'success':
+          searchButton.disabled = true;
+          searchButton.style.opacity = '0.8';
+          searchButton.innerHTML = this.renderIcon('circle-check');
+          return;
+        case 'error':
+          searchButton.disabled = false;
+          searchButton.style.opacity = '1';
+          searchButton.innerHTML = this.renderIcon('x');
+          return;
+        case 'idle':
+        default:
+          searchButton.disabled = false;
+          searchButton.style.opacity = '1';
+          searchButton.innerHTML = this.renderIcon('refresh');
+      }
+    };
+
     setStatus('out');
     const cachedStatus = this.statusBySceneId.get(scene.sceneId);
     if (cachedStatus) {
       setStatus(cachedStatus.exists ? 'in' : 'out');
+      if (cachedStatus.exists && cachedStatus.hasFile === false) {
+        missingWrap.style.display = 'inline-flex';
+        setMissingState('idle');
+      } else {
+        missingWrap.style.display = 'none';
+      }
     }
 
     actionButton.addEventListener('click', async (event) => {
@@ -1069,6 +1151,39 @@ class SceneCardObserver {
       }
     });
 
+    searchButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const cached = this.statusBySceneId.get(scene.sceneId);
+      if (!cached?.whisparrId) {
+        setMissingState('error');
+        return;
+      }
+      setMissingState('loading');
+      const runtime = extContent?.runtime;
+      if (!runtime) {
+        setMissingState('error');
+        return;
+      }
+      try {
+        const response = await runtime.sendMessage({
+          type: 'SCENE_CARD_TRIGGER_SEARCH',
+          whisparrId: cached.whisparrId,
+        });
+        if (!response.ok) {
+          setMissingState('error');
+          return;
+        }
+        setMissingState('success');
+        window.setTimeout(() => {
+          this.statusQueue.set(scene.sceneId, scene);
+          void this.flushStatusQueue();
+        }, 8000);
+      } catch {
+        setMissingState('error');
+      }
+    });
+
     container.dataset.sceneId = scene.sceneId;
     container.dataset.sceneStatus = 'out';
 
@@ -1088,6 +1203,7 @@ class SceneCardObserver {
 
     this.statusIconBySceneId.set(scene.sceneId, statusIcon);
     this.actionBySceneId.set(scene.sceneId, { button: actionButton, setStatus });
+    this.missingBySceneId.set(scene.sceneId, { wrap: missingWrap, setState: setMissingState });
 
     const footer =
       card.querySelector('.card-footer') ??
@@ -1152,6 +1268,7 @@ class SceneCardObserver {
           whisparrId: result.whisparrId,
           monitored: result.monitored,
           tagIds: result.tagIds,
+          hasFile: result.hasFile,
         });
       }
       this.applyStatusResults(response.results);
@@ -1163,7 +1280,7 @@ class SceneCardObserver {
   }
 
   private applyStatusResults(
-    results: Array<{ sceneId: string; exists: boolean }>,
+    results: Array<{ sceneId: string; exists: boolean; hasFile?: boolean }>,
   ) {
     for (const result of results) {
       const icon = this.statusIconBySceneId.get(result.sceneId);
@@ -1181,6 +1298,15 @@ class SceneCardObserver {
         const action = this.actionBySceneId.get(result.sceneId);
         if (action) {
           action.setStatus('out');
+        }
+      }
+      const missing = this.missingBySceneId.get(result.sceneId);
+      if (missing) {
+        if (result.exists && result.hasFile === false) {
+          missing.wrap.style.display = 'inline-flex';
+          missing.setState('idle');
+        } else {
+          missing.wrap.style.display = 'none';
         }
       }
     }
@@ -1216,16 +1342,23 @@ class SceneCardObserver {
     document.head.appendChild(style);
   }
 
-  private renderIcon(name: 'spinner' | 'circle-check' | 'download' | 'ban', spin = false) {
+  private renderIcon(
+    name: 'spinner' | 'circle-check' | 'download' | 'ban' | 'warning' | 'refresh' | 'x',
+    spin = false,
+  ) {
     const paths: Record<typeof name, string> = {
       spinner: 'M12 2a10 10 0 1 0 10 10h-3a7 7 0 1 1-7-7V2z',
       'circle-check': 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm5 7-6 6-3-3 1.4-1.4L11 12.2l4.6-4.6L17 9z',
       download: 'M12 3v9m0 0 4-4m-4 4-4-4M5 19h14',
       ban: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-6.2 5.8L18.2 18.2M18.2 5.8 5.8 18.2',
+      warning: 'M12 3 1.5 21h21L12 3zm0 5.5 3.5 7H8.5L12 8.5zm-1 9.5h2v2h-2v-2z',
+      refresh: 'M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.3 2.3z',
+      x: 'M6 6l12 12M18 6L6 18',
     };
     this.ensureIconStyles();
     const spinStyle = spin ? 'animation: stasharr-spin 1s linear infinite;' : '';
-    const strokeIcons = name === 'download' || name === 'ban';
+    const strokeIcons =
+      name === 'download' || name === 'ban' || name === 'refresh' || name === 'x';
     if (strokeIcons) {
       return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[name]}"></path></svg>`;
     }

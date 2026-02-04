@@ -17,6 +17,7 @@ const MESSAGE_TYPES = {
   sceneCardActionRequested: 'SCENE_CARD_ACTION_REQUESTED',
   sceneCardsCheckStatus: 'SCENE_CARDS_CHECK_STATUS',
   sceneCardAdd: 'SCENE_CARD_ADD',
+  sceneCardTriggerSearch: 'SCENE_CARD_TRIGGER_SEARCH',
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
 } as const;
@@ -55,6 +56,7 @@ type SceneCardStatusEntry = {
   whisparrId?: number;
   monitored?: boolean;
   tagIds?: number[];
+  hasFile?: boolean;
   fetchedAt: number;
 };
 
@@ -1077,6 +1079,7 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
     whisparrId?: number;
     monitored?: boolean;
     tagIds?: number[];
+    hasFile?: boolean;
   }> = [];
 
   const settings = await getSettings();
@@ -1141,11 +1144,13 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
     const whisparrId = Number(first.id);
     const monitored = typeof first.monitored === 'boolean' ? first.monitored : undefined;
     const tagIds = normalizeTags(first.tags);
+    const hasFile = typeof first.hasFile === 'boolean' ? first.hasFile : undefined;
     const entry: SceneCardStatusEntry = {
       exists: true,
       whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
       monitored,
       tagIds,
+      hasFile,
       fetchedAt: now,
     };
     sceneCardStatusCache.set(sceneId, entry);
@@ -1155,6 +1160,7 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
       whisparrId: entry.whisparrId,
       monitored: entry.monitored,
       tagIds: entry.tagIds,
+      hasFile: entry.hasFile,
     });
   }
 
@@ -1246,6 +1252,57 @@ async function handleSceneCardAdd(request: { type?: string; [key: string]: unkno
   return { ok: true, type: MESSAGE_TYPES.sceneCardAdd, whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined };
 }
 
+async function handleSceneCardTriggerSearch(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.sceneCardTriggerSearch) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: 'invalid_request', message: 'Invalid request type.' } };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: 'missing_id', message: 'Whisparr ID is required.' } };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: 'invalid_base_url', message: normalized.error ?? 'Invalid base URL.' } };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: 'missing_key', message: 'API key is required.' } };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: 'no_permissions', message: 'Permissions API not available.' } };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: 'permission_missing', message: `Permission missing for ${origin}` } };
+  }
+
+  const response = await handleFetchJson({
+    url: `${normalized.value}/api/v3/command`,
+    method: 'POST',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'RefreshMovie', movieId: whisparrId }),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401 || status === 403) {
+      return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: 'unauthorized', message: 'Unauthorized (check API key).' } };
+    }
+    if (status === 400) {
+      return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: 'validation', message: 'Validation failed (check Whisparr item).' } };
+    }
+    return { ok: false, type: MESSAGE_TYPES.sceneCardTriggerSearch, error: { code: `http_${status}`, message: response.error ?? `HTTP ${status}` } };
+  }
+
+  return { ok: true, type: MESSAGE_TYPES.sceneCardTriggerSearch };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -1329,6 +1386,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.sceneCardAdd) {
       return handleSceneCardAdd(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.sceneCardTriggerSearch) {
+      return handleSceneCardTriggerSearch(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {
