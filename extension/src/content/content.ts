@@ -1017,7 +1017,6 @@ class SceneCardObserver {
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Already in Whisparr');
-          actionButton.textContent = 'Added';
           return;
         case 'excluded':
           statusIcon.innerHTML = this.renderIcon('ban');
@@ -1025,7 +1024,6 @@ class SceneCardObserver {
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Excluded from Whisparr');
-          actionButton.textContent = 'Excluded';
           return;
         case 'error':
           statusIcon.innerHTML = this.renderIcon('ban');
@@ -1033,7 +1031,6 @@ class SceneCardObserver {
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
           actionButton.setAttribute('aria-label', 'Error, try again');
-          actionButton.textContent = 'Retry';
           return;
         case 'out':
         default:
@@ -1042,7 +1039,6 @@ class SceneCardObserver {
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
           actionButton.setAttribute('aria-label', 'Add to Whisparr');
-          actionButton.textContent = 'Add';
       }
     };
 
