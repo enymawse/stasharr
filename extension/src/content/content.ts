@@ -966,7 +966,7 @@ class SceneCardObserver {
     statusOverlay.style.height = '26px';
     statusOverlay.style.borderRadius = '999px';
     statusOverlay.style.background = 'rgba(15, 23, 42, 0.8)';
-    statusOverlay.style.color = '#0ea5e9';
+    statusOverlay.style.color = '#6f2dbd';
     statusOverlay.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.35)';
 
     const statusIcon = document.createElement('span');
@@ -1000,7 +1000,7 @@ class SceneCardObserver {
       switch (state) {
         case 'loading':
           statusIcon.innerHTML = this.renderIcon('spinner', true);
-          statusIcon.style.color = '#0ea5e9';
+          statusIcon.style.color = '#6f2dbd';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Adding to Whisparr');
@@ -1029,7 +1029,7 @@ class SceneCardObserver {
         case 'out':
         default:
           statusIcon.innerHTML = this.renderIcon('download');
-          statusIcon.style.color = '#0ea5e9';
+          statusIcon.style.color = '#6f2dbd';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
           actionButton.setAttribute('aria-label', 'Add to Whisparr');
@@ -1167,7 +1167,7 @@ class SceneCardObserver {
         icon.style.color = '#16a34a';
       } else {
         icon.innerHTML = this.renderIcon('download');
-        icon.style.color = '#0ea5e9';
+        icon.style.color = '#6f2dbd';
       }
     }
   }
