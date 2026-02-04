@@ -112,6 +112,11 @@ function setStashPermission(message: string, isError = false) {
   elements.stashPermission.style.color = isError ? '#ef4444' : '#9ca3af';
 }
 
+function setStashBusy(isBusy: boolean) {
+  elements.stashValidate.disabled = isBusy;
+  elements.stashSave.disabled = isBusy;
+}
+
 function setDiscoveryStatus(message: string, isError = false) {
   elements.discoveryStatus.textContent = message;
   elements.discoveryStatus.style.color = isError ? '#ef4444' : '#9ca3af';
@@ -623,21 +628,27 @@ async function saveStashSettings() {
 }
 
 async function validateStashSettings() {
+  setStashBusy(true);
+  setStashStatus('Validating...', false);
+
   const normalized = normalizeBaseUrl(elements.stashBaseUrl.value);
   if (!normalized.ok || !normalized.value) {
     setStashStatus(normalized.error ?? 'Invalid base URL.', true);
+    setStashBusy(false);
     return;
   }
 
   const apiKey = elements.stashApiKey.value.trim();
   if (!apiKey) {
     setStashStatus('API key is required.', true);
+    setStashBusy(false);
     return;
   }
 
   const permitted = await requestStashPermission();
   if (!permitted) {
     setStashStatus('Permission required before validation.', true);
+    setStashBusy(false);
     return;
   }
 
@@ -669,10 +680,12 @@ async function validateStashSettings() {
     }
     const status = response.status ? ` (${response.status})` : '';
     setStashStatus(`Validation failed${status}: ${response.error ?? 'Unknown error'}`, true);
+    setStashBusy(false);
     return;
   }
 
   setStashStatus(`Validated at ${new Date().toLocaleString()}`);
+  setStashBusy(false);
 }
 
 elements.save.addEventListener('click', () => {
