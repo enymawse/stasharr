@@ -49,6 +49,7 @@ const elements = {
   save: document.querySelector('[data-action="save"]') as HTMLButtonElement,
   reveal: document.querySelector('[data-action="reveal"]') as HTMLButtonElement,
   refresh: document.querySelector('[data-action="refresh"]') as HTMLButtonElement,
+  whisparrSpinner: document.querySelector('[data-whisparr-spinner]') as HTMLElement,
   stashBaseUrl: document.querySelector('[data-field="stashBaseUrl"]') as HTMLInputElement,
   stashApiKey: document.querySelector('[data-field="stashApiKey"]') as HTMLInputElement,
   stashStatus: document.querySelector('[data-stash-status]') as HTMLElement,
@@ -75,6 +76,7 @@ if (
   !elements.save ||
   !elements.reveal ||
   !elements.refresh ||
+  !elements.whisparrSpinner ||
   !elements.stashBaseUrl ||
   !elements.stashApiKey ||
   !elements.stashStatus ||
@@ -102,6 +104,12 @@ function setStatus(message: string, isError = false) {
 function setPermission(message: string, isError = false) {
   elements.permission.textContent = message;
   elements.permission.style.color = isError ? '#ef4444' : '#9ca3af';
+}
+
+function setWhisparrBusy(isBusy: boolean) {
+  elements.validate.disabled = isBusy;
+  elements.save.disabled = isBusy;
+  elements.whisparrSpinner.classList.toggle('is-active', isBusy);
 }
 
 function setStashStatus(message: string, isError = false) {
@@ -555,21 +563,27 @@ async function saveSettings() {
 }
 
 async function validateSettings() {
+  setWhisparrBusy(true);
+  setStatus('Validating...');
+
   const normalized = normalizeBaseUrl(elements.baseUrl.value);
   if (!normalized.ok || !normalized.value) {
     setStatus(normalized.error ?? 'Invalid base URL.', true);
+    setWhisparrBusy(false);
     return;
   }
 
   const apiKey = elements.apiKey.value.trim();
   if (!apiKey) {
     setStatus('API key is required.', true);
+    setWhisparrBusy(false);
     return;
   }
 
   const permitted = await requestPermission();
   if (!permitted) {
     setStatus('Permission required before validation.', true);
+    setWhisparrBusy(false);
     return;
   }
 
@@ -583,6 +597,7 @@ async function validateSettings() {
   if (!response.ok) {
     const status = response.status ? ` (${response.status})` : '';
     setStatus(`Validation failed${status}: ${response.error ?? 'Unknown error'}`, true);
+    setWhisparrBusy(false);
     return;
   }
 
@@ -598,6 +613,7 @@ async function validateSettings() {
   setStatus(`Validated at ${new Date().toLocaleString()}`);
   setDiscoveryEnabled(true);
   void runDiscovery(true);
+  setWhisparrBusy(false);
 }
 
 async function saveStashSettings() {

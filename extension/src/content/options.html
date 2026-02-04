@@ -101,8 +101,6 @@
   <body>
     <main>
       <h1>Stasharr Options</h1>
-      <p data-status>Loading...</p>
-
       <section class="panel">
         <label>
           Whisparr Base URL
@@ -126,6 +124,10 @@
           <button type="button" data-action="validate">Validate</button>
         </div>
 
+        <div class="row">
+          <div data-whisparr-spinner class="spinner" aria-hidden="true"></div>
+          <p data-status class="muted">Loading...</p>
+        </div>
         <p data-permission class="muted">Permission status: unknown.</p>
       </section>
 
