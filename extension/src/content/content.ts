@@ -216,18 +216,22 @@ if (!document.getElementById(PANEL_ID)) {
   updateDiagnostics();
   panel.appendChild(parseDetails);
 
+  const sceneControls = document.createElement('div');
+  sceneControls.style.display = 'none';
+  panel.appendChild(sceneControls);
+
   const sceneStatusRow = document.createElement('div');
   sceneStatusRow.style.marginTop = '6px';
   sceneStatusRow.style.fontSize = '11px';
   sceneStatusRow.style.opacity = '0.9';
   sceneStatusRow.textContent = 'Scene status: unknown';
-  panel.appendChild(sceneStatusRow);
+  sceneControls.appendChild(sceneStatusRow);
 
   const actionRow = document.createElement('div');
   actionRow.style.display = 'flex';
   actionRow.style.gap = '6px';
   actionRow.style.marginTop = '6px';
-  panel.appendChild(actionRow);
+  sceneControls.appendChild(actionRow);
 
   const checkStatusButton = document.createElement('button');
   checkStatusButton.type = 'button';
@@ -258,7 +262,7 @@ if (!document.getElementById(PANEL_ID)) {
   monitorRow.style.display = 'flex';
   monitorRow.style.gap = '6px';
   monitorRow.style.marginTop = '6px';
-  panel.appendChild(monitorRow);
+  sceneControls.appendChild(monitorRow);
 
   const monitorToggle = document.createElement('button');
   monitorToggle.type = 'button';
@@ -291,7 +295,7 @@ if (!document.getElementById(PANEL_ID)) {
   qualityRow.style.display = 'flex';
   qualityRow.style.flexDirection = 'column';
   qualityRow.style.gap = '6px';
-  panel.appendChild(qualityRow);
+  sceneControls.appendChild(qualityRow);
 
   const qualityLabel = document.createElement('div');
   qualityLabel.textContent = 'Quality profile';
@@ -331,7 +335,7 @@ if (!document.getElementById(PANEL_ID)) {
   tagsRow.style.display = 'flex';
   tagsRow.style.flexDirection = 'column';
   tagsRow.style.gap = '6px';
-  panel.appendChild(tagsRow);
+  sceneControls.appendChild(tagsRow);
 
   const tagsLabel = document.createElement('div');
   tagsLabel.textContent = 'Tags';
@@ -410,6 +414,10 @@ if (!document.getElementById(PANEL_ID)) {
   let readiness: 'unconfigured' | 'configured' | 'validated' = 'unconfigured';
 
   let currentMonitorState: boolean | null = null;
+
+  const setSceneControlsVisible = (visible: boolean) => {
+    sceneControls.style.display = visible ? 'block' : 'none';
+  };
 
   const renderQualityOptions = (selectedId?: number) => {
     qualitySelect.innerHTML = '';
@@ -535,6 +543,7 @@ if (!document.getElementById(PANEL_ID)) {
   const updateSceneStatus = async (force = false) => {
     const current = getParsedPage();
     const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    setSceneControlsVisible(current.type === 'scene');
     if (!sceneId) {
       sceneStatusRow.textContent = 'Scene status: unavailable';
       checkStatusButton.disabled = true;
