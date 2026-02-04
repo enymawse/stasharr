@@ -1530,6 +1530,15 @@ class SceneCardObserver {
       if (action) {
         action.setStatus('error');
       }
+      const exclude = this.excludeBySceneId.get(sceneId);
+      if (exclude) {
+        exclude.button.style.display = 'inline-flex';
+        exclude.setState('error', false);
+        exclude.button.disabled = true;
+        exclude.button.style.opacity = '0.6';
+        exclude.button.setAttribute('aria-label', 'Exclusion status unavailable');
+        exclude.button.title = 'Exclusion status unavailable';
+      }
     }
   }
 
