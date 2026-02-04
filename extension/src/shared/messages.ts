@@ -168,6 +168,7 @@ export type CheckSceneStatusResponse = {
   monitored?: boolean;
   tagIds?: number[];
   qualityProfileId?: number;
+  excluded?: boolean;
   error?: string;
 };
 

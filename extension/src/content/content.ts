@@ -164,6 +164,7 @@ if (!document.getElementById(PANEL_ID)) {
       monitored?: boolean;
       tagIds?: number[];
       qualityProfileId?: number;
+      excluded?: boolean;
       error?: string;
     }
   >();
@@ -262,6 +263,18 @@ if (!document.getElementById(PANEL_ID)) {
   monitorToggle.style.color = '#ffffff';
   applyDisabledStyles(monitorToggle, true);
   actionRow.appendChild(monitorToggle);
+
+  const excludeToggle = document.createElement('button');
+  excludeToggle.type = 'button';
+  excludeToggle.textContent = 'Exclude';
+  excludeToggle.style.padding = '6px 10px';
+  excludeToggle.style.borderRadius = '6px';
+  excludeToggle.style.border = 'none';
+  excludeToggle.style.cursor = 'pointer';
+  excludeToggle.style.background = '#ef4444';
+  excludeToggle.style.color = '#ffffff';
+  applyDisabledStyles(excludeToggle, true);
+  actionRow.appendChild(excludeToggle);
 
   const qualityRow = document.createElement('div');
   qualityRow.style.marginTop = '8px';
@@ -454,6 +467,22 @@ if (!document.getElementById(PANEL_ID)) {
     tagsStatus.textContent = 'Tags: ready';
   };
 
+  const updateExcludeControls = (sceneId?: string) => {
+    const cached = sceneId ? statusCache.get(sceneId) : undefined;
+    if (!sceneId) {
+      excludeToggle.textContent = 'Exclude';
+      applyDisabledStyles(excludeToggle, true);
+      return;
+    }
+    if (cached?.exists) {
+      excludeToggle.textContent = cached.excluded ? 'Excluded' : 'Exclude';
+      applyDisabledStyles(excludeToggle, true);
+      return;
+    }
+    excludeToggle.textContent = cached?.excluded ? 'Unexclude' : 'Exclude';
+    applyDisabledStyles(excludeToggle, false);
+  };
+
   const loadCatalogs = async () => {
     try {
       const response = await extContent.runtime.sendMessage({
@@ -501,6 +530,8 @@ if (!document.getElementById(PANEL_ID)) {
       checkStatusButton.disabled = true;
       applyDisabledStyles(addSceneButton, true);
       applyDisabledStyles(monitorToggle, true);
+      applyDisabledStyles(excludeToggle, true);
+      excludeToggle.textContent = 'Exclude';
       qualitySelect.disabled = true;
       applyDisabledStyles(updateQualityButton, true);
       qualityStatus.textContent = 'Quality: unavailable';
@@ -524,11 +555,16 @@ if (!document.getElementById(PANEL_ID)) {
             currentMonitorState = cached.monitored;
             monitorToggle.textContent = cached.monitored ? 'Unmonitor' : 'Monitor';
           }
+          applyDisabledStyles(excludeToggle, true);
+          excludeToggle.textContent = cached.excluded ? 'Excluded' : 'Exclude';
         } else {
           applyDisabledStyles(monitorToggle, true);
+          applyDisabledStyles(excludeToggle, false);
+          excludeToggle.textContent = cached.excluded ? 'Unexclude' : 'Exclude';
         }
         updateQualityControls(sceneId);
         updateTagControls(sceneId);
+        updateExcludeControls(sceneId);
         return;
       }
     }
@@ -560,6 +596,7 @@ if (!document.getElementById(PANEL_ID)) {
         monitored: response.monitored,
         tagIds: response.tagIds,
         qualityProfileId: response.qualityProfileId,
+        excluded: response.excluded,
       });
       sceneStatusRow.textContent = exists
         ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
@@ -572,12 +609,17 @@ if (!document.getElementById(PANEL_ID)) {
         if (currentMonitorState !== null) {
           monitorToggle.textContent = currentMonitorState ? 'Unmonitor' : 'Monitor';
         }
+        applyDisabledStyles(excludeToggle, true);
+        excludeToggle.textContent = response.excluded ? 'Excluded' : 'Exclude';
       } else {
         applyActionState(sceneId);
         currentMonitorState = null;
+        applyDisabledStyles(excludeToggle, false);
+        excludeToggle.textContent = response.excluded ? 'Unexclude' : 'Exclude';
       }
       updateQualityControls(sceneId);
       updateTagControls(sceneId);
+      updateExcludeControls(sceneId);
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: error (${(error as Error).message})`;
     } finally {
@@ -666,6 +708,47 @@ if (!document.getElementById(PANEL_ID)) {
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: monitor update failed (${(error as Error).message})`;
       applyDisabledStyles(monitorToggle, false);
+    }
+  };
+
+  const updateExcludeState = async () => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId) {
+      return;
+    }
+    const cached = statusCache.get(sceneId);
+    const nextExcluded = !Boolean(cached?.excluded);
+    applyDisabledStyles(excludeToggle, true);
+    excludeToggle.textContent = 'Working...';
+    const runtime = extContent?.runtime;
+    if (!runtime) {
+      excludeToggle.textContent = nextExcluded ? 'Exclude' : 'Unexclude';
+      applyDisabledStyles(excludeToggle, false);
+      return;
+    }
+    try {
+      const response = await runtime.sendMessage({
+        type: 'SCENE_CARD_SET_EXCLUDED',
+        sceneId,
+        excluded: nextExcluded,
+        movieTitle: cached?.title,
+        movieYear: undefined,
+      });
+      if (!response.ok) {
+        excludeToggle.textContent = cached?.excluded ? 'Unexclude' : 'Exclude';
+        applyDisabledStyles(excludeToggle, false);
+        return;
+      }
+      statusCache.set(sceneId, {
+        ...cached,
+        exists: cached?.exists ?? false,
+        excluded: response.excluded ?? nextExcluded,
+      });
+      updateExcludeControls(sceneId);
+    } catch {
+      excludeToggle.textContent = cached?.excluded ? 'Unexclude' : 'Exclude';
+      applyDisabledStyles(excludeToggle, false);
     }
   };
 
@@ -764,6 +847,10 @@ if (!document.getElementById(PANEL_ID)) {
 
   monitorToggle.addEventListener('click', () => {
     void updateMonitorState();
+  });
+
+  excludeToggle.addEventListener('click', () => {
+    void updateExcludeState();
   });
 
   qualitySelect.addEventListener('change', () => {

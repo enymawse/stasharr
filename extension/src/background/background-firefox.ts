@@ -714,7 +714,8 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
 
   const first = response.json.find(isRecord);
   if (!first) {
-    return { ok: true, type: MESSAGE_TYPES.checkSceneStatus, exists: false };
+    const excluded = await fetchExclusionState(normalized.value, apiKey, stashId);
+    return { ok: true, type: MESSAGE_TYPES.checkSceneStatus, exists: false, excluded: excluded.excluded };
   }
 
   const whisparrId = Number(first.id);
@@ -734,6 +735,7 @@ async function handleCheckSceneStatus(request: { type?: string; [key: string]: u
     monitored,
     tagIds,
     qualityProfileId: Number.isFinite(qualityProfileId) ? qualityProfileId : undefined,
+    excluded: false,
   };
 }
 

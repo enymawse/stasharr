@@ -1791,10 +1791,12 @@ async function handleCheckSceneStatus(
 
   const first = response.json.find(isRecord);
   if (!first) {
+    const excluded = await fetchExclusionState(normalized.value, apiKey, stashId);
     return {
       ok: true,
       type: MESSAGE_TYPES_BG.checkSceneStatus,
       exists: false,
+      excluded: excluded.excluded,
     };
   }
 
@@ -1819,6 +1821,7 @@ async function handleCheckSceneStatus(
     qualityProfileId: Number.isFinite(qualityProfileId)
       ? qualityProfileId
       : undefined,
+    excluded: false,
   };
 }
 
