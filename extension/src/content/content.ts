@@ -928,18 +928,6 @@ class SceneCardObserver {
     container.style.color = '#0f172a';
     container.style.fontSize = '11px';
 
-    const badge = document.createElement('span');
-    badge.textContent = 'Stasharr';
-    badge.style.fontWeight = '600';
-    badge.style.letterSpacing = '0.02em';
-    container.appendChild(badge);
-
-    const status = document.createElement('span');
-    status.textContent = 'Not in Whisparr';
-    status.style.opacity = '0.8';
-    status.style.marginLeft = '2px';
-    container.appendChild(status);
-
     const statusIcon = document.createElement('span');
     statusIcon.setAttribute('aria-hidden', 'true');
     statusIcon.style.display = 'inline-flex';
@@ -999,40 +987,40 @@ class SceneCardObserver {
     const setStatus = (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => {
       switch (state) {
         case 'loading':
-          status.textContent = 'Adding...';
           statusIcon.innerHTML = faIcon('spinner', true);
           statusIcon.style.color = '#0ea5e9';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.setAttribute('aria-label', 'Adding to Whisparr');
           return;
         case 'in':
-          status.textContent = 'In Whisparr';
           statusIcon.innerHTML = faIcon('circle-check');
           statusIcon.style.color = '#16a34a';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.setAttribute('aria-label', 'Already in Whisparr');
           return;
         case 'excluded':
-          status.textContent = 'Excluded';
           statusIcon.innerHTML = faIcon('ban');
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.setAttribute('aria-label', 'Excluded from Whisparr');
           return;
         case 'error':
-          status.textContent = 'Error';
           statusIcon.innerHTML = faIcon('ban');
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
+          actionButton.setAttribute('aria-label', 'Error, try again');
           return;
         case 'out':
         default:
-          status.textContent = 'Not in Whisparr';
           statusIcon.innerHTML = faIcon('download');
           statusIcon.style.color = '#0ea5e9';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
+          actionButton.setAttribute('aria-label', 'Add to Whisparr');
       }
     };
 
