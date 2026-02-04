@@ -1286,7 +1286,7 @@ async function handleSceneCardTriggerSearch(request: { type?: string; [key: stri
     url: `${normalized.value}/api/v3/command`,
     method: 'POST',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'RefreshMovie', movieId: whisparrId }),
+    body: JSON.stringify({ name: 'MoviesSearch', movieIds: [whisparrId] }),
   });
 
   if (!response.ok) {
