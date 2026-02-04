@@ -936,8 +936,8 @@ class SceneCardObserver {
     statusOverlay.style.display = 'inline-flex';
     statusOverlay.style.alignItems = 'center';
     statusOverlay.style.justifyContent = 'center';
-    statusOverlay.style.width = '22px';
-    statusOverlay.style.height = '22px';
+    statusOverlay.style.width = '26px';
+    statusOverlay.style.height = '26px';
     statusOverlay.style.borderRadius = '999px';
     statusOverlay.style.background = 'rgba(15, 23, 42, 0.8)';
     statusOverlay.style.color = '#0ea5e9';
@@ -948,8 +948,8 @@ class SceneCardObserver {
     statusIcon.style.display = 'inline-flex';
     statusIcon.style.alignItems = 'center';
     statusIcon.style.justifyContent = 'center';
-    statusIcon.style.width = '14px';
-    statusIcon.style.height = '14px';
+    statusIcon.style.width = '16px';
+    statusIcon.style.height = '16px';
     statusOverlay.appendChild(statusIcon);
 
     const actionButton = document.createElement('button');
