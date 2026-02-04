@@ -52,9 +52,9 @@ export type FetchJsonResponse = {
 
 export type ValidateConnectionRequest = {
   type: typeof MESSAGE_TYPES.validateConnection;
-  baseUrl: string;
-  apiKey: string;
-  kind: 'whisparr';
+  kind: 'whisparr' | 'stash';
+  baseUrl?: string;
+  apiKey?: string;
 };
 
 export type ValidateConnectionResponse = {

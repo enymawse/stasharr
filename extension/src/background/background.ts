@@ -29,6 +29,7 @@ import {
   saveSelections,
   saveSettings,
 } from '../shared/storage.js';
+import { stashGraphqlRequest } from './stash/graphql.js';
 
 const MESSAGE_TYPES_BG = MESSAGE_TYPES;
 
@@ -394,9 +395,54 @@ function buildUpdatePayload(
 }
 
 async function handleValidateConnection(
-  baseUrl: string,
-  apiKey: string,
+  request: ExtensionRequest,
 ): Promise<ValidateConnectionResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.validateConnection) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.validateConnection,
+      error: 'Invalid request type.',
+    };
+  }
+
+  if (request.kind === 'stash') {
+    const query = `
+      query StasharrSystemStatus {
+        systemStatus {
+          status
+        }
+      }
+    `;
+    const result = await stashGraphqlRequest<{ systemStatus?: { status?: string } }>(
+      query,
+    );
+    if (!result.ok) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.validateConnection,
+        status: result.error.status,
+        error: result.error.message,
+        data: result.error.details,
+      };
+    }
+
+    if (!result.data?.systemStatus) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.validateConnection,
+        error: 'Unexpected response payload.',
+      };
+    }
+
+    return {
+      ok: true,
+      type: MESSAGE_TYPES_BG.validateConnection,
+      data: result.data,
+    };
+  }
+
+  const baseUrl = request.baseUrl ?? '';
+  const apiKey = request.apiKey ?? '';
   const normalized = normalizeBaseUrl(baseUrl);
   if (!normalized.ok || !normalized.value) {
     return {
@@ -1877,7 +1923,7 @@ ext.runtime.onMessage.addListener(
       }
 
       if (request?.type === MESSAGE_TYPES_BG.validateConnection) {
-        return handleValidateConnection(request.baseUrl, request.apiKey);
+        return handleValidateConnection(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.getSettings) {

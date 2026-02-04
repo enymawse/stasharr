@@ -284,8 +284,146 @@ async function handleFetchJson(request: { url?: string; method?: string; headers
   }
 }
 
-async function handleValidateConnection(baseUrl: string, apiKey: string) {
-  const normalized = normalizeBaseUrl(baseUrl);
+function stashGraphqlEndpoint(baseUrl: string): string {
+  const trimmed = baseUrl.replace(/\/+$/, '');
+  if (trimmed.endsWith('/graphql')) {
+    return trimmed;
+  }
+  return `${trimmed}/graphql`;
+}
+
+async function stashGraphqlRequest<T>(
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<{ ok: true; data: T } | { ok: false; error: { message: string; status?: number; details?: unknown } }> {
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.stashBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, error: { message: normalized.error ?? 'Invalid base URL.' } };
+  }
+
+  const apiKey = settings.stashApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, error: { message: 'API key is required.' } };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, error: { message: 'Permissions API not available.' } };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, error: { message: `Permission missing for ${origin}` } };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(stashGraphqlEndpoint(normalized.value), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Stash GraphQL auth uses the ApiKey header (not X-Api-Key).
+        ApiKey: apiKey,
+      },
+      body: JSON.stringify({ query, variables }),
+      signal: controller.signal,
+    });
+
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      return {
+        ok: false,
+        error: {
+          message: `JSON parse error: ${(error as Error).message}`,
+          status: response.status,
+        },
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: {
+          message: `HTTP ${response.status}`,
+          status: response.status,
+          details: payload,
+        },
+      };
+    }
+
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'errors' in payload &&
+      Array.isArray((payload as { errors?: unknown }).errors)
+    ) {
+      const [firstError] = (payload as { errors: Array<{ message?: string }> }).errors;
+      return {
+        ok: false,
+        error: {
+          message: firstError?.message ?? 'GraphQL error',
+          details: payload,
+        },
+      };
+    }
+
+    if (!payload || typeof payload !== 'object' || !('data' in payload)) {
+      return { ok: false, error: { message: 'Missing GraphQL data in response.' } };
+    }
+
+    return { ok: true, data: (payload as { data: T }).data };
+  } catch (error) {
+    if ((error as Error).name === 'AbortError') {
+      return { ok: false, error: { message: 'Request timed out.' } };
+    }
+    return { ok: false, error: { message: `Network error: ${(error as Error).message}` } };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function handleValidateConnection(request: { baseUrl?: string; apiKey?: string; kind?: string }) {
+  if (request.kind === 'stash') {
+    const query = `
+      query StasharrSystemStatus {
+        systemStatus {
+          status
+        }
+      }
+    `;
+    const result = await stashGraphqlRequest<{ systemStatus?: { status?: string } }>(
+      query,
+    );
+    if (!result.ok) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.validateConnection,
+        status: result.error.status,
+        error: result.error.message,
+        data: result.error.details,
+      };
+    }
+
+    if (!result.data?.systemStatus) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.validateConnection,
+        error: 'Unexpected response payload.',
+      };
+    }
+
+    return {
+      ok: true,
+      type: MESSAGE_TYPES.validateConnection,
+      data: result.data,
+    };
+  }
+
+  const normalized = normalizeBaseUrl(request.baseUrl ?? '');
   if (!normalized.ok || !normalized.value) {
     return {
       ok: false,
@@ -294,7 +432,7 @@ async function handleValidateConnection(baseUrl: string, apiKey: string) {
     };
   }
 
-  if (!apiKey.trim()) {
+  if (!request.apiKey?.trim()) {
     return {
       ok: false,
       type: MESSAGE_TYPES.validateConnection,
@@ -304,7 +442,7 @@ async function handleValidateConnection(baseUrl: string, apiKey: string) {
 
   const response = await handleFetchJson({
     url: `${normalized.value}/api/v3/system/status`,
-    headers: { 'X-Api-Key': apiKey.trim() },
+    headers: { 'X-Api-Key': request.apiKey.trim() },
   });
 
   if (!response.ok) {
@@ -1444,8 +1582,9 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     }
 
     if (request?.type === MESSAGE_TYPES.validateConnection) {
-      const { baseUrl, apiKey } = request as { baseUrl: string; apiKey: string };
-      return handleValidateConnection(baseUrl, apiKey);
+      return handleValidateConnection(
+        request as { baseUrl?: string; apiKey?: string; kind?: string },
+      );
     }
 
     if (request?.type === MESSAGE_TYPES.getSettings) {
