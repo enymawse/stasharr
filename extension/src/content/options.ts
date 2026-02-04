@@ -56,6 +56,7 @@ const elements = {
   stashValidate: document.querySelector('[data-action="stash-validate"]') as HTMLButtonElement,
   stashSave: document.querySelector('[data-action="stash-save"]') as HTMLButtonElement,
   stashReveal: document.querySelector('[data-action="stash-reveal"]') as HTMLButtonElement,
+  stashSpinner: document.querySelector('[data-stash-spinner]') as HTMLElement,
   discoveryStatus: document.querySelector('[data-discovery-status]') as HTMLElement,
   qualitySelect: document.querySelector('[data-field="qualityProfileId"]') as HTMLSelectElement,
   rootSelect: document.querySelector('[data-field="rootFolderPath"]') as HTMLSelectElement,
@@ -81,6 +82,7 @@ if (
   !elements.stashValidate ||
   !elements.stashSave ||
   !elements.stashReveal ||
+  !elements.stashSpinner ||
   !elements.discoveryStatus ||
   !elements.qualitySelect ||
   !elements.rootSelect ||
@@ -115,6 +117,7 @@ function setStashPermission(message: string, isError = false) {
 function setStashBusy(isBusy: boolean) {
   elements.stashValidate.disabled = isBusy;
   elements.stashSave.disabled = isBusy;
+  elements.stashSpinner.classList.toggle('is-active', isBusy);
 }
 
 function setDiscoveryStatus(message: string, isError = false) {

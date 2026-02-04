@@ -79,6 +79,23 @@
         background: #1f2937;
         margin: 8px 0;
       }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        border: 2px solid rgba(148, 163, 184, 0.3);
+        border-top-color: #e2e8f0;
+        animation: spin 0.9s linear infinite;
+        display: none;
+      }
+      .spinner.is-active {
+        display: inline-block;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
@@ -137,7 +154,10 @@
           <button type="button" data-action="stash-validate">Validate</button>
         </div>
 
-        <p data-stash-status class="muted">Not configured.</p>
+        <div class="row">
+          <div data-stash-spinner class="spinner" aria-hidden="true"></div>
+          <p data-stash-status class="muted">Not configured.</p>
+        </div>
         <p data-stash-permission class="muted">Permission status: unknown.</p>
       </section>
 
