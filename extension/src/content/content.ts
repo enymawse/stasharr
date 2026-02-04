@@ -28,6 +28,11 @@ type SceneCardTriggerSearchRequest = {
   type: 'SCENE_CARD_TRIGGER_SEARCH';
   whisparrId: number;
 };
+type SceneCardSetExcludedRequest = {
+  type: 'SCENE_CARD_SET_EXCLUDED';
+  whisparrId: number;
+  excluded: boolean;
+};
 
 type ContentRuntime = {
   runtime: {
@@ -44,7 +49,8 @@ type ContentRuntime = {
         | UpdateQualityProfileRequest
         | SceneCardsCheckStatusRequest
         | SceneCardAddRequest
-        | SceneCardTriggerSearchRequest,
+        | SceneCardTriggerSearchRequest
+        | SceneCardSetExcludedRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -72,7 +78,9 @@ type ContentRuntime = {
         monitored?: boolean;
         tagIds?: number[];
         hasFile?: boolean;
+        excluded?: boolean;
       }>;
+      excluded?: boolean;
     }>;
     getURL?: (path: string) => string;
     openOptionsPage?: () => void;
@@ -843,6 +851,7 @@ class SceneCardObserver {
       monitored?: boolean;
       tagIds?: number[];
       hasFile?: boolean;
+      excluded?: boolean;
     }
   >();
   private statusIconBySceneId = new Map<string, HTMLElement>();
@@ -853,6 +862,13 @@ class SceneCardObserver {
       setStatus: (
         state: 'loading' | 'in' | 'out' | 'excluded' | 'error' | 'missing',
       ) => void;
+    }
+  >();
+  private excludeBySceneId = new Map<
+    string,
+    {
+      button: HTMLButtonElement;
+      setState: (state: 'idle' | 'loading' | 'error', excluded: boolean) => void;
     }
   >();
   private missingBySceneId = new Map<
@@ -1044,6 +1060,24 @@ class SceneCardObserver {
     searchButton.innerHTML = this.renderIcon('search');
     missingWrap.appendChild(searchButton);
 
+    const excludeButton = document.createElement('button');
+    excludeButton.type = 'button';
+    excludeButton.setAttribute('aria-label', 'Exclude from Whisparr');
+    excludeButton.title = 'Exclude from Whisparr';
+    excludeButton.style.border = '1px solid #ef4444';
+    excludeButton.style.borderRadius = '999px';
+    excludeButton.style.padding = '2px 8px';
+    excludeButton.style.cursor = 'pointer';
+    excludeButton.style.background = '#ef4444';
+    excludeButton.style.color = '#ffffff';
+    excludeButton.style.fontSize = '12px';
+    excludeButton.style.lineHeight = '1';
+    excludeButton.style.display = 'none';
+    excludeButton.style.alignItems = 'center';
+    excludeButton.style.justifyContent = 'center';
+    excludeButton.innerHTML = this.renderIcon('ban');
+    container.appendChild(excludeButton);
+
     const setStatus = (
       state: 'loading' | 'in' | 'out' | 'excluded' | 'error' | 'missing',
     ) => {
@@ -1145,6 +1179,28 @@ class SceneCardObserver {
       }
     };
 
+    const setExcludeState = (state: 'idle' | 'loading' | 'error', excluded: boolean) => {
+      switch (state) {
+        case 'loading':
+          excludeButton.disabled = true;
+          excludeButton.style.opacity = '0.6';
+          excludeButton.innerHTML = this.renderIcon('spinner', true);
+          return;
+        case 'error':
+          excludeButton.disabled = false;
+          excludeButton.style.opacity = '1';
+          excludeButton.innerHTML = this.renderIcon('x');
+          return;
+        case 'idle':
+        default:
+          excludeButton.disabled = false;
+          excludeButton.style.opacity = '1';
+          excludeButton.innerHTML = excluded ? this.renderIcon('circle-check') : this.renderIcon('ban');
+          excludeButton.style.background = excluded ? '#9ca3af' : '#ef4444';
+          excludeButton.style.borderColor = excluded ? '#9ca3af' : '#ef4444';
+      }
+    };
+
     setStatus('out');
     const cachedStatus = this.statusBySceneId.get(scene.sceneId);
     if (cachedStatus) {
@@ -1152,8 +1208,22 @@ class SceneCardObserver {
       if (cachedStatus.exists && cachedStatus.hasFile === false) {
         missingWrap.style.display = 'inline-flex';
         setMissingState('idle');
+      } else if (cachedStatus.exists) {
+        missingWrap.style.display = 'inline-flex';
+        setMissingState('success');
       } else {
         missingWrap.style.display = 'none';
+      }
+      if (cachedStatus.exists) {
+        excludeButton.style.display = 'inline-flex';
+        setExcludeState('idle', Boolean(cachedStatus.excluded));
+        excludeButton.setAttribute(
+          'aria-label',
+          cachedStatus.excluded ? 'Remove exclusion' : 'Exclude from Whisparr',
+        );
+        excludeButton.title = cachedStatus.excluded ? 'Remove exclusion' : 'Exclude from Whisparr';
+      } else {
+        excludeButton.style.display = 'none';
       }
     }
 
@@ -1211,6 +1281,46 @@ class SceneCardObserver {
       }
     });
 
+    excludeButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const cached = this.statusBySceneId.get(scene.sceneId);
+      if (!cached?.whisparrId) {
+        setExcludeState('error', Boolean(cached?.excluded));
+        return;
+      }
+      const nextExcluded = !Boolean(cached.excluded);
+      setExcludeState('loading', nextExcluded);
+      const runtime = extContent?.runtime;
+      if (!runtime) {
+        setExcludeState('error', Boolean(cached.excluded));
+        return;
+      }
+      try {
+        const response = await runtime.sendMessage({
+          type: 'SCENE_CARD_SET_EXCLUDED',
+          whisparrId: cached.whisparrId,
+          excluded: nextExcluded,
+        });
+        if (!response.ok) {
+          setExcludeState('error', Boolean(cached.excluded));
+          return;
+        }
+        cached.excluded = response.excluded ?? nextExcluded;
+        setExcludeState('idle', Boolean(cached.excluded));
+        this.applyStatusResults([
+          {
+            sceneId: scene.sceneId,
+            exists: true,
+            hasFile: cached.hasFile,
+            excluded: cached.excluded,
+          },
+        ]);
+      } catch {
+        setExcludeState('error', Boolean(cached.excluded));
+      }
+    });
+
     container.dataset.sceneId = scene.sceneId;
     container.dataset.sceneStatus = 'out';
 
@@ -1231,6 +1341,7 @@ class SceneCardObserver {
     this.statusIconBySceneId.set(scene.sceneId, statusIcon);
     this.actionBySceneId.set(scene.sceneId, { button: actionButton, setStatus });
     this.missingBySceneId.set(scene.sceneId, { wrap: missingWrap, setState: setMissingState });
+    this.excludeBySceneId.set(scene.sceneId, { button: excludeButton, setState: setExcludeState });
 
     const footer =
       card.querySelector('.card-footer') ??
@@ -1296,6 +1407,7 @@ class SceneCardObserver {
           monitored: result.monitored,
           tagIds: result.tagIds,
           hasFile: result.hasFile,
+          excluded: result.excluded,
         });
       }
       this.applyStatusResults(response.results);
@@ -1307,12 +1419,14 @@ class SceneCardObserver {
   }
 
   private applyStatusResults(
-    results: Array<{ sceneId: string; exists: boolean; hasFile?: boolean }>,
+    results: Array<{ sceneId: string; exists: boolean; hasFile?: boolean; excluded?: boolean }>,
   ) {
     for (const result of results) {
       const action = this.actionBySceneId.get(result.sceneId);
       if (action) {
-        if (result.exists && result.hasFile === false) {
+        if (result.exists && result.excluded) {
+          action.setStatus('excluded');
+        } else if (result.exists && result.hasFile === false) {
           action.setStatus('missing');
         } else if (result.exists) {
           action.setStatus('in');
@@ -1331,6 +1445,20 @@ class SceneCardObserver {
           }
         } else {
           missing.wrap.style.display = 'none';
+        }
+      }
+      const exclude = this.excludeBySceneId.get(result.sceneId);
+      if (exclude) {
+        if (result.exists) {
+          exclude.button.style.display = 'inline-flex';
+          exclude.setState('idle', Boolean(result.excluded));
+          exclude.button.setAttribute(
+            'aria-label',
+            result.excluded ? 'Remove exclusion' : 'Exclude from Whisparr',
+          );
+          exclude.button.title = result.excluded ? 'Remove exclusion' : 'Exclude from Whisparr';
+        } else {
+          exclude.button.style.display = 'none';
         }
       }
     }

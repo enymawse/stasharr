@@ -18,6 +18,7 @@ const MESSAGE_TYPES = {
   sceneCardsCheckStatus: 'SCENE_CARDS_CHECK_STATUS',
   sceneCardAdd: 'SCENE_CARD_ADD',
   sceneCardTriggerSearch: 'SCENE_CARD_TRIGGER_SEARCH',
+  sceneCardSetExcluded: 'SCENE_CARD_SET_EXCLUDED',
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
 } as const;
@@ -57,6 +58,7 @@ type SceneCardStatusEntry = {
   monitored?: boolean;
   tagIds?: number[];
   hasFile?: boolean;
+  excluded?: boolean;
   fetchedAt: number;
 };
 
@@ -1080,6 +1082,7 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
     monitored?: boolean;
     tagIds?: number[];
     hasFile?: boolean;
+    excluded?: boolean;
   }> = [];
 
   const settings = await getSettings();
@@ -1156,12 +1159,14 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
               : typeof first.fileCount === 'number'
                 ? first.fileCount > 0
                 : undefined;
+    const excluded = typeof monitored === 'boolean' ? !monitored : undefined;
     const entry: SceneCardStatusEntry = {
       exists: true,
       whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
       monitored,
       tagIds,
       hasFile,
+      excluded,
       fetchedAt: now,
     };
     sceneCardStatusCache.set(sceneId, entry);
@@ -1172,6 +1177,7 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
       monitored: entry.monitored,
       tagIds: entry.tagIds,
       hasFile: entry.hasFile,
+      excluded: entry.excluded,
     });
   }
 
@@ -1314,6 +1320,95 @@ async function handleSceneCardTriggerSearch(request: { type?: string; [key: stri
   return { ok: true, type: MESSAGE_TYPES.sceneCardTriggerSearch };
 }
 
+async function handleSceneCardSetExcluded(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.sceneCardSetExcluded) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'invalid_request', message: 'Invalid request type.' } };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  const excluded = Boolean(request.excluded);
+  if (!Number.isFinite(whisparrId)) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'missing_id', message: 'Whisparr ID is required.' } };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'invalid_base_url', message: normalized.error ?? 'Invalid base URL.' } };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'missing_key', message: 'API key is required.' } };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'no_permissions', message: 'Permissions API not available.' } };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'permission_missing', message: `Permission missing for ${origin}` } };
+  }
+
+  const existingResponse = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!existingResponse.ok || !isRecord(existingResponse.json)) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'lookup_failed', message: existingResponse.error ?? 'Failed to fetch Whisparr scene.' } };
+  }
+
+  const currentMonitored =
+    typeof existingResponse.json.monitored === 'boolean'
+      ? existingResponse.json.monitored
+      : undefined;
+  const desiredMonitored = !excluded;
+  if (typeof currentMonitored === 'boolean' && currentMonitored === desiredMonitored) {
+    return { ok: true, type: MESSAGE_TYPES.sceneCardSetExcluded, excluded };
+  }
+
+  const build = buildUpdatePayload(existingResponse.json as Record<string, unknown>, {
+    id: whisparrId,
+    monitored: desiredMonitored,
+  });
+  if (!build.payload) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'invalid_payload', message: build.error ?? 'Whisparr scene missing required fields.' } };
+  }
+
+  const response = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(build.payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401 || status === 403) {
+      return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'unauthorized', message: 'Unauthorized (check API key).' } };
+    }
+    if (status === 400) {
+      return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: 'validation', message: 'Validation failed (check Whisparr item).' } };
+    }
+    return { ok: false, type: MESSAGE_TYPES.sceneCardSetExcluded, error: { code: `http_${status}`, message: response.error ?? `HTTP ${status}` } };
+  }
+
+  for (const [sceneId, entry] of sceneCardStatusCache.entries()) {
+    if (entry.whisparrId === whisparrId) {
+      sceneCardStatusCache.set(sceneId, {
+        ...entry,
+        excluded,
+        monitored: desiredMonitored,
+        fetchedAt: Date.now(),
+      });
+    }
+  }
+
+  return { ok: true, type: MESSAGE_TYPES.sceneCardSetExcluded, excluded };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -1401,6 +1496,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.sceneCardTriggerSearch) {
       return handleSceneCardTriggerSearch(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.sceneCardSetExcluded) {
+      return handleSceneCardSetExcluded(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {

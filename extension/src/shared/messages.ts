@@ -20,6 +20,7 @@ export const MESSAGE_TYPES = {
   sceneCardsCheckStatus: 'SCENE_CARDS_CHECK_STATUS',
   sceneCardAdd: 'SCENE_CARD_ADD',
   sceneCardTriggerSearch: 'SCENE_CARD_TRIGGER_SEARCH',
+  sceneCardSetExcluded: 'SCENE_CARD_SET_EXCLUDED',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -249,6 +250,7 @@ export type SceneCardsCheckStatusResponse = {
     monitored?: boolean;
     tagIds?: number[];
     hasFile?: boolean;
+    excluded?: boolean;
   }>;
   error?: string;
 };
@@ -274,6 +276,19 @@ export type SceneCardTriggerSearchRequest = {
 export type SceneCardTriggerSearchResponse = {
   ok: boolean;
   type: typeof MESSAGE_TYPES.sceneCardTriggerSearch;
+  error?: { code: string; message: string };
+};
+
+export type SceneCardSetExcludedRequest = {
+  type: typeof MESSAGE_TYPES.sceneCardSetExcluded;
+  whisparrId: number;
+  excluded: boolean;
+};
+
+export type SceneCardSetExcludedResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.sceneCardSetExcluded;
+  excluded?: boolean;
   error?: { code: string; message: string };
 };
 
@@ -323,7 +338,8 @@ export type ExtensionRequest =
   | SceneCardActionRequestedRequest
   | SceneCardsCheckStatusRequest
   | SceneCardAddRequest
-  | SceneCardTriggerSearchRequest;
+  | SceneCardTriggerSearchRequest
+  | SceneCardSetExcludedRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -347,4 +363,5 @@ export type ExtensionResponse =
   | SceneCardsCheckStatusResponse
   | SceneCardAddResponse
   | SceneCardTriggerSearchResponse
+  | SceneCardSetExcludedResponse
   | { ok: false; type: MessageType; error: string };

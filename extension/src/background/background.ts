@@ -18,6 +18,7 @@ import {
   type SceneCardsCheckStatusResponse,
   type SceneCardAddResponse,
   type SceneCardTriggerSearchResponse,
+  type SceneCardSetExcludedResponse,
 } from '../shared/messages.js';
 import {
   getCatalogs,
@@ -91,6 +92,7 @@ type SceneCardStatusEntry = {
   monitored?: boolean;
   tagIds?: number[];
   hasFile?: boolean;
+  excluded?: boolean;
   fetchedAt: number;
 };
 
@@ -1164,6 +1166,7 @@ async function handleSceneCardsCheckStatus(
     monitored?: boolean;
     tagIds?: number[];
     hasFile?: boolean;
+    excluded?: boolean;
   }> = [];
 
   const settings = await getSettings();
@@ -1258,12 +1261,14 @@ async function handleSceneCardsCheckStatus(
               : typeof first.fileCount === 'number'
                 ? first.fileCount > 0
                 : undefined;
+    const excluded = typeof monitored === 'boolean' ? !monitored : undefined;
     const entry: SceneCardStatusEntry = {
       exists: true,
       whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
       monitored,
       tagIds,
       hasFile,
+      excluded,
       fetchedAt: now,
     };
     sceneCardStatusCache.set(sceneId, entry);
@@ -1274,6 +1279,7 @@ async function handleSceneCardsCheckStatus(
       monitored: entry.monitored,
       tagIds: entry.tagIds,
       hasFile: entry.hasFile,
+      excluded: entry.excluded,
     });
   }
 
@@ -1368,6 +1374,143 @@ async function handleSceneCardTriggerSearch(
   }
 
   return { ok: true, type: MESSAGE_TYPES_BG.sceneCardTriggerSearch };
+}
+
+async function handleSceneCardSetExcluded(
+  request: ExtensionRequest,
+): Promise<SceneCardSetExcludedResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.sceneCardSetExcluded) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: 'invalid_request', message: 'Invalid request type.' },
+    };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  const excluded = Boolean(request.excluded);
+  if (!Number.isFinite(whisparrId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: 'missing_id', message: 'Whisparr ID is required.' },
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: 'invalid_base_url', message: normalized.error ?? 'Invalid base URL.' },
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: 'missing_key', message: 'API key is required.' },
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: 'no_permissions', message: 'Permissions API not available.' },
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: 'permission_missing', message: `Permission missing for ${origin}` },
+    };
+  }
+
+  const existingResponse = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!existingResponse.ok || !isRecord(existingResponse.json)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: 'lookup_failed', message: existingResponse.error ?? 'Failed to fetch Whisparr scene.' },
+    };
+  }
+
+  const currentMonitored =
+    typeof existingResponse.json.monitored === 'boolean'
+      ? existingResponse.json.monitored
+      : undefined;
+  const desiredMonitored = !excluded;
+  if (typeof currentMonitored === 'boolean' && currentMonitored === desiredMonitored) {
+    return { ok: true, type: MESSAGE_TYPES_BG.sceneCardSetExcluded, excluded };
+  }
+
+  const build = buildUpdatePayload(existingResponse.json, {
+    id: whisparrId,
+    monitored: desiredMonitored,
+  });
+  if (!build.payload) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: 'invalid_payload', message: build.error ?? 'Whisparr scene missing required fields.' },
+    };
+  }
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${normalized.value}/api/v3/movie/${whisparrId}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(build.payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401 || status === 403) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+        error: { code: 'unauthorized', message: 'Unauthorized (check API key).' },
+      };
+    }
+    if (status === 400) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+        error: { code: 'validation', message: 'Validation failed (check Whisparr item).' },
+      };
+    }
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      error: { code: `http_${status}`, message: response.error ?? `HTTP ${status}` },
+    };
+  }
+
+  for (const [sceneId, entry] of sceneCardStatusCache.entries()) {
+    if (entry.whisparrId === whisparrId) {
+      sceneCardStatusCache.set(sceneId, {
+        ...entry,
+        excluded,
+        monitored: desiredMonitored,
+        fetchedAt: Date.now(),
+      });
+    }
+  }
+
+  return { ok: true, type: MESSAGE_TYPES_BG.sceneCardSetExcluded, excluded };
 }
 
 async function handleSceneCardAdd(
@@ -1779,6 +1922,10 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.sceneCardTriggerSearch) {
         return handleSceneCardTriggerSearch(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.sceneCardSetExcluded) {
+        return handleSceneCardSetExcluded(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {
