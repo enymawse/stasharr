@@ -850,7 +850,9 @@ class SceneCardObserver {
     string,
     {
       button: HTMLButtonElement;
-      setStatus: (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => void;
+      setStatus: (
+        state: 'loading' | 'in' | 'out' | 'excluded' | 'error' | 'missing',
+      ) => void;
     }
   >();
   private missingBySceneId = new Map<
@@ -1053,7 +1055,9 @@ class SceneCardObserver {
     searchButton.innerHTML = this.renderIcon('refresh');
     missingWrap.appendChild(searchButton);
 
-    const setStatus = (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => {
+    const setStatus = (
+      state: 'loading' | 'in' | 'out' | 'excluded' | 'error' | 'missing',
+    ) => {
       switch (state) {
         case 'loading':
           statusIcon.innerHTML = this.renderIcon('spinner', true);
@@ -1068,6 +1072,13 @@ class SceneCardObserver {
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Already in Whisparr');
+          return;
+        case 'missing':
+          statusIcon.innerHTML = this.renderIcon('warning');
+          statusIcon.style.color = '#f59e0b';
+          actionButton.disabled = true;
+          actionButton.style.opacity = '0.6';
+          actionButton.setAttribute('aria-label', 'In Whisparr (missing file)');
           return;
         case 'excluded':
           statusIcon.innerHTML = this.renderIcon('ban');
@@ -1283,27 +1294,13 @@ class SceneCardObserver {
     results: Array<{ sceneId: string; exists: boolean; hasFile?: boolean }>,
   ) {
     for (const result of results) {
-      const icon = this.statusIconBySceneId.get(result.sceneId);
-      if (!icon) continue;
-      if (result.exists && result.hasFile === false) {
-        icon.innerHTML = this.renderIcon('warning');
-        icon.style.color = '#f59e0b';
-        const action = this.actionBySceneId.get(result.sceneId);
-        if (action) {
+      const action = this.actionBySceneId.get(result.sceneId);
+      if (action) {
+        if (result.exists && result.hasFile === false) {
+          action.setStatus('missing');
+        } else if (result.exists) {
           action.setStatus('in');
-        }
-      } else if (result.exists) {
-        icon.innerHTML = this.renderIcon('circle-check');
-        icon.style.color = '#16a34a';
-        const action = this.actionBySceneId.get(result.sceneId);
-        if (action) {
-          action.setStatus('in');
-        }
-      } else {
-        icon.innerHTML = this.renderIcon('download');
-        icon.style.color = '#7138c8';
-        const action = this.actionBySceneId.get(result.sceneId);
-        if (action) {
+        } else {
           action.setStatus('out');
         }
       }
