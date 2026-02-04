@@ -960,10 +960,12 @@ class SceneCardObserver {
     });
 
     const footer =
+      card.querySelector('.card-footer') ??
       card.querySelector('[class*="CardFooter"]') ??
       card.querySelector('[class*="Footer"]') ??
       card.querySelector('[data-testid*="footer"]');
     const body =
+      card.querySelector('.SceneCard-body') ??
       card.querySelector('[class*="CardBody"]') ??
       card.querySelector('[class*="Body"]') ??
       card.querySelector('[data-testid*="body"]');
