@@ -906,18 +906,15 @@ class SceneCardObserver {
   private injectControls(card: HTMLElement, scene: SceneCardData) {
     const container = document.createElement('div');
     container.className = 'stasharr-scene-card';
-    container.style.position = 'absolute';
-    container.style.top = '6px';
-    container.style.right = '6px';
-    container.style.display = 'inline-flex';
+    container.style.display = 'flex';
     container.style.gap = '6px';
     container.style.alignItems = 'center';
-    container.style.padding = '4px 6px';
-    container.style.borderRadius = '6px';
-    container.style.background = 'rgba(17, 24, 39, 0.85)';
-    container.style.color = '#f9fafb';
-    container.style.fontSize = '10px';
-    container.style.zIndex = '5';
+    container.style.padding = '6px 8px';
+    container.style.borderTop = '1px solid rgba(148, 163, 184, 0.2)';
+    container.style.borderBottom = '1px solid rgba(148, 163, 184, 0.2)';
+    container.style.background = 'rgba(15, 23, 42, 0.04)';
+    container.style.color = '#0f172a';
+    container.style.fontSize = '11px';
 
     const badge = document.createElement('span');
     badge.textContent = 'Stasharr';
@@ -962,12 +959,15 @@ class SceneCardObserver {
       }
     });
 
-    const computed = window.getComputedStyle(card);
-    if (computed.position === 'static') {
-      card.style.position = 'relative';
+    const footer =
+      card.querySelector('[class*="CardFooter"]') ??
+      card.querySelector('[class*="Footer"]') ??
+      card.querySelector('[data-testid*="footer"]');
+    if (footer && footer.parentElement === card) {
+      card.insertBefore(container, footer);
+    } else {
+      card.appendChild(container);
     }
-
-    card.appendChild(container);
     return container;
   }
 }
