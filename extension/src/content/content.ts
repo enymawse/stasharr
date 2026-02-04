@@ -1026,17 +1026,6 @@ class SceneCardObserver {
     missingWrap.style.gap = '4px';
     container.appendChild(missingWrap);
 
-    const missingIcon = document.createElement('span');
-    missingIcon.setAttribute('aria-hidden', 'true');
-    missingIcon.style.display = 'inline-flex';
-    missingIcon.style.alignItems = 'center';
-    missingIcon.style.justifyContent = 'center';
-    missingIcon.style.width = '14px';
-    missingIcon.style.height = '14px';
-    missingIcon.style.color = '#f59e0b';
-    missingIcon.innerHTML = this.renderIcon('warning');
-    missingWrap.appendChild(missingIcon);
-
     const searchButton = document.createElement('button');
     searchButton.type = 'button';
     searchButton.setAttribute('aria-label', 'Trigger Whisparr search');
@@ -1046,13 +1035,13 @@ class SceneCardObserver {
     searchButton.style.padding = '2px 8px';
     searchButton.style.cursor = 'pointer';
     searchButton.style.background = '#f8fafc';
-    searchButton.style.color = '#0f172a';
+    searchButton.style.color = '#f59e0b';
     searchButton.style.fontSize = '12px';
     searchButton.style.lineHeight = '1';
     searchButton.style.display = 'inline-flex';
     searchButton.style.alignItems = 'center';
     searchButton.style.justifyContent = 'center';
-    searchButton.innerHTML = this.renderIcon('refresh');
+    searchButton.innerHTML = this.renderIcon('search');
     missingWrap.appendChild(searchButton);
 
     const setStatus = (
@@ -1125,7 +1114,7 @@ class SceneCardObserver {
         default:
           searchButton.disabled = false;
           searchButton.style.opacity = '1';
-          searchButton.innerHTML = this.renderIcon('refresh');
+          searchButton.innerHTML = this.renderIcon('search');
       }
     };
 
@@ -1347,7 +1336,7 @@ class SceneCardObserver {
   }
 
   private renderIcon(
-    name: 'spinner' | 'circle-check' | 'download' | 'ban' | 'warning' | 'refresh' | 'x',
+    name: 'spinner' | 'circle-check' | 'download' | 'ban' | 'warning' | 'refresh' | 'x' | 'search',
     spin = false,
   ) {
     const paths: Record<typeof name, string> = {
@@ -1358,11 +1347,12 @@ class SceneCardObserver {
       warning: 'M12 3 1.5 21h21L12 3zm0 5.5 3.5 7H8.5L12 8.5zm-1 9.5h2v2h-2v-2z',
       refresh: 'M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.3 2.3z',
       x: 'M6 6l12 12M18 6L6 18',
+      search: 'M21 21l-4.3-4.3m1.3-5A7 7 0 1 1 10 4a7 7 0 0 1 8 7.7z',
     };
     this.ensureIconStyles();
     const spinStyle = spin ? 'animation: stasharr-spin 1s linear infinite;' : '';
     const strokeIcons =
-      name === 'download' || name === 'ban' || name === 'refresh' || name === 'x';
+      name === 'download' || name === 'ban' || name === 'refresh' || name === 'x' || name === 'search';
     if (strokeIcons) {
       return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[name]}"></path></svg>`;
     }
