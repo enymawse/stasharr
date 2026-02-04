@@ -30,7 +30,7 @@ type SceneCardTriggerSearchRequest = {
 };
 type SceneCardSetExcludedRequest = {
   type: 'SCENE_CARD_SET_EXCLUDED';
-  whisparrId: number;
+  sceneId: string;
   excluded: boolean;
 };
 
@@ -1293,39 +1293,37 @@ class SceneCardObserver {
       event.preventDefault();
       event.stopPropagation();
       const cached = this.statusBySceneId.get(scene.sceneId);
-      if (!cached?.whisparrId) {
-        setExcludeState('error', Boolean(cached?.excluded));
-        return;
-      }
-      const nextExcluded = !Boolean(cached.excluded);
+      const nextExcluded = !Boolean(cached?.excluded);
       setExcludeState('loading', nextExcluded);
       const runtime = extContent?.runtime;
       if (!runtime) {
-        setExcludeState('error', Boolean(cached.excluded));
+        setExcludeState('error', Boolean(cached?.excluded));
         return;
       }
       try {
         const response = await runtime.sendMessage({
           type: 'SCENE_CARD_SET_EXCLUDED',
-          whisparrId: cached.whisparrId,
+          sceneId: scene.sceneId,
           excluded: nextExcluded,
         });
         if (!response.ok) {
-          setExcludeState('error', Boolean(cached.excluded));
+          setExcludeState('error', Boolean(cached?.excluded));
           return;
         }
-        cached.excluded = response.excluded ?? nextExcluded;
-        setExcludeState('idle', Boolean(cached.excluded));
+        if (cached) {
+          cached.excluded = response.excluded ?? nextExcluded;
+        }
+        setExcludeState('idle', Boolean(cached?.excluded ?? nextExcluded));
         this.applyStatusResults([
           {
             sceneId: scene.sceneId,
-            exists: true,
-            hasFile: cached.hasFile,
-            excluded: cached.excluded,
+            exists: cached?.exists ?? false,
+            hasFile: cached?.hasFile,
+            excluded: cached?.excluded ?? nextExcluded,
           },
         ]);
       } catch {
-        setExcludeState('error', Boolean(cached.excluded));
+        setExcludeState('error', Boolean(cached?.excluded));
       }
     });
 
