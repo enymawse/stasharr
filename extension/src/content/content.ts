@@ -1004,12 +1004,12 @@ class SceneCardObserver {
     const actionButton = document.createElement('button');
     actionButton.type = 'button';
     actionButton.setAttribute('aria-label', 'Add to Whisparr');
-    actionButton.style.border = '1px solid rgba(148, 163, 184, 0.5)';
+    actionButton.style.border = '1px solid #7138c8';
     actionButton.style.borderRadius = '999px';
     actionButton.style.padding = '2px 8px';
     actionButton.style.cursor = 'pointer';
-    actionButton.style.background = '#f8fafc';
-    actionButton.style.color = '#0f172a';
+    actionButton.style.background = '#7138c8';
+    actionButton.style.color = '#ffffff';
     actionButton.style.fontSize = '12px';
     actionButton.style.lineHeight = '1';
     actionButton.style.display = 'inline-flex';
@@ -1030,12 +1030,12 @@ class SceneCardObserver {
     searchButton.type = 'button';
     searchButton.setAttribute('aria-label', 'Trigger Whisparr search');
     searchButton.title = 'Trigger Whisparr search';
-    searchButton.style.border = '1px solid rgba(148, 163, 184, 0.5)';
+    searchButton.style.border = '1px solid #f59e0b';
     searchButton.style.borderRadius = '999px';
     searchButton.style.padding = '2px 8px';
     searchButton.style.cursor = 'pointer';
-    searchButton.style.background = '#f8fafc';
-    searchButton.style.color = '#f59e0b';
+    searchButton.style.background = '#f59e0b';
+    searchButton.style.color = '#ffffff';
     searchButton.style.fontSize = '12px';
     searchButton.style.lineHeight = '1';
     searchButton.style.display = 'inline-flex';
@@ -1053,6 +1053,9 @@ class SceneCardObserver {
           statusIcon.style.color = '#7138c8';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.style.background = '#b9a2e8';
+          actionButton.style.borderColor = '#b9a2e8';
+          actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Adding to Whisparr');
           return;
         case 'in':
@@ -1060,6 +1063,9 @@ class SceneCardObserver {
           statusIcon.style.color = '#16a34a';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.style.background = '#b9a2e8';
+          actionButton.style.borderColor = '#b9a2e8';
+          actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Already in Whisparr');
           return;
         case 'missing':
@@ -1067,6 +1073,9 @@ class SceneCardObserver {
           statusIcon.style.color = '#f59e0b';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.style.background = '#b9a2e8';
+          actionButton.style.borderColor = '#b9a2e8';
+          actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'In Whisparr (missing file)');
           return;
         case 'excluded':
@@ -1081,6 +1090,9 @@ class SceneCardObserver {
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
+          actionButton.style.background = '#7138c8';
+          actionButton.style.borderColor = '#7138c8';
+          actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Error, try again');
           return;
         case 'out':
@@ -1089,6 +1101,9 @@ class SceneCardObserver {
           statusIcon.style.color = '#7138c8';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
+          actionButton.style.background = '#7138c8';
+          actionButton.style.borderColor = '#7138c8';
+          actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Add to Whisparr');
       }
     };
@@ -1098,22 +1113,34 @@ class SceneCardObserver {
         case 'loading':
           searchButton.disabled = true;
           searchButton.style.opacity = '0.6';
+          searchButton.style.background = '#f3c46b';
+          searchButton.style.borderColor = '#f3c46b';
+          searchButton.style.color = '#ffffff';
           searchButton.innerHTML = this.renderIcon('spinner', true);
           return;
         case 'success':
           searchButton.disabled = true;
           searchButton.style.opacity = '0.8';
+          searchButton.style.background = '#f3c46b';
+          searchButton.style.borderColor = '#f3c46b';
+          searchButton.style.color = '#ffffff';
           searchButton.innerHTML = this.renderIcon('circle-check');
           return;
         case 'error':
           searchButton.disabled = false;
           searchButton.style.opacity = '1';
+          searchButton.style.background = '#f59e0b';
+          searchButton.style.borderColor = '#f59e0b';
+          searchButton.style.color = '#ffffff';
           searchButton.innerHTML = this.renderIcon('x');
           return;
         case 'idle':
         default:
           searchButton.disabled = false;
           searchButton.style.opacity = '1';
+          searchButton.style.background = '#f59e0b';
+          searchButton.style.borderColor = '#f59e0b';
+          searchButton.style.color = '#ffffff';
           searchButton.innerHTML = this.renderIcon('search');
       }
     };
