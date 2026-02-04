@@ -49,6 +49,13 @@ const elements = {
   save: document.querySelector('[data-action="save"]') as HTMLButtonElement,
   reveal: document.querySelector('[data-action="reveal"]') as HTMLButtonElement,
   refresh: document.querySelector('[data-action="refresh"]') as HTMLButtonElement,
+  stashBaseUrl: document.querySelector('[data-field="stashBaseUrl"]') as HTMLInputElement,
+  stashApiKey: document.querySelector('[data-field="stashApiKey"]') as HTMLInputElement,
+  stashStatus: document.querySelector('[data-stash-status]') as HTMLElement,
+  stashPermission: document.querySelector('[data-stash-permission]') as HTMLElement,
+  stashValidate: document.querySelector('[data-action="stash-validate"]') as HTMLButtonElement,
+  stashSave: document.querySelector('[data-action="stash-save"]') as HTMLButtonElement,
+  stashReveal: document.querySelector('[data-action="stash-reveal"]') as HTMLButtonElement,
   discoveryStatus: document.querySelector('[data-discovery-status]') as HTMLElement,
   qualitySelect: document.querySelector('[data-field="qualityProfileId"]') as HTMLSelectElement,
   rootSelect: document.querySelector('[data-field="rootFolderPath"]') as HTMLSelectElement,
@@ -67,6 +74,13 @@ if (
   !elements.save ||
   !elements.reveal ||
   !elements.refresh ||
+  !elements.stashBaseUrl ||
+  !elements.stashApiKey ||
+  !elements.stashStatus ||
+  !elements.stashPermission ||
+  !elements.stashValidate ||
+  !elements.stashSave ||
+  !elements.stashReveal ||
   !elements.discoveryStatus ||
   !elements.qualitySelect ||
   !elements.rootSelect ||
@@ -86,6 +100,16 @@ function setStatus(message: string, isError = false) {
 function setPermission(message: string, isError = false) {
   elements.permission.textContent = message;
   elements.permission.style.color = isError ? '#ef4444' : '#9ca3af';
+}
+
+function setStashStatus(message: string, isError = false) {
+  elements.stashStatus.textContent = message;
+  elements.stashStatus.style.color = isError ? '#ef4444' : '#9ca3af';
+}
+
+function setStashPermission(message: string, isError = false) {
+  elements.stashPermission.textContent = message;
+  elements.stashPermission.style.color = isError ? '#ef4444' : '#9ca3af';
 }
 
 function setDiscoveryStatus(message: string, isError = false) {
@@ -143,16 +167,23 @@ async function loadSettings() {
   const settings = response.settings;
   elements.baseUrl.value = settings.whisparrBaseUrl ?? '';
   elements.apiKey.value = settings.whisparrApiKey ?? '';
+  elements.stashBaseUrl.value = settings.stashBaseUrl ?? '';
+  elements.stashApiKey.value = settings.stashApiKey ?? '';
 
   const configured =
     Boolean(settings.whisparrBaseUrl) && Boolean(settings.whisparrApiKey);
   setStatus(configured ? 'Configured.' : 'Not configured.');
+
+  const stashConfigured =
+    Boolean(settings.stashBaseUrl) && Boolean(settings.stashApiKey);
+  setStashStatus(stashConfigured ? 'Configured.' : 'Not configured.');
 
   if (settings.lastValidatedAt) {
     setStatus(`Last validated: ${new Date(settings.lastValidatedAt).toLocaleString()}`);
   }
 
   await refreshPermission();
+  await refreshStashPermission();
 
   const hasValidation = Boolean(settings.lastValidatedAt);
   setDiscoveryEnabled(configured && hasValidation);
@@ -186,6 +217,29 @@ async function refreshPermission() {
   }
 }
 
+async function refreshStashPermission() {
+  const normalized = normalizeBaseUrl(elements.stashBaseUrl.value);
+  if (!normalized.ok || !normalized.value) {
+    setStashPermission(normalized.error ?? 'Invalid base URL.', true);
+    return;
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    setStashPermission('Permissions API not available.', true);
+    return;
+  }
+
+  try {
+    const granted = await ext.permissions.contains({ origins: [origin] });
+    setStashPermission(
+      granted ? `Permission granted for ${origin}` : `Permission missing for ${origin}`,
+    );
+  } catch (error) {
+    setStashPermission((error as Error).message ?? 'Permission check failed.', true);
+  }
+}
+
 async function requestPermission(): Promise<boolean> {
   const normalized = normalizeBaseUrl(elements.baseUrl.value);
   if (!normalized.ok || !normalized.value) {
@@ -212,6 +266,36 @@ async function requestPermission(): Promise<boolean> {
     return true;
   } catch (error) {
     setPermission((error as Error).message ?? 'Permission request failed.', true);
+    return false;
+  }
+}
+
+async function requestStashPermission(): Promise<boolean> {
+  const normalized = normalizeBaseUrl(elements.stashBaseUrl.value);
+  if (!normalized.ok || !normalized.value) {
+    setStashPermission(normalized.error ?? 'Invalid base URL.', true);
+    return false;
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.request) {
+    setStashPermission('Permissions API not available.', true);
+    return false;
+  }
+
+  try {
+    const granted = await ext.permissions.request({ origins: [origin] });
+    if (!granted) {
+      setStashPermission(
+        `Permission required to access ${origin}. Grant permission to proceed.`,
+        true,
+      );
+      return false;
+    }
+    setStashPermission(`Permission granted for ${origin}`);
+    return true;
+  } catch (error) {
+    setStashPermission((error as Error).message ?? 'Permission request failed.', true);
     return false;
   }
 }
@@ -508,6 +592,89 @@ async function validateSettings() {
   void runDiscovery(true);
 }
 
+async function saveStashSettings() {
+  const normalized = normalizeBaseUrl(elements.stashBaseUrl.value);
+  if (!normalized.ok || !normalized.value) {
+    setStashStatus(normalized.error ?? 'Invalid base URL.', true);
+    return;
+  }
+
+  const apiKey = elements.stashApiKey.value.trim();
+  if (!apiKey) {
+    setStashStatus('API key is required.', true);
+    return;
+  }
+
+  const response = await ext.runtime.sendMessage({
+    type: MESSAGE_TYPES.saveSettings,
+    settings: {
+      stashBaseUrl: normalized.value,
+      stashApiKey: apiKey,
+    },
+  });
+
+  if (!response.ok) {
+    setStashStatus(response.error ?? 'Save failed.', true);
+    return;
+  }
+
+  setStashStatus('Settings saved.');
+  await refreshStashPermission();
+}
+
+async function validateStashSettings() {
+  const normalized = normalizeBaseUrl(elements.stashBaseUrl.value);
+  if (!normalized.ok || !normalized.value) {
+    setStashStatus(normalized.error ?? 'Invalid base URL.', true);
+    return;
+  }
+
+  const apiKey = elements.stashApiKey.value.trim();
+  if (!apiKey) {
+    setStashStatus('API key is required.', true);
+    return;
+  }
+
+  const permitted = await requestStashPermission();
+  if (!permitted) {
+    setStashStatus('Permission required before validation.', true);
+    return;
+  }
+
+  const current = await ext.runtime.sendMessage({ type: MESSAGE_TYPES.getSettings });
+  const previous = current.ok ? current.settings : undefined;
+
+  await ext.runtime.sendMessage({
+    type: MESSAGE_TYPES.saveSettings,
+    settings: {
+      stashBaseUrl: normalized.value,
+      stashApiKey: apiKey,
+    },
+  });
+
+  const response = await ext.runtime.sendMessage({
+    type: MESSAGE_TYPES.validateConnection,
+    kind: 'stash',
+  });
+
+  if (!response.ok) {
+    if (previous) {
+      await ext.runtime.sendMessage({
+        type: MESSAGE_TYPES.saveSettings,
+        settings: {
+          stashBaseUrl: previous.stashBaseUrl,
+          stashApiKey: previous.stashApiKey,
+        },
+      });
+    }
+    const status = response.status ? ` (${response.status})` : '';
+    setStashStatus(`Validation failed${status}: ${response.error ?? 'Unknown error'}`, true);
+    return;
+  }
+
+  setStashStatus(`Validated at ${new Date().toLocaleString()}`);
+}
+
 elements.save.addEventListener('click', () => {
   void saveSettings();
 });
@@ -523,6 +690,24 @@ elements.reveal.addEventListener('click', () => {
   } else {
     elements.apiKey.type = 'password';
     elements.reveal.textContent = 'Show';
+  }
+});
+
+elements.stashSave.addEventListener('click', () => {
+  void saveStashSettings();
+});
+
+elements.stashValidate.addEventListener('click', () => {
+  void validateStashSettings();
+});
+
+elements.stashReveal.addEventListener('click', () => {
+  if (elements.stashApiKey.type === 'password') {
+    elements.stashApiKey.type = 'text';
+    elements.stashReveal.textContent = 'Hide';
+  } else {
+    elements.stashApiKey.type = 'password';
+    elements.stashReveal.textContent = 'Show';
   }
 });
 
@@ -550,6 +735,14 @@ elements.baseUrl.addEventListener('input', () => {
 elements.apiKey.addEventListener('input', () => {
   setDiscoveryEnabled(false);
   setDiscoveryStatus('Validate to load configuration lists.');
+});
+
+elements.stashBaseUrl.addEventListener('input', () => {
+  setStashStatus('Not configured.');
+});
+
+elements.stashApiKey.addEventListener('input', () => {
+  setStashStatus('Not configured.');
 });
 
 void loadSettings();

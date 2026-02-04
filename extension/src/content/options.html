@@ -89,7 +89,11 @@
       <section class="panel">
         <label>
           Whisparr Base URL
-          <input data-field="whisparrBaseUrl" type="text" placeholder="whisparr.lan:6969" />
+          <input
+            data-field="whisparrBaseUrl"
+            type="text"
+            placeholder="http://whisparr.lan:6969"
+          />
         </label>
 
         <label>
@@ -106,6 +110,35 @@
         </div>
 
         <p data-permission class="muted">Permission status: unknown.</p>
+      </section>
+
+      <div class="divider"></div>
+
+      <section class="panel">
+        <label>
+          Stash Base URL
+          <input
+            data-field="stashBaseUrl"
+            type="text"
+            placeholder="http://stash.lan:9999"
+          />
+        </label>
+
+        <label>
+          Stash API Key
+          <div class="row">
+            <input data-field="stashApiKey" type="password" placeholder="API key" />
+            <button type="button" data-action="stash-reveal">Show</button>
+          </div>
+        </label>
+
+        <div class="row">
+          <button type="button" data-action="stash-save">Save</button>
+          <button type="button" data-action="stash-validate">Validate</button>
+        </div>
+
+        <p data-stash-status class="muted">Not configured.</p>
+        <p data-stash-permission class="muted">Permission status: unknown.</p>
       </section>
 
       <div class="divider"></div>
