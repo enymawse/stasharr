@@ -15,6 +15,12 @@ type UpdateQualityProfileRequest = {
   whisparrId: number;
   qualityProfileId: number;
 };
+type SceneCardActionRequestedRequest = {
+  type: 'SCENE_CARD_ACTION_REQUESTED';
+  sceneId: string;
+  sceneUrl: string;
+  action: 'stub_add';
+};
 
 type ContentRuntime = {
   runtime: {
@@ -28,7 +34,8 @@ type ContentRuntime = {
         | SetMonitorStateRequest
         | FetchDiscoveryCatalogsRequest
         | UpdateTagsRequest
-        | UpdateQualityProfileRequest,
+        | UpdateQualityProfileRequest
+        | SceneCardActionRequestedRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -803,3 +810,167 @@ if (!document.getElementById(PANEL_ID)) {
   window.addEventListener('popstate', checkNavigation);
   window.setInterval(checkNavigation, 500);
 }
+
+type SceneCardData = { sceneId: string; sceneUrl: string };
+
+class SceneCardObserver {
+  private observer: MutationObserver | null = null;
+  private debounceHandle: number | null = null;
+  private injectedByCard = new Map<HTMLElement, HTMLElement>();
+
+  start() {
+    this.scan(document.body);
+    this.observer = new MutationObserver((mutations) => {
+      let shouldScan = false;
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
+          shouldScan = true;
+          break;
+        }
+      }
+      if (shouldScan) {
+        this.scheduleScan();
+      }
+    });
+    this.observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  private scheduleScan() {
+    if (this.debounceHandle !== null) {
+      window.clearTimeout(this.debounceHandle);
+    }
+    this.debounceHandle = window.setTimeout(() => {
+      this.debounceHandle = null;
+      this.scan(document.body);
+    }, 150);
+  }
+
+  private scan(root: ParentNode) {
+    this.cleanup();
+    const anchors = Array.from(root.querySelectorAll<HTMLAnchorElement>('a[href^="/scenes/"]'));
+    for (const anchor of anchors) {
+      const scene = this.extractScene(anchor);
+      if (!scene) continue;
+      const card = this.findCardContainer(anchor);
+      if (!card) continue;
+      if (card.dataset.stasharrAugmented === 'true') continue;
+      const injected = this.injectControls(card, scene);
+      if (injected) {
+        card.dataset.stasharrAugmented = 'true';
+        this.injectedByCard.set(card, injected);
+      }
+    }
+  }
+
+  private cleanup() {
+    for (const [card, injected] of this.injectedByCard.entries()) {
+      if (!card.isConnected) {
+        injected.remove();
+        this.injectedByCard.delete(card);
+      }
+    }
+  }
+
+  private extractScene(anchor: HTMLAnchorElement): SceneCardData | null {
+    const href = anchor.getAttribute('href');
+    if (!href) return null;
+    let url: URL;
+    try {
+      url = new URL(href, window.location.origin);
+    } catch {
+      return null;
+    }
+    const match = url.pathname.match(/^\/scenes\/([^/?#]+)/);
+    if (!match) return null;
+    return { sceneId: match[1], sceneUrl: url.toString() };
+  }
+
+  private findCardContainer(anchor: HTMLAnchorElement): HTMLElement | null {
+    const selectors = [
+      '[class*="SceneCard"]',
+      '[class*="Card"]',
+      '[data-testid*="scene"]',
+      'article',
+      'li',
+      '.card',
+    ];
+    for (const selector of selectors) {
+      const match = anchor.closest(selector);
+      if (match instanceof HTMLElement) {
+        return match;
+      }
+    }
+    return anchor.closest('article, li, .card, [class*="Card"], [class*="SceneCard"], [data-testid*="scene"]');
+  }
+
+  private injectControls(card: HTMLElement, scene: SceneCardData) {
+    const container = document.createElement('div');
+    container.className = 'stasharr-scene-card';
+    container.style.position = 'absolute';
+    container.style.top = '6px';
+    container.style.right = '6px';
+    container.style.display = 'inline-flex';
+    container.style.gap = '6px';
+    container.style.alignItems = 'center';
+    container.style.padding = '4px 6px';
+    container.style.borderRadius = '6px';
+    container.style.background = 'rgba(17, 24, 39, 0.85)';
+    container.style.color = '#f9fafb';
+    container.style.fontSize = '10px';
+    container.style.zIndex = '5';
+
+    const badge = document.createElement('span');
+    badge.textContent = 'Stasharr';
+    badge.style.fontWeight = '600';
+    container.appendChild(badge);
+
+    const status = document.createElement('span');
+    status.textContent = 'unknown';
+    status.style.opacity = '0.85';
+    container.appendChild(status);
+
+    const actionButton = document.createElement('button');
+    actionButton.type = 'button';
+    actionButton.textContent = '+';
+    actionButton.style.border = 'none';
+    actionButton.style.borderRadius = '4px';
+    actionButton.style.padding = '2px 6px';
+    actionButton.style.cursor = 'pointer';
+    actionButton.style.background = '#22c55e';
+    actionButton.style.color = '#0b1220';
+    container.appendChild(actionButton);
+
+    actionButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      status.textContent = 'clicked';
+      const runtime = extContent?.runtime;
+      if (!runtime) {
+        status.textContent = 'error';
+        return;
+      }
+      try {
+        const response = await runtime.sendMessage({
+          type: 'SCENE_CARD_ACTION_REQUESTED',
+          sceneId: scene.sceneId,
+          sceneUrl: scene.sceneUrl,
+          action: 'stub_add',
+        });
+        status.textContent = response.ok ? 'ok' : 'error';
+      } catch {
+        status.textContent = 'error';
+      }
+    });
+
+    const computed = window.getComputedStyle(card);
+    if (computed.position === 'static') {
+      card.style.position = 'relative';
+    }
+
+    card.appendChild(container);
+    return container;
+  }
+}
+
+const sceneCardObserver = new SceneCardObserver();
+sceneCardObserver.start();

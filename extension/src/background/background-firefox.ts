@@ -14,6 +14,7 @@ const MESSAGE_TYPES = {
   checkSceneStatus: 'CHECK_SCENE_STATUS',
   updateTags: 'UPDATE_TAGS',
   updateQualityProfile: 'UPDATE_QUALITY_PROFILE',
+  sceneCardActionRequested: 'SCENE_CARD_ACTION_REQUESTED',
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
 } as const;
@@ -1023,6 +1024,20 @@ async function handleUpdateQualityProfile(request: { type?: string; [key: string
   return { ok: true, type: MESSAGE_TYPES.updateQualityProfile, qualityProfileId };
 }
 
+async function handleSceneCardAction(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.sceneCardActionRequested) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardActionRequested, error: 'Invalid request type.' };
+  }
+
+  const sceneId = String(request.sceneId ?? '').trim();
+  const sceneUrl = String(request.sceneUrl ?? '').trim();
+  if (!sceneId || !sceneUrl) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardActionRequested, error: 'Scene ID and URL are required.' };
+  }
+
+  return { ok: true, type: MESSAGE_TYPES.sceneCardActionRequested };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -1094,6 +1109,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.updateQualityProfile) {
       return handleUpdateQualityProfile(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.sceneCardActionRequested) {
+      return handleSceneCardAction(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {

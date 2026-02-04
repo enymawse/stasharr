@@ -14,6 +14,7 @@ import {
   type SetMonitorStateResponse,
   type UpdateTagsResponse,
   type UpdateQualityProfileResponse,
+  type SceneCardActionRequestedResponse,
 } from '../shared/messages.js';
 import {
   getCatalogs,
@@ -1093,6 +1094,28 @@ async function handleUpdateQualityProfile(
   };
 }
 
+async function handleSceneCardAction(
+  request: ExtensionRequest,
+): Promise<SceneCardActionRequestedResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.sceneCardActionRequested) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardActionRequested,
+      error: 'Invalid request type.',
+    };
+  }
+
+  if (!request.sceneId || !request.sceneUrl) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardActionRequested,
+      error: 'Scene ID and URL are required.',
+    };
+  }
+
+  return { ok: true, type: MESSAGE_TYPES_BG.sceneCardActionRequested };
+}
+
 async function handleCheckSceneStatus(
   request: ExtensionRequest,
 ): Promise<CheckSceneStatusResponse> {
@@ -1336,6 +1359,10 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.updateQualityProfile) {
         return handleUpdateQualityProfile(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.sceneCardActionRequested) {
+        return handleSceneCardAction(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {

@@ -16,6 +16,7 @@ export const MESSAGE_TYPES = {
   setMonitorState: 'SET_MONITOR_STATE',
   updateTags: 'UPDATE_TAGS',
   updateQualityProfile: 'UPDATE_QUALITY_PROFILE',
+  sceneCardActionRequested: 'SCENE_CARD_ACTION_REQUESTED',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -217,6 +218,19 @@ export type UpdateQualityProfileResponse = {
   error?: string;
 };
 
+export type SceneCardActionRequestedRequest = {
+  type: typeof MESSAGE_TYPES.sceneCardActionRequested;
+  sceneId: string;
+  sceneUrl: string;
+  action: 'stub_add';
+};
+
+export type SceneCardActionRequestedResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.sceneCardActionRequested;
+  error?: string;
+};
+
 export type SaveSelectionsRequest = {
   type: typeof MESSAGE_TYPES.saveSelections;
   selections: {
@@ -259,7 +273,8 @@ export type ExtensionRequest =
   | AddSceneRequest
   | SetMonitorStateRequest
   | UpdateTagsRequest
-  | UpdateQualityProfileRequest;
+  | UpdateQualityProfileRequest
+  | SceneCardActionRequestedRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -279,4 +294,5 @@ export type ExtensionResponse =
   | SetMonitorStateResponse
   | UpdateTagsResponse
   | UpdateQualityProfileResponse
+  | SceneCardActionRequestedResponse
   | { ok: false; type: MessageType; error: string };
