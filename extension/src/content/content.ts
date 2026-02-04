@@ -551,9 +551,11 @@ if (!document.getElementById(PANEL_ID)) {
     if (!force) {
       const cached = statusCache.get(sceneId);
       if (cached) {
-        sceneStatusRow.textContent = cached.exists
-          ? `Scene status: already in Whisparr${cached.hasFile === false ? ' (no file)' : ''}`
-          : 'Scene status: not in Whisparr';
+        sceneStatusRow.textContent = cached.excluded
+          ? 'Scene status: excluded'
+          : cached.exists
+            ? `Scene status: already in Whisparr${cached.hasFile === false ? ' (no file)' : ''}`
+            : 'Scene status: not in Whisparr';
         if (cached.exists) {
           applyDisabledStyles(addSceneButton, true);
           applyDisabledStyles(monitorToggle, false);
@@ -604,9 +606,11 @@ if (!document.getElementById(PANEL_ID)) {
         qualityProfileId: response.qualityProfileId,
         excluded: response.excluded,
       });
-      sceneStatusRow.textContent = exists
-        ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
-        : 'Scene status: not in Whisparr';
+      sceneStatusRow.textContent = response.excluded
+        ? 'Scene status: excluded'
+        : exists
+          ? `Scene status: already in Whisparr${response.hasFile === false ? ' (no file)' : ''}`
+          : 'Scene status: not in Whisparr';
       if (exists) {
         applyDisabledStyles(addSceneButton, true);
         applyDisabledStyles(monitorToggle, false);
