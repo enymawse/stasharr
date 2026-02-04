@@ -838,6 +838,7 @@ class SceneCardObserver {
       tagIds?: number[];
     }
   >();
+  private statusIconBySceneId = new Map<string, HTMLElement>();
   private statusQueue = new Map<string, { sceneId: string; sceneUrl: string }>();
   private statusDebounceHandle: number | null = null;
   private statusInFlight = false;
@@ -1080,6 +1081,8 @@ class SceneCardObserver {
       container.insertBefore(statusOverlay, container.firstChild);
     }
 
+    this.statusIconBySceneId.set(scene.sceneId, statusIcon);
+
     const footer =
       card.querySelector('.card-footer') ??
       card.querySelector('[class*="CardFooter"]') ??
@@ -1157,31 +1160,24 @@ class SceneCardObserver {
     results: Array<{ sceneId: string; exists: boolean }>,
   ) {
     for (const result of results) {
-      const target = this.findInjectedBySceneId(result.sceneId);
-      if (!target) continue;
-      const icon = target.querySelector<HTMLElement>('.stasharr-scene-card-status span');
+      const icon = this.statusIconBySceneId.get(result.sceneId);
       if (!icon) continue;
       if (result.exists) {
         icon.innerHTML = this.renderIcon('circle-check');
         icon.style.color = '#16a34a';
-        target.dataset.sceneStatus = 'in';
       } else {
         icon.innerHTML = this.renderIcon('download');
         icon.style.color = '#0ea5e9';
-        target.dataset.sceneStatus = 'out';
       }
     }
   }
 
   private applyStatusError(sceneIds: string[]) {
     for (const sceneId of sceneIds) {
-      const target = this.findInjectedBySceneId(sceneId);
-      if (!target) continue;
-      const icon = target.querySelector<HTMLElement>('.stasharr-scene-card-status span');
+      const icon = this.statusIconBySceneId.get(sceneId);
       if (!icon) continue;
       icon.innerHTML = this.renderIcon('ban');
       icon.style.color = '#ef4444';
-      target.dataset.sceneStatus = 'error';
     }
   }
 
