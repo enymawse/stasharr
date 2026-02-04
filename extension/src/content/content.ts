@@ -1407,7 +1407,8 @@ class SceneCardObserver {
   }
 
   private enqueueStatus(scene: SceneCardMeta) {
-    if (this.statusBySceneId.has(scene.sceneId)) {
+    const cached = this.statusBySceneId.get(scene.sceneId);
+    if (cached && typeof cached.exists === 'boolean') {
       return;
     }
     this.statusQueue.set(scene.sceneId, scene);
