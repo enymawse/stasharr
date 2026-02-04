@@ -1285,7 +1285,14 @@ class SceneCardObserver {
     for (const result of results) {
       const icon = this.statusIconBySceneId.get(result.sceneId);
       if (!icon) continue;
-      if (result.exists) {
+      if (result.exists && result.hasFile === false) {
+        icon.innerHTML = this.renderIcon('warning');
+        icon.style.color = '#f59e0b';
+        const action = this.actionBySceneId.get(result.sceneId);
+        if (action) {
+          action.setStatus('in');
+        }
+      } else if (result.exists) {
         icon.innerHTML = this.renderIcon('circle-check');
         icon.style.color = '#16a34a';
         const action = this.actionBySceneId.get(result.sceneId);
