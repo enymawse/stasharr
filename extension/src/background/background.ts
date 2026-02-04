@@ -15,6 +15,7 @@ import {
   type UpdateTagsResponse,
   type UpdateQualityProfileResponse,
   type SceneCardActionRequestedResponse,
+  type SceneCardsCheckStatusResponse,
 } from '../shared/messages.js';
 import {
   getCatalogs,
@@ -62,6 +63,8 @@ if (!extCandidate) {
 const ext = extCandidate;
 const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
+const SCENE_CARD_STATUS_TTL_MS = 10 * 60 * 1000;
+const SCENE_CARD_STATUS_BATCH_LIMIT = 25;
 
 type DiscoveryErrors = {
   qualityProfiles?: string;
@@ -79,6 +82,16 @@ type AddScenePayload = {
   foreignId: string;
   title?: string;
 };
+
+type SceneCardStatusEntry = {
+  exists: boolean;
+  whisparrId?: number;
+  monitored?: boolean;
+  tagIds?: number[];
+  fetchedAt: number;
+};
+
+const sceneCardStatusCache = new Map<string, SceneCardStatusEntry>();
 
 type UpdateScenePayload = {
   id: number;
@@ -1116,6 +1129,139 @@ async function handleSceneCardAction(
   return { ok: true, type: MESSAGE_TYPES_BG.sceneCardActionRequested };
 }
 
+async function handleSceneCardsCheckStatus(
+  request: ExtensionRequest,
+): Promise<SceneCardsCheckStatusResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.sceneCardsCheckStatus) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardsCheckStatus,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const items = Array.isArray(request.items) ? request.items : [];
+  if (items.length === 0) {
+    return { ok: true, type: MESSAGE_TYPES_BG.sceneCardsCheckStatus, results: [] };
+  }
+
+  const uniqueItems = new Map<string, { sceneId: string; sceneUrl: string }>();
+  for (const item of items.slice(0, SCENE_CARD_STATUS_BATCH_LIMIT)) {
+    const sceneId = item?.sceneId?.trim();
+    const sceneUrl = item?.sceneUrl?.trim();
+    if (!sceneId || !sceneUrl) continue;
+    uniqueItems.set(sceneId, { sceneId, sceneUrl });
+  }
+
+  const now = Date.now();
+  const results: Array<{
+    sceneId: string;
+    exists: boolean;
+    whisparrId?: number;
+    monitored?: boolean;
+    tagIds?: number[];
+  }> = [];
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardsCheckStatus,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardsCheckStatus,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardsCheckStatus,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardsCheckStatus,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const pendingIds: string[] = [];
+  for (const [sceneId] of uniqueItems.entries()) {
+    const cached = sceneCardStatusCache.get(sceneId);
+    if (cached && now - cached.fetchedAt < SCENE_CARD_STATUS_TTL_MS) {
+      results.push({
+        sceneId,
+        exists: cached.exists,
+        whisparrId: cached.whisparrId,
+        monitored: cached.monitored,
+        tagIds: cached.tagIds,
+      });
+    } else {
+      pendingIds.push(sceneId);
+    }
+  }
+
+  for (const sceneId of pendingIds) {
+    const response = await handleFetchJson({
+      type: MESSAGE_TYPES_BG.fetchJson,
+      url: `${normalized.value}/api/v3/movie?stashId=${encodeURIComponent(sceneId)}`,
+      headers: { 'X-Api-Key': apiKey },
+    });
+
+    if (!response.ok) {
+      results.push({ sceneId, exists: false });
+      continue;
+    }
+
+    if (!Array.isArray(response.json)) {
+      results.push({ sceneId, exists: false });
+      continue;
+    }
+
+    const first = response.json.find(isRecord);
+    if (!first) {
+      sceneCardStatusCache.set(sceneId, { exists: false, fetchedAt: now });
+      results.push({ sceneId, exists: false });
+      continue;
+    }
+
+    const whisparrId = Number(first.id);
+    const monitored =
+      typeof first.monitored === 'boolean' ? first.monitored : undefined;
+    const tagIds = normalizeTags(first.tags);
+    const entry: SceneCardStatusEntry = {
+      exists: true,
+      whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+      monitored,
+      tagIds,
+      fetchedAt: now,
+    };
+    sceneCardStatusCache.set(sceneId, entry);
+    results.push({
+      sceneId,
+      exists: entry.exists,
+      whisparrId: entry.whisparrId,
+      monitored: entry.monitored,
+      tagIds: entry.tagIds,
+    });
+  }
+
+  return { ok: true, type: MESSAGE_TYPES_BG.sceneCardsCheckStatus, results };
+}
+
 async function handleCheckSceneStatus(
   request: ExtensionRequest,
 ): Promise<CheckSceneStatusResponse> {
@@ -1363,6 +1509,10 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.sceneCardActionRequested) {
         return handleSceneCardAction(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.sceneCardsCheckStatus) {
+        return handleSceneCardsCheckStatus(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {

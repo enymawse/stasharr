@@ -21,6 +21,10 @@ type SceneCardActionRequestedRequest = {
   sceneUrl: string;
   action: 'stub_add';
 };
+type SceneCardsCheckStatusRequest = {
+  type: 'SCENE_CARDS_CHECK_STATUS';
+  items: Array<{ sceneId: string; sceneUrl: string }>;
+};
 
 type ContentRuntime = {
   runtime: {
@@ -35,7 +39,8 @@ type ContentRuntime = {
         | FetchDiscoveryCatalogsRequest
         | UpdateTagsRequest
         | UpdateQualityProfileRequest
-        | SceneCardActionRequestedRequest,
+        | SceneCardActionRequestedRequest
+        | SceneCardsCheckStatusRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -56,6 +61,13 @@ type ContentRuntime = {
       hasFile?: boolean;
       monitored?: boolean;
       error?: string;
+      results?: Array<{
+        sceneId: string;
+        exists: boolean;
+        whisparrId?: number;
+        monitored?: boolean;
+        tagIds?: number[];
+      }>;
     }>;
     getURL?: (path: string) => string;
     openOptionsPage?: () => void;
@@ -817,6 +829,18 @@ class SceneCardObserver {
   private observer: MutationObserver | null = null;
   private debounceHandle: number | null = null;
   private injectedByCard = new Map<HTMLElement, HTMLElement>();
+  private statusBySceneId = new Map<
+    string,
+    {
+      exists: boolean;
+      whisparrId?: number;
+      monitored?: boolean;
+      tagIds?: number[];
+    }
+  >();
+  private statusQueue = new Map<string, { sceneId: string; sceneUrl: string }>();
+  private statusDebounceHandle: number | null = null;
+  private statusInFlight = false;
 
   start() {
     this.scan(document.body);
@@ -863,6 +887,7 @@ class SceneCardObserver {
         card.dataset.stasharrAugmented = 'true';
         this.injectedByCard.set(card, injected);
       }
+      this.enqueueStatus(scene);
     }
   }
 
@@ -967,62 +992,34 @@ class SceneCardObserver {
     actionButton.style.alignItems = 'center';
     actionButton.style.justifyContent = 'center';
     actionButton.style.gap = '4px';
-    const ensureIconStyles = () => {
-      if (document.getElementById('stasharr-fa-style')) return;
-      const style = document.createElement('style');
-      style.id = 'stasharr-fa-style';
-      style.textContent = '@keyframes stasharr-spin { to { transform: rotate(360deg); } }';
-      document.head.appendChild(style);
-    };
-
-    const faIcon = (name: 'spinner' | 'circle-check' | 'download' | 'ban', spin = false) => {
-      const paths: Record<typeof name, string> = {
-        spinner:
-          'M12 2a10 10 0 1 0 10 10h-3a7 7 0 1 1-7-7V2z',
-        'circle-check':
-          'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm5 7-6 6-3-3 1.4-1.4L11 12.2l4.6-4.6L17 9z',
-        download:
-          'M12 3v9m0 0 4-4m-4 4-4-4M5 19h14',
-        ban:
-          'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-6.2 5.8L18.2 18.2M18.2 5.8 5.8 18.2',
-      };
-      ensureIconStyles();
-      const spinStyle = spin ? 'animation: stasharr-spin 1s linear infinite;' : '';
-      const strokeIcons = name === 'download' || name === 'ban';
-      const common = 'display:block; color: currentColor;';
-      if (strokeIcons) {
-        return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="${common} ${spinStyle}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[name]}"></path></svg>`;
-      }
-      return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="${common} ${spinStyle}"><path d="${paths[name]}"></path></svg>`;
-    };
-    actionButton.innerHTML = faIcon('download');
+    actionButton.innerHTML = this.renderIcon('download');
     container.appendChild(actionButton);
 
     const setStatus = (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => {
       switch (state) {
         case 'loading':
-          statusIcon.innerHTML = faIcon('spinner', true);
+          statusIcon.innerHTML = this.renderIcon('spinner', true);
           statusIcon.style.color = '#0ea5e9';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Adding to Whisparr');
           return;
         case 'in':
-          statusIcon.innerHTML = faIcon('circle-check');
+          statusIcon.innerHTML = this.renderIcon('circle-check');
           statusIcon.style.color = '#16a34a';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Already in Whisparr');
           return;
         case 'excluded':
-          statusIcon.innerHTML = faIcon('ban');
+          statusIcon.innerHTML = this.renderIcon('ban');
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Excluded from Whisparr');
           return;
         case 'error':
-          statusIcon.innerHTML = faIcon('ban');
+          statusIcon.innerHTML = this.renderIcon('ban');
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
@@ -1030,7 +1027,7 @@ class SceneCardObserver {
           return;
         case 'out':
         default:
-          statusIcon.innerHTML = faIcon('download');
+          statusIcon.innerHTML = this.renderIcon('download');
           statusIcon.style.color = '#0ea5e9';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
@@ -1039,6 +1036,10 @@ class SceneCardObserver {
     };
 
     setStatus('out');
+    const cachedStatus = this.statusBySceneId.get(scene.sceneId);
+    if (cachedStatus) {
+      setStatus(cachedStatus.exists ? 'in' : 'out');
+    }
 
     actionButton.addEventListener('click', async (event) => {
       event.preventDefault();
@@ -1061,6 +1062,9 @@ class SceneCardObserver {
         setStatus('error');
       }
     });
+
+    container.dataset.sceneId = scene.sceneId;
+    container.dataset.sceneStatus = 'out';
 
     const imageAnchor =
       card.querySelector<HTMLAnchorElement>('a.SceneCard-image') ?? anchor;
@@ -1094,6 +1098,124 @@ class SceneCardObserver {
       card.appendChild(container);
     }
     return container;
+  }
+
+  private enqueueStatus(scene: SceneCardData) {
+    if (this.statusBySceneId.has(scene.sceneId)) {
+      return;
+    }
+    this.statusQueue.set(scene.sceneId, scene);
+    if (this.statusDebounceHandle !== null) {
+      window.clearTimeout(this.statusDebounceHandle);
+    }
+    this.statusDebounceHandle = window.setTimeout(() => {
+      this.statusDebounceHandle = null;
+      void this.flushStatusQueue();
+    }, 250);
+  }
+
+  private async flushStatusQueue() {
+    if (this.statusInFlight) {
+      return;
+    }
+    if (this.statusQueue.size === 0) {
+      return;
+    }
+    const runtime = extContent?.runtime;
+    if (!runtime) {
+      return;
+    }
+    const items = Array.from(this.statusQueue.values());
+    this.statusQueue.clear();
+    this.statusInFlight = true;
+    try {
+      const response = await runtime.sendMessage({
+        type: 'SCENE_CARDS_CHECK_STATUS',
+        items,
+      });
+      if (!response.ok || !response.results) {
+        this.applyStatusError(items.map((item) => item.sceneId));
+        return;
+      }
+      for (const result of response.results) {
+        this.statusBySceneId.set(result.sceneId, {
+          exists: result.exists,
+          whisparrId: result.whisparrId,
+          monitored: result.monitored,
+          tagIds: result.tagIds,
+        });
+      }
+      this.applyStatusResults(response.results);
+    } catch {
+      this.applyStatusError(items.map((item) => item.sceneId));
+    } finally {
+      this.statusInFlight = false;
+    }
+  }
+
+  private applyStatusResults(
+    results: Array<{ sceneId: string; exists: boolean }>,
+  ) {
+    for (const result of results) {
+      const target = this.findInjectedBySceneId(result.sceneId);
+      if (!target) continue;
+      const icon = target.querySelector<HTMLElement>('.stasharr-scene-card-status span');
+      if (!icon) continue;
+      if (result.exists) {
+        icon.innerHTML = this.renderIcon('circle-check');
+        icon.style.color = '#16a34a';
+        target.dataset.sceneStatus = 'in';
+      } else {
+        icon.innerHTML = this.renderIcon('download');
+        icon.style.color = '#0ea5e9';
+        target.dataset.sceneStatus = 'out';
+      }
+    }
+  }
+
+  private applyStatusError(sceneIds: string[]) {
+    for (const sceneId of sceneIds) {
+      const target = this.findInjectedBySceneId(sceneId);
+      if (!target) continue;
+      const icon = target.querySelector<HTMLElement>('.stasharr-scene-card-status span');
+      if (!icon) continue;
+      icon.innerHTML = this.renderIcon('ban');
+      icon.style.color = '#ef4444';
+      target.dataset.sceneStatus = 'error';
+    }
+  }
+
+  private findInjectedBySceneId(sceneId: string) {
+    for (const node of this.injectedByCard.values()) {
+      if (node.dataset.sceneId === sceneId) {
+        return node;
+      }
+    }
+    return null;
+  }
+
+  private ensureIconStyles() {
+    if (document.getElementById('stasharr-fa-style')) return;
+    const style = document.createElement('style');
+    style.id = 'stasharr-fa-style';
+    style.textContent = '@keyframes stasharr-spin { to { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
+  }
+
+  private renderIcon(name: 'spinner' | 'circle-check' | 'download' | 'ban', spin = false) {
+    const paths: Record<typeof name, string> = {
+      spinner: 'M12 2a10 10 0 1 0 10 10h-3a7 7 0 1 1-7-7V2z',
+      'circle-check': 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm5 7-6 6-3-3 1.4-1.4L11 12.2l4.6-4.6L17 9z',
+      download: 'M12 3v9m0 0 4-4m-4 4-4-4M5 19h14',
+      ban: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-6.2 5.8L18.2 18.2M18.2 5.8 5.8 18.2',
+    };
+    this.ensureIconStyles();
+    const spinStyle = spin ? 'animation: stasharr-spin 1s linear infinite;' : '';
+    const strokeIcons = name === 'download' || name === 'ban';
+    if (strokeIcons) {
+      return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[name]}"></path></svg>`;
+    }
+    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}"><path d="${paths[name]}"></path></svg>`;
   }
 }
 

@@ -17,6 +17,7 @@ export const MESSAGE_TYPES = {
   updateTags: 'UPDATE_TAGS',
   updateQualityProfile: 'UPDATE_QUALITY_PROFILE',
   sceneCardActionRequested: 'SCENE_CARD_ACTION_REQUESTED',
+  sceneCardsCheckStatus: 'SCENE_CARDS_CHECK_STATUS',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -231,6 +232,24 @@ export type SceneCardActionRequestedResponse = {
   error?: string;
 };
 
+export type SceneCardsCheckStatusRequest = {
+  type: typeof MESSAGE_TYPES.sceneCardsCheckStatus;
+  items: Array<{ sceneId: string; sceneUrl: string }>;
+};
+
+export type SceneCardsCheckStatusResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.sceneCardsCheckStatus;
+  results?: Array<{
+    sceneId: string;
+    exists: boolean;
+    whisparrId?: number;
+    monitored?: boolean;
+    tagIds?: number[];
+  }>;
+  error?: string;
+};
+
 export type SaveSelectionsRequest = {
   type: typeof MESSAGE_TYPES.saveSelections;
   selections: {
@@ -274,7 +293,8 @@ export type ExtensionRequest =
   | SetMonitorStateRequest
   | UpdateTagsRequest
   | UpdateQualityProfileRequest
-  | SceneCardActionRequestedRequest;
+  | SceneCardActionRequestedRequest
+  | SceneCardsCheckStatusRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -295,4 +315,5 @@ export type ExtensionResponse =
   | UpdateTagsResponse
   | UpdateQualityProfileResponse
   | SceneCardActionRequestedResponse
+  | SceneCardsCheckStatusResponse
   | { ok: false; type: MessageType; error: string };
