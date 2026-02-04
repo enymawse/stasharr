@@ -854,6 +854,10 @@ class SceneCardObserver {
       const card = this.findCardContainer(anchor);
       if (!card) continue;
       if (card.dataset.stasharrAugmented === 'true') continue;
+      if (card.querySelector('.stasharr-scene-card')) {
+        card.dataset.stasharrAugmented = 'true';
+        continue;
+      }
       const injected = this.injectControls(card, scene);
       if (injected) {
         card.dataset.stasharrAugmented = 'true';
