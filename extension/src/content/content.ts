@@ -963,7 +963,13 @@ class SceneCardObserver {
       card.querySelector('[class*="CardFooter"]') ??
       card.querySelector('[class*="Footer"]') ??
       card.querySelector('[data-testid*="footer"]');
-    if (footer && footer.parentElement === card) {
+    const body =
+      card.querySelector('[class*="CardBody"]') ??
+      card.querySelector('[class*="Body"]') ??
+      card.querySelector('[data-testid*="body"]');
+    if (body && body.parentElement === card) {
+      card.insertBefore(container, body.nextSibling);
+    } else if (footer && footer.parentElement === card) {
       card.insertBefore(container, footer);
     } else {
       card.appendChild(container);
