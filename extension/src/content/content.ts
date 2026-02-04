@@ -238,6 +238,7 @@ if (!document.getElementById(PANEL_ID)) {
   checkStatusButton.style.cursor = 'pointer';
   checkStatusButton.style.background = '#0f766e';
   checkStatusButton.style.color = '#ffffff';
+  checkStatusButton.style.flex = '1';
   actionRow.appendChild(checkStatusButton);
 
   const addSceneButton = document.createElement('button');
@@ -249,6 +250,7 @@ if (!document.getElementById(PANEL_ID)) {
   addSceneButton.style.cursor = 'pointer';
   addSceneButton.style.background = '#2563eb';
   addSceneButton.style.color = '#ffffff';
+  addSceneButton.style.flex = '1';
   applyDisabledStyles(addSceneButton, true);
   actionRow.appendChild(addSceneButton);
 
@@ -267,6 +269,7 @@ if (!document.getElementById(PANEL_ID)) {
   monitorToggle.style.cursor = 'pointer';
   monitorToggle.style.background = '#7c3aed';
   monitorToggle.style.color = '#ffffff';
+  monitorToggle.style.flex = '1';
   applyDisabledStyles(monitorToggle, true);
   monitorRow.appendChild(monitorToggle);
 
@@ -279,6 +282,7 @@ if (!document.getElementById(PANEL_ID)) {
   excludeToggle.style.cursor = 'pointer';
   excludeToggle.style.background = '#ef4444';
   excludeToggle.style.color = '#ffffff';
+  excludeToggle.style.flex = '1';
   applyDisabledStyles(excludeToggle, true);
   monitorRow.appendChild(excludeToggle);
 
