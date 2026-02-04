@@ -900,11 +900,19 @@ class SceneCardObserver {
     ];
     for (const selector of selectors) {
       const match = anchor.closest(selector);
-      if (match instanceof HTMLElement) {
+      if (match instanceof HTMLElement && match.tagName !== 'A') {
         return match;
       }
     }
-    return anchor.closest('article, li, .card, [class*="Card"], [class*="SceneCard"], [data-testid*="scene"]');
+    const fallback = anchor.closest('article, li, .card, [class*="Card"], [class*="SceneCard"], [data-testid*="scene"]');
+    if (fallback instanceof HTMLElement && fallback.tagName !== 'A') {
+      return fallback;
+    }
+    const explicit = anchor.closest('.SceneCard.card');
+    if (explicit instanceof HTMLElement && explicit.tagName !== 'A') {
+      return explicit;
+    }
+    return null;
   }
 
   private injectControls(card: HTMLElement, scene: SceneCardData) {
