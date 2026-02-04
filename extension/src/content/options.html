@@ -27,6 +27,13 @@
         padding: 16px;
         border-radius: 12px;
       }
+      .section-title {
+        margin: 0 0 4px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #cbd5f5;
+      }
       label {
         display: flex;
         flex-direction: column;
@@ -102,6 +109,7 @@
     <main>
       <h1>Stasharr Options</h1>
       <section class="panel">
+        <h2 class="section-title">Whisparr Configuration</h2>
         <label>
           Whisparr Base URL
           <input
@@ -134,6 +142,7 @@
       <div class="divider"></div>
 
       <section class="panel">
+        <h2 class="section-title">Stash Configuration</h2>
         <label>
           Stash Base URL
           <input
@@ -167,10 +176,12 @@
 
       <section class="panel">
         <div class="row">
-          <strong>Configuration lists</strong>
+          <strong>Whisparr Configuration Lists</strong>
           <button type="button" data-action="refresh">Refresh lists</button>
         </div>
-        <p data-discovery-status class="muted">Validate to load configuration lists.</p>
+        <p data-discovery-status class="muted">
+          Whisparr validation is required before loading these lists.
+        </p>
 
         <label>
           Quality Profile
