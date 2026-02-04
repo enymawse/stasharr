@@ -1246,7 +1246,14 @@ async function handleSceneCardsCheckStatus(
     const monitored =
       typeof first.monitored === 'boolean' ? first.monitored : undefined;
     const tagIds = normalizeTags(first.tags);
-    const hasFile = typeof first.hasFile === 'boolean' ? first.hasFile : undefined;
+    const hasFile =
+      typeof first.hasFile === 'boolean'
+        ? first.hasFile
+        : typeof first.fileCount === 'number'
+          ? first.fileCount > 0
+          : isRecord(first.movieFile)
+            ? true
+            : undefined;
     const entry: SceneCardStatusEntry = {
       exists: true,
       whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
