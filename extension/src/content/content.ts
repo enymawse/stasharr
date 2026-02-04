@@ -991,6 +991,7 @@ class SceneCardObserver {
   private statusQueue = new Map<string, SceneCardMeta>();
   private statusDebounceHandle: number | null = null;
   private statusInFlight = false;
+  private lastUrl = window.location.href;
 
   start() {
     this.scan(document.body);
@@ -1007,6 +1008,26 @@ class SceneCardObserver {
       }
     });
     this.observer.observe(document.body, { childList: true, subtree: true });
+    const checkNavigation = () => {
+      if (window.location.href !== this.lastUrl) {
+        this.lastUrl = window.location.href;
+        this.resetStatusCache();
+        this.scan(document.body);
+      }
+    };
+    window.addEventListener('popstate', checkNavigation);
+    window.setInterval(checkNavigation, 500);
+  }
+
+  private resetStatusCache() {
+    this.statusQueue.clear();
+    this.statusInFlight = false;
+    for (const [sceneId, entry] of this.statusBySceneId.entries()) {
+      this.statusBySceneId.set(sceneId, {
+        ...entry,
+        statusKnown: false,
+      });
+    }
   }
 
   private scheduleScan() {
