@@ -16,6 +16,7 @@ const MESSAGE_TYPES = {
   updateQualityProfile: 'UPDATE_QUALITY_PROFILE',
   sceneCardActionRequested: 'SCENE_CARD_ACTION_REQUESTED',
   sceneCardsCheckStatus: 'SCENE_CARDS_CHECK_STATUS',
+  sceneCardAdd: 'SCENE_CARD_ADD',
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
 } as const;
@@ -1160,6 +1161,91 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
   return { ok: true, type: MESSAGE_TYPES.sceneCardsCheckStatus, results };
 }
 
+async function handleSceneCardAdd(request: { type?: string; [key: string]: unknown }) {
+  if (request.type !== MESSAGE_TYPES.sceneCardAdd) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: 'Invalid request type.' };
+  }
+
+  const sceneId = typeof request.sceneId === 'string' ? request.sceneId.trim() : '';
+  const sceneUrl = typeof request.sceneUrl === 'string' ? request.sceneUrl.trim() : '';
+  if (!sceneId || !sceneUrl) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: 'Scene ID and URL are required.' };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: normalized.error ?? 'Invalid base URL.' };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: 'API key is required.' };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: 'Permissions API not available.' };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: `Permission missing for ${origin}` };
+  }
+
+  const selections = await getSelections();
+  const qualityProfileId = selections.whisparr.qualityProfileId;
+  const rootFolderPath = selections.whisparr.rootFolderPath;
+  if (!qualityProfileId || !rootFolderPath) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: 'Missing quality profile or root folder selection.' };
+  }
+
+  const lookup = await fetchSceneLookup(normalized.value, apiKey, sceneId);
+  if (!lookup.scene) {
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: lookup.error ?? 'Lookup failed.' };
+  }
+
+  const foreignId = typeof lookup.scene.foreignId === 'string' ? lookup.scene.foreignId : `stash:${sceneId}`;
+  const title = typeof lookup.scene.title === 'string' ? lookup.scene.title : undefined;
+
+  const payload = {
+    qualityProfileId,
+    rootFolderPath,
+    tags: selections.whisparr.tagIds ?? [],
+    searchForMovie: true,
+    foreignId,
+    title,
+  };
+
+  const response = await handleFetchJson({
+    url: `${normalized.value}/api/v3/movie`,
+    method: 'POST',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401 || status === 403) {
+      return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: 'Unauthorized (check API key).' };
+    }
+    if (status === 400) {
+      return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: 'Validation failed (check selections).' };
+    }
+    return { ok: false, type: MESSAGE_TYPES.sceneCardAdd, error: response.error ?? `HTTP ${status}` };
+  }
+
+  const whisparrId = response.json && isRecord(response.json) ? Number(response.json.id) : undefined;
+  sceneCardStatusCache.set(sceneId, {
+    exists: true,
+    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+    monitored: response.json && isRecord(response.json) && typeof response.json.monitored === 'boolean' ? response.json.monitored : undefined,
+    tagIds: response.json && isRecord(response.json) ? normalizeTags(response.json.tags) : undefined,
+    fetchedAt: Date.now(),
+  });
+
+  return { ok: true, type: MESSAGE_TYPES.sceneCardAdd, whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -1239,6 +1325,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.sceneCardsCheckStatus) {
       return handleSceneCardsCheckStatus(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.sceneCardAdd) {
+      return handleSceneCardAdd(request);
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {

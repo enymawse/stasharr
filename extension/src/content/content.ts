@@ -15,15 +15,14 @@ type UpdateQualityProfileRequest = {
   whisparrId: number;
   qualityProfileId: number;
 };
-type SceneCardActionRequestedRequest = {
-  type: 'SCENE_CARD_ACTION_REQUESTED';
-  sceneId: string;
-  sceneUrl: string;
-  action: 'stub_add';
-};
 type SceneCardsCheckStatusRequest = {
   type: 'SCENE_CARDS_CHECK_STATUS';
   items: Array<{ sceneId: string; sceneUrl: string }>;
+};
+type SceneCardAddRequest = {
+  type: 'SCENE_CARD_ADD';
+  sceneId: string;
+  sceneUrl: string;
 };
 
 type ContentRuntime = {
@@ -39,8 +38,8 @@ type ContentRuntime = {
         | FetchDiscoveryCatalogsRequest
         | UpdateTagsRequest
         | UpdateQualityProfileRequest
-        | SceneCardActionRequestedRequest
-        | SceneCardsCheckStatusRequest,
+        | SceneCardsCheckStatusRequest
+        | SceneCardAddRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
@@ -839,6 +838,13 @@ class SceneCardObserver {
     }
   >();
   private statusIconBySceneId = new Map<string, HTMLElement>();
+  private actionBySceneId = new Map<
+    string,
+    {
+      button: HTMLButtonElement;
+      setStatus: (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => void;
+    }
+  >();
   private statusQueue = new Map<string, { sceneId: string; sceneUrl: string }>();
   private statusDebounceHandle: number | null = null;
   private statusInFlight = false;
@@ -1011,6 +1017,7 @@ class SceneCardObserver {
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Already in Whisparr');
+          actionButton.textContent = 'Added';
           return;
         case 'excluded':
           statusIcon.innerHTML = this.renderIcon('ban');
@@ -1018,6 +1025,7 @@ class SceneCardObserver {
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.setAttribute('aria-label', 'Excluded from Whisparr');
+          actionButton.textContent = 'Excluded';
           return;
         case 'error':
           statusIcon.innerHTML = this.renderIcon('ban');
@@ -1025,6 +1033,7 @@ class SceneCardObserver {
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
           actionButton.setAttribute('aria-label', 'Error, try again');
+          actionButton.textContent = 'Retry';
           return;
         case 'out':
         default:
@@ -1033,6 +1042,7 @@ class SceneCardObserver {
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
           actionButton.setAttribute('aria-label', 'Add to Whisparr');
+          actionButton.textContent = 'Add';
       }
     };
 
@@ -1053,10 +1063,9 @@ class SceneCardObserver {
       }
       try {
         const response = await runtime.sendMessage({
-          type: 'SCENE_CARD_ACTION_REQUESTED',
+          type: 'SCENE_CARD_ADD',
           sceneId: scene.sceneId,
           sceneUrl: scene.sceneUrl,
-          action: 'stub_add',
         });
         setStatus(response.ok ? 'in' : 'error');
       } catch {
@@ -1082,6 +1091,7 @@ class SceneCardObserver {
     }
 
     this.statusIconBySceneId.set(scene.sceneId, statusIcon);
+    this.actionBySceneId.set(scene.sceneId, { button: actionButton, setStatus });
 
     const footer =
       card.querySelector('.card-footer') ??
@@ -1165,9 +1175,17 @@ class SceneCardObserver {
       if (result.exists) {
         icon.innerHTML = this.renderIcon('circle-check');
         icon.style.color = '#16a34a';
+        const action = this.actionBySceneId.get(result.sceneId);
+        if (action) {
+          action.setStatus('in');
+        }
       } else {
         icon.innerHTML = this.renderIcon('download');
         icon.style.color = '#7138c8';
+        const action = this.actionBySceneId.get(result.sceneId);
+        if (action) {
+          action.setStatus('out');
+        }
       }
     }
   }
@@ -1178,6 +1196,10 @@ class SceneCardObserver {
       if (!icon) continue;
       icon.innerHTML = this.renderIcon('ban');
       icon.style.color = '#ef4444';
+      const action = this.actionBySceneId.get(sceneId);
+      if (action) {
+        action.setStatus('error');
+      }
     }
   }
 

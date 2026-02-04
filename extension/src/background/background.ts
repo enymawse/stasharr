@@ -16,6 +16,7 @@ import {
   type UpdateQualityProfileResponse,
   type SceneCardActionRequestedResponse,
   type SceneCardsCheckStatusResponse,
+  type SceneCardAddResponse,
 } from '../shared/messages.js';
 import {
   getCatalogs,
@@ -1262,6 +1263,156 @@ async function handleSceneCardsCheckStatus(
   return { ok: true, type: MESSAGE_TYPES_BG.sceneCardsCheckStatus, results };
 }
 
+async function handleSceneCardAdd(
+  request: ExtensionRequest,
+): Promise<SceneCardAddResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.sceneCardAdd) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const sceneId = request.sceneId?.trim();
+  const sceneUrl = request.sceneUrl?.trim();
+  if (!sceneId || !sceneUrl) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: 'Scene ID and URL are required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const selections = await getSelections();
+  const qualityProfileId = selections.whisparr.qualityProfileId;
+  const rootFolderPath = selections.whisparr.rootFolderPath;
+  if (!qualityProfileId || !rootFolderPath) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: 'Missing quality profile or root folder selection.',
+    };
+  }
+
+  const lookup = await fetchSceneLookup(normalized.value, apiKey, sceneId);
+  if (!lookup.scene) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: lookup.error ?? 'Lookup failed.',
+    };
+  }
+
+  const foreignId =
+    typeof lookup.scene.foreignId === 'string'
+      ? lookup.scene.foreignId
+      : `stash:${sceneId}`;
+  const title =
+    typeof lookup.scene.title === 'string' ? lookup.scene.title : undefined;
+
+  const payload: AddScenePayload = {
+    qualityProfileId,
+    rootFolderPath,
+    tags: selections.whisparr.tagIds ?? [],
+    searchForMovie: true,
+    foreignId,
+    title,
+  };
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES_BG.fetchJson,
+    url: `${normalized.value}/api/v3/movie`,
+    method: 'POST',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401 || status === 403) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.sceneCardAdd,
+        error: 'Unauthorized (check API key).',
+      };
+    }
+    if (status === 400) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES_BG.sceneCardAdd,
+        error: 'Validation failed (check selections).',
+      };
+    }
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.sceneCardAdd,
+      error: response.error ?? `HTTP ${status}`,
+    };
+  }
+
+  const whisparrId =
+    response.json && isRecord(response.json)
+      ? Number(response.json.id)
+      : undefined;
+
+  sceneCardStatusCache.set(sceneId, {
+    exists: true,
+    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+    monitored:
+      response.json && isRecord(response.json) && typeof response.json.monitored === 'boolean'
+        ? response.json.monitored
+        : undefined,
+    tagIds:
+      response.json && isRecord(response.json)
+        ? normalizeTags(response.json.tags)
+        : undefined,
+    fetchedAt: Date.now(),
+  });
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.sceneCardAdd,
+    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+  };
+}
+
 async function handleCheckSceneStatus(
   request: ExtensionRequest,
 ): Promise<CheckSceneStatusResponse> {
@@ -1513,6 +1664,10 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.sceneCardsCheckStatus) {
         return handleSceneCardsCheckStatus(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.sceneCardAdd) {
+        return handleSceneCardAdd(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {
