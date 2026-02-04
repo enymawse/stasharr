@@ -857,6 +857,7 @@ class SceneCardObserver {
       excluded?: boolean;
       title?: string;
       year?: number;
+      statusKnown?: boolean;
     }
   >();
   private statusIconBySceneId = new Map<string, HTMLElement>();
@@ -937,6 +938,7 @@ class SceneCardObserver {
         ...cached,
         title: scene.title ?? cached.title,
         year: scene.year ?? cached.year,
+        statusKnown: cached.statusKnown ?? false,
       });
       this.enqueueStatus(scene);
     }
@@ -1408,7 +1410,7 @@ class SceneCardObserver {
 
   private enqueueStatus(scene: SceneCardMeta) {
     const cached = this.statusBySceneId.get(scene.sceneId);
-    if (cached && typeof cached.exists === 'boolean') {
+    if (cached?.statusKnown) {
       return;
     }
     this.statusQueue.set(scene.sceneId, scene);
@@ -1455,6 +1457,7 @@ class SceneCardObserver {
           excluded: result.excluded,
           title: existing?.title,
           year: existing?.year,
+          statusKnown: true,
         });
       }
       this.applyStatusResults(response.results);
