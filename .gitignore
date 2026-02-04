@@ -2,5 +2,4 @@ node_modules
 dist/
 .env
 extension/dist/
-extension/docs/
 legacy/userscript/dist/
