@@ -101,7 +101,7 @@ const CATALOGS_KEY = 'stasharrCatalogs';
 const SELECTIONS_KEY = 'stasharrSelections';
 const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
-const SCENE_CARD_STATUS_TTL_MS = 10 * 60 * 1000;
+const SCENE_CARD_STATUS_TTL_MS = 0;
 const SCENE_CARD_STATUS_BATCH_LIMIT = 25;
 
 async function getSettings(): Promise<ExtensionSettings> {
@@ -1108,23 +1108,7 @@ async function handleSceneCardsCheckStatus(request: { type?: string; [key: strin
     return { ok: false, type: MESSAGE_TYPES.sceneCardsCheckStatus, error: `Permission missing for ${origin}` };
   }
 
-  const pendingIds: string[] = [];
-  for (const [sceneId] of uniqueItems.entries()) {
-    const cached = sceneCardStatusCache.get(sceneId);
-    if (cached && now - cached.fetchedAt < SCENE_CARD_STATUS_TTL_MS) {
-      results.push({
-        sceneId,
-        exists: cached.exists,
-        whisparrId: cached.whisparrId,
-        monitored: cached.monitored,
-        tagIds: cached.tagIds,
-      });
-    } else {
-      pendingIds.push(sceneId);
-    }
-  }
-
-  for (const sceneId of pendingIds) {
+  for (const sceneId of uniqueItems.keys()) {
     const response = await handleFetchJson({
       url: `${normalized.value}/api/v3/movie?stashId=${encodeURIComponent(sceneId)}`,
       headers: { 'X-Api-Key': apiKey },
