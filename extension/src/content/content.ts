@@ -965,35 +965,48 @@ class SceneCardObserver {
     actionButton.style.alignItems = 'center';
     actionButton.style.justifyContent = 'center';
     actionButton.style.gap = '4px';
-    actionButton.innerHTML = '<i class="fa-solid fa-download" aria-hidden="true"></i>';
+    const faIcon = (name: 'spinner' | 'circle-check' | 'download' | 'ban') => {
+      const paths: Record<typeof name, string> = {
+        spinner:
+          'M456.433 371.72l-27.814-16.065a32 32 0 0 0-43.617 11.707A160 160 0 1 1 427.6 150.8a32 32 0 0 0 43.55 12.54l27.82-16.06a32 32 0 0 0 12.54-43.55C432.45 63.98 350.1 0 256 0 114.62 0 0 114.62 0 256s114.62 256 256 256c98.6 0 182.7-55.07 226.1-136.1a32 32 0 0 0-11.7-43.6z',
+        'circle-check':
+          'M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 48c110.5 0 200 89.5 200 200s-89.5 200-200 200S56 366.5 56 256 145.5 56 256 56zm140.7 112.7l-20.1-20.1c-9.4-9.4-24.6-9.4-33.9 0L215 276.3l-57.7-57.7c-9.4-9.4-24.6-9.4-33.9 0l-20.1 20.1c-9.4 9.4-9.4 24.6 0 33.9l78.6 78.6c9.4 9.4 24.6 9.4 33.9 0l161-161c9.4-9.4 9.4-24.6 0-33.9z',
+        download:
+          'M480 352h-96V32c0-17.7-14.3-32-32-32h-64c-17.7 0-32 14.3-32 32v320H160c-28.4 0-42.8 34.5-22.6 54.6l160 160c12.5 12.5 32.8 12.5 45.3 0l160-160C522.8 386.5 508.4 352 480 352zM32 480v-32c0-17.7 14.3-32 32-32h416c17.7 0 32 14.3 32 32v32c0 17.7-14.3 32-32 32H64c-17.7 0-32-14.3-32-32z',
+        ban:
+          'M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 48c49.1 0 94.6 17.3 130.4 46.1L102.1 386.4C73.3 350.6 56 305.1 56 256 56 141.1 141.1 56 256 56zm0 400c-49.1 0-94.6-17.3-130.4-46.1L409.9 125.6C438.7 161.4 456 206.9 456 256c0 114.9-85.1 200-200 200z',
+      };
+      return `<svg viewBox="0 0 512 512" width="12" height="12" aria-hidden="true" focusable="false" style="display:block; fill: currentColor;"><path d="${paths[name]}"></path></svg>`;
+    };
+    actionButton.innerHTML = faIcon('download');
     container.appendChild(actionButton);
 
     const setStatus = (state: 'loading' | 'in' | 'out' | 'excluded' | 'error') => {
       switch (state) {
         case 'loading':
           status.textContent = 'Adding...';
-          statusIcon.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+          statusIcon.innerHTML = faIcon('spinner');
           statusIcon.style.color = '#0ea5e9';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           return;
         case 'in':
           status.textContent = 'In Whisparr';
-          statusIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+          statusIcon.innerHTML = faIcon('circle-check');
           statusIcon.style.color = '#16a34a';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           return;
         case 'excluded':
           status.textContent = 'Excluded';
-          statusIcon.innerHTML = '<i class="fa-solid fa-ban"></i>';
+          statusIcon.innerHTML = faIcon('ban');
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           return;
         case 'error':
           status.textContent = 'Error';
-          statusIcon.innerHTML = '<i class="fa-solid fa-ban"></i>';
+          statusIcon.innerHTML = faIcon('ban');
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
@@ -1001,7 +1014,7 @@ class SceneCardObserver {
         case 'out':
         default:
           status.textContent = 'Not in Whisparr';
-          statusIcon.innerHTML = '<i class="fa-solid fa-download"></i>';
+          statusIcon.innerHTML = faIcon('download');
           statusIcon.style.color = '#0ea5e9';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
