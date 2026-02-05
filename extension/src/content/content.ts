@@ -1531,6 +1531,7 @@ class SceneCardObserver {
     viewWhisparrButton.appendChild(whisparrIcon);
     viewWhisparrButton.disabled = true;
     viewWhisparrButton.style.opacity = '0.6';
+    viewWhisparrButton.style.cursor = 'not-allowed';
 
     const viewStashButton = document.createElement('button');
     viewStashButton.type = 'button';
@@ -1556,6 +1557,7 @@ class SceneCardObserver {
     viewStashButton.appendChild(stashIcon);
     viewStashButton.disabled = true;
     viewStashButton.style.opacity = '0.6';
+    viewStashButton.style.cursor = 'not-allowed';
     const viewWrap = document.createElement('div');
     viewWrap.style.display = 'inline-flex';
     viewWrap.style.alignItems = 'center';
@@ -1688,9 +1690,6 @@ class SceneCardObserver {
       viewStashButton.style.opacity = enabled ? '1' : '0.6';
       viewStashButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
       viewStashButton.title = title ?? (enabled ? 'View in Stash' : 'No match in Stash');
-      if (!enabled) {
-        viewStashButton.innerHTML = this.renderIcon('external-link');
-      }
     };
 
     const setStashLoading = () => {
