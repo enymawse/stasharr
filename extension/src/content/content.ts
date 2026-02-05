@@ -1,4 +1,9 @@
 import { sendMessage } from '../shared/messaging.js';
+import {
+  createDebouncedMutationObserver,
+  createLocationObserver,
+} from './dom/observer.js';
+import { extractSceneIdFromPathname, parseStashDbPage } from './parsing.js';
 import { createIconButton, setButtonState } from './ui/buttons.js';
 import { renderIcon } from './ui/icons.js';
 import { createStatusIndicator } from './ui/statusIndicator.js';
@@ -204,28 +209,7 @@ function applyDisabledStyles(button: HTMLButtonElement, disabled: boolean) {
 }
 
 function getParsedPage() {
-  return (
-    (
-      globalThis as {
-        StasharrPageParser?: {
-          parseStashDbPage: (
-            doc: Document,
-            loc: Location,
-          ) => {
-            type: string;
-            stashIds: string[];
-            canonicalUrl: string | null;
-            url: string;
-          };
-        };
-      }
-    ).StasharrPageParser?.parseStashDbPage(document, window.location) ?? {
-      type: 'other',
-      stashIds: [],
-      canonicalUrl: null,
-      url: window.location.href,
-    }
-  );
+  return parseStashDbPage(document, window.location);
 }
 
 if (!document.getElementById(PANEL_ID)) {
@@ -1280,7 +1264,6 @@ type SceneCardMeta = {
 class SceneCardObserver {
   // Dev checklist: missing indicator renders for hasFile=false, search triggers background, UI shows loading/success/error.
   private observer: MutationObserver | null = null;
-  private debounceHandle: number | null = null;
   private injectedByCard = new Map<HTMLElement, HTMLElement>();
   private statusBySceneId = new Map<
     string,
@@ -1360,36 +1343,22 @@ class SceneCardObserver {
   private statusQueue = new Map<string, SceneCardMeta>();
   private statusDebounceHandle: number | null = null;
   private statusInFlight = false;
-  private lastUrl = window.location.href;
 
   start() {
     this.scan(document.body);
     void this.refreshLinkSettings();
-    this.observer = new MutationObserver((mutations) => {
-      let shouldScan = false;
-      for (const mutation of mutations) {
-        if (
-          mutation.addedNodes.length > 0 ||
-          mutation.removedNodes.length > 0
-        ) {
-          shouldScan = true;
-          break;
-        }
-      }
-      if (shouldScan) {
-        this.scheduleScan();
-      }
+    this.observer = createDebouncedMutationObserver({
+      target: document.body,
+      onChange: () => this.scan(document.body),
+      debounceMs: 150,
     });
-    this.observer.observe(document.body, { childList: true, subtree: true });
-    const checkNavigation = () => {
-      if (window.location.href !== this.lastUrl) {
-        this.lastUrl = window.location.href;
+    createLocationObserver({
+      onChange: () => {
         this.resetStatusCache();
         this.scan(document.body);
-      }
-    };
-    window.addEventListener('popstate', checkNavigation);
-    window.setInterval(checkNavigation, 500);
+      },
+      intervalMs: 500,
+    });
   }
 
   private async refreshLinkSettings() {
@@ -1470,16 +1439,6 @@ class SceneCardObserver {
     }
   }
 
-  private scheduleScan() {
-    if (this.debounceHandle !== null) {
-      window.clearTimeout(this.debounceHandle);
-    }
-    this.debounceHandle = window.setTimeout(() => {
-      this.debounceHandle = null;
-      this.scan(document.body);
-    }, 150);
-  }
-
   private scan(root: ParentNode) {
     this.cleanup();
     const anchors = Array.from(
@@ -1531,8 +1490,8 @@ class SceneCardObserver {
     } catch {
       return null;
     }
-    const match = url.pathname.match(/^\/scenes\/([^/?#]+)/);
-    if (!match) return null;
+    const sceneId = extractSceneIdFromPathname(url.pathname);
+    if (!sceneId) return null;
     const card = this.findCardContainer(anchor);
     let title: string | undefined;
     let year: number | undefined;
@@ -1553,7 +1512,7 @@ class SceneCardObserver {
         year = Number(yearMatch[1]);
       }
     }
-    return { sceneId: match[1], sceneUrl: url.toString(), title, year };
+    return { sceneId, sceneUrl: url.toString(), title, year };
   }
 
   private findCardContainer(anchor: HTMLAnchorElement): HTMLElement | null {
