@@ -94,10 +94,6 @@ type SceneCardStatusEntry = {
   fetchedAt: number;
 };
 
-const sceneCardStatusCache = createTtlCache<string, SceneCardStatusEntry>({
-  ttlMs: SCENE_CARD_STATUS_TTL_MS,
-});
-
 type StorageArea = {
   get: (keys?: string[] | string | null) => Promise<Record<string, unknown>>;
   set: (items: Record<string, unknown>) => Promise<void>;
@@ -145,6 +141,10 @@ const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
 const SCENE_CARD_STATUS_TTL_MS = 0;
 const SCENE_CARD_STATUS_BATCH_LIMIT = 25;
+
+const sceneCardStatusCache = createTtlCache<string, SceneCardStatusEntry>({
+  ttlMs: SCENE_CARD_STATUS_TTL_MS,
+});
 
 async function getSettings(): Promise<ExtensionSettings> {
   const result = await ext.storage.local.get(SETTINGS_KEY);
