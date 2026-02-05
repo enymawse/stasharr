@@ -3,6 +3,25 @@ import {
   createBaseHandlers,
   registerBackgroundListener,
 } from './core.js';
+import {
+  handleAddScene as handleAddSceneShared,
+  handleCheckSceneStatus as handleCheckSceneStatusShared,
+  handleFetchDiscoveryCatalogs as handleFetchDiscoveryCatalogsShared,
+  handleSaveSelections as handleSaveSelectionsShared,
+  handleSceneCardAction as handleSceneCardActionShared,
+  handleSceneCardAdd as handleSceneCardAddShared,
+  handleSceneCardsCheckStatus as handleSceneCardsCheckStatusShared,
+  handleSceneCardSetExcluded as handleSceneCardSetExcludedShared,
+  handleSceneCardTriggerSearch as handleSceneCardTriggerSearchShared,
+  handleSetMonitorState as handleSetMonitorStateShared,
+  handleUpdateQualityProfile as handleUpdateQualityProfileShared,
+  handleUpdateTags as handleUpdateTagsShared,
+  handleValidateWhisparrConnection as handleValidateWhisparrConnectionShared,
+} from './services/whisparr.js';
+import {
+  handleStashFindSceneByStashdbId as handleStashFindSceneByStashdbIdShared,
+  handleValidateStashConnection as handleValidateStashConnectionShared,
+} from './services/stash.js';
 import { fetchWithTimeout } from './http.js';
 
 const MESSAGE_TYPES = {
@@ -2300,9 +2319,9 @@ const handlers: Record<
       },
     ),
   [MESSAGE_TYPES.validateConnection]: (request) =>
-    handleValidateConnection(
-      request as { baseUrl?: string; apiKey?: string; kind?: string },
-    ),
+    (request as { kind?: string }).kind === 'stash'
+      ? handleValidateStashConnectionShared(request as any)
+      : handleValidateWhisparrConnectionShared(request as any),
   [MESSAGE_TYPES.saveSettings]: async (request) => {
     const { settings } = request as { settings: Partial<ExtensionSettings> };
     const next = await saveSettings(settings);
@@ -2312,22 +2331,20 @@ const handlers: Record<
     await resetSettings();
     return { ok: true, type: MESSAGE_TYPES.resetSettings };
   },
-  [MESSAGE_TYPES.fetchDiscoveryCatalogs]: handleFetchDiscoveryCatalogs,
-  [MESSAGE_TYPES.saveSelections]: handleSaveSelections,
-  [MESSAGE_TYPES.checkSceneStatus]: handleCheckSceneStatus,
-  [MESSAGE_TYPES.addScene]: handleAddScene,
-  [MESSAGE_TYPES.setMonitorState]: handleSetMonitorState,
-  [MESSAGE_TYPES.updateTags]: handleUpdateTags,
-  [MESSAGE_TYPES.updateQualityProfile]: handleUpdateQualityProfile,
-  [MESSAGE_TYPES.sceneCardActionRequested]: handleSceneCardAction,
-  [MESSAGE_TYPES.sceneCardsCheckStatus]: handleSceneCardsCheckStatus,
-  [MESSAGE_TYPES.sceneCardAdd]: handleSceneCardAdd,
-  [MESSAGE_TYPES.sceneCardTriggerSearch]: handleSceneCardTriggerSearch,
-  [MESSAGE_TYPES.sceneCardSetExcluded]: handleSceneCardSetExcluded,
+  [MESSAGE_TYPES.fetchDiscoveryCatalogs]: handleFetchDiscoveryCatalogsShared as any,
+  [MESSAGE_TYPES.saveSelections]: handleSaveSelectionsShared as any,
+  [MESSAGE_TYPES.checkSceneStatus]: handleCheckSceneStatusShared as any,
+  [MESSAGE_TYPES.addScene]: handleAddSceneShared as any,
+  [MESSAGE_TYPES.setMonitorState]: handleSetMonitorStateShared as any,
+  [MESSAGE_TYPES.updateTags]: handleUpdateTagsShared as any,
+  [MESSAGE_TYPES.updateQualityProfile]: handleUpdateQualityProfileShared as any,
+  [MESSAGE_TYPES.sceneCardActionRequested]: handleSceneCardActionShared as any,
+  [MESSAGE_TYPES.sceneCardsCheckStatus]: handleSceneCardsCheckStatusShared as any,
+  [MESSAGE_TYPES.sceneCardAdd]: handleSceneCardAddShared as any,
+  [MESSAGE_TYPES.sceneCardTriggerSearch]: handleSceneCardTriggerSearchShared as any,
+  [MESSAGE_TYPES.sceneCardSetExcluded]: handleSceneCardSetExcludedShared as any,
   [MESSAGE_TYPES.stashFindSceneByStashdbId]: (request) =>
-    handleStashFindSceneByStashdbId(
-      request as { stashdbSceneId?: string },
-    ),
+    handleStashFindSceneByStashdbIdShared(request as any),
   [MESSAGE_TYPES.requestPermission]: async (request) => {
     if (!ext.permissions?.request) {
       return {
