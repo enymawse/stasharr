@@ -935,6 +935,9 @@ if (!document.getElementById(PANEL_ID)) {
       return;
     }
     const cached = statusCache.get(sceneId);
+    if (cached?.exists) {
+      return;
+    }
     const nextExcluded = !Boolean(cached?.excluded);
     applyDisabledStyles(excludeToggle, true);
     excludeToggle.textContent = 'Working...';
@@ -2014,6 +2017,9 @@ class SceneCardObserver {
       event.preventDefault();
       event.stopPropagation();
       const cached = this.statusBySceneId.get(scene.sceneId);
+      if (cached?.exists) {
+        return;
+      }
       const nextExcluded = !Boolean(cached?.excluded);
       setExcludeState('loading', nextExcluded);
       const runtime = extContent?.runtime;
