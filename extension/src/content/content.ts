@@ -296,31 +296,31 @@ if (!document.getElementById(PANEL_ID)) {
 
   const viewInStashButton = document.createElement('button');
   viewInStashButton.type = 'button';
-  viewInStashButton.textContent = '↗';
+  viewInStashButton.textContent = 'Stash';
   viewInStashButton.setAttribute('aria-label', 'View in Stash');
   viewInStashButton.title = 'View in Stash';
-  viewInStashButton.style.padding = '6px 0';
-  viewInStashButton.style.width = '32px';
+  viewInStashButton.style.padding = '6px 10px';
   viewInStashButton.style.borderRadius = '6px';
   viewInStashButton.style.border = 'none';
   viewInStashButton.style.cursor = 'pointer';
   viewInStashButton.style.background = '#16a34a';
   viewInStashButton.style.color = '#ffffff';
+  viewInStashButton.style.flex = '1';
   applyDisabledStyles(viewInStashButton, true);
   viewRow.appendChild(viewInStashButton);
 
   const viewInWhisparrButton = document.createElement('button');
   viewInWhisparrButton.type = 'button';
-  viewInWhisparrButton.textContent = '↗';
+  viewInWhisparrButton.textContent = 'Whisparr';
   viewInWhisparrButton.setAttribute('aria-label', 'View in Whisparr');
   viewInWhisparrButton.title = 'View in Whisparr';
-  viewInWhisparrButton.style.padding = '6px 0';
-  viewInWhisparrButton.style.width = '32px';
+  viewInWhisparrButton.style.padding = '6px 10px';
   viewInWhisparrButton.style.borderRadius = '6px';
   viewInWhisparrButton.style.border = 'none';
   viewInWhisparrButton.style.cursor = 'pointer';
   viewInWhisparrButton.style.background = '#2563eb';
   viewInWhisparrButton.style.color = '#ffffff';
+  viewInWhisparrButton.style.flex = '1';
   applyDisabledStyles(viewInWhisparrButton, true);
   viewInWhisparrButton.style.display = 'none';
   viewRow.appendChild(viewInWhisparrButton);
