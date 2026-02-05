@@ -314,6 +314,30 @@ function buildUpdatePayload(
   };
 }
 
+async function fetchExclusionState(
+  baseUrl: string,
+  apiKey: string,
+  sceneId: string,
+) {
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${baseUrl}/api/v3/exclusions?stashId=${encodeURIComponent(sceneId)}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+  if (!response.ok || !Array.isArray(response.json)) {
+    return { excluded: false, exclusionId: undefined as number | undefined };
+  }
+  const match = response.json.find(isRecord);
+  if (!match) {
+    return { excluded: false, exclusionId: undefined as number | undefined };
+  }
+  const exclusionId = Number(match.id);
+  return {
+    excluded: true,
+    exclusionId: Number.isFinite(exclusionId) ? exclusionId : undefined,
+  };
+}
+
 async function fetchSceneLookup(
   baseUrl: string,
   apiKey: string,
@@ -1682,19 +1706,31 @@ export async function handleCheckSceneStatus(
   }
 
   if (!Array.isArray(response.json) || response.json.length === 0) {
+    const excluded = await fetchExclusionState(
+      normalized.value,
+      apiKey,
+      stashId,
+    );
     return {
       ok: true,
       type: MESSAGE_TYPES.checkSceneStatus,
       exists: false,
+      excluded: excluded.excluded,
     };
   }
 
   const movie = response.json.find(isRecord);
   if (!movie) {
+    const excluded = await fetchExclusionState(
+      normalized.value,
+      apiKey,
+      stashId,
+    );
     return {
       ok: true,
       type: MESSAGE_TYPES.checkSceneStatus,
       exists: false,
+      excluded: excluded.excluded,
     };
   }
 
