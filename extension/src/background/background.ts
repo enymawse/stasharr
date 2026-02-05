@@ -185,14 +185,21 @@ async function handleFetchJson(
   }
 }
 
-function normalizeBaseUrl(raw: string): { ok: boolean; value?: string; error?: string } {
+function normalizeBaseUrl(raw: string): {
+  ok: boolean;
+  value?: string;
+  error?: string;
+} {
   const trimmed = raw.trim();
   if (!trimmed) {
     return { ok: false, error: 'Base URL is required.' };
   }
 
   if (!/^https?:\/\//i.test(trimmed)) {
-    return { ok: false, error: 'Base URL must include a scheme (http or https).' };
+    return {
+      ok: false,
+      error: 'Base URL must include a scheme (http or https).',
+    };
   }
 
   try {
@@ -218,7 +225,9 @@ function hashValue(input: string): string {
   return `${hash >>> 0}`;
 }
 
-function toUiSelections(selections: DiscoverySelections): DiscoverySelectionsForUi {
+function toUiSelections(
+  selections: DiscoverySelections,
+): DiscoverySelectionsForUi {
   return {
     qualityProfileId: selections.qualityProfileId,
     rootFolderPath: selections.rootFolderPath,
@@ -241,7 +250,10 @@ async function fetchQualityProfiles(
   });
 
   if (!response.ok) {
-    return { items: [], error: response.error ?? 'Quality profiles request failed.' };
+    return {
+      items: [],
+      error: response.error ?? 'Quality profiles request failed.',
+    };
   }
 
   if (!Array.isArray(response.json)) {
@@ -272,7 +284,10 @@ async function fetchRootFolders(
   });
 
   if (!response.ok) {
-    return { items: [], error: response.error ?? 'Root folders request failed.' };
+    return {
+      items: [],
+      error: response.error ?? 'Root folders request failed.',
+    };
   }
 
   if (!Array.isArray(response.json)) {
@@ -329,7 +344,10 @@ async function fetchTags(
 function reconcileSelections(
   catalogs: DiscoveryCatalogs,
   selections: DiscoverySelections,
-): { next: DiscoverySelections; invalid: FetchDiscoveryCatalogsResponse['invalidSelections'] } {
+): {
+  next: DiscoverySelections;
+  invalid: FetchDiscoveryCatalogsResponse['invalidSelections'];
+} {
   const invalid: FetchDiscoveryCatalogsResponse['invalidSelections'] = {};
   const next: DiscoverySelections = {
     qualityProfileId: selections.qualityProfileId,
@@ -339,7 +357,9 @@ function reconcileSelections(
 
   if (
     next.qualityProfileId !== null &&
-    !catalogs.qualityProfiles.some((profile) => profile.id === next.qualityProfileId)
+    !catalogs.qualityProfiles.some(
+      (profile) => profile.id === next.qualityProfileId,
+    )
   ) {
     next.qualityProfileId = null;
     invalid.qualityProfileId = true;
@@ -367,9 +387,7 @@ function reconcileSelections(
 
 function normalizeTags(value: unknown): number[] {
   if (!Array.isArray(value)) return [];
-  return value
-    .map((tag) => Number(tag))
-    .filter((tag) => Number.isFinite(tag));
+  return value.map((tag) => Number(tag)).filter((tag) => Number.isFinite(tag));
 }
 
 function buildUpdatePayload(
@@ -392,7 +410,9 @@ function buildUpdatePayload(
       rootFolderPath,
       tags: normalizeTags(existing.tags),
       title: typeof existing.title === 'string' ? existing.title : undefined,
-      year: Number.isFinite(Number(existing.year)) ? Number(existing.year) : undefined,
+      year: Number.isFinite(Number(existing.year))
+        ? Number(existing.year)
+        : undefined,
       path,
       ...overrides,
     },
@@ -418,9 +438,9 @@ async function handleValidateConnection(
         }
       }
     `;
-    const result = await stashGraphqlRequest<{ systemStatus?: { status?: string } }>(
-      query,
-    );
+    const result = await stashGraphqlRequest<{
+      systemStatus?: { status?: string };
+    }>(query);
     if (!result.ok) {
       return {
         ok: false,
@@ -581,7 +601,9 @@ async function handleFetchDiscoveryCatalogs(
       catalogsForUi.qualityProfiles = qualityResult.error
         ? cached.qualityProfiles
         : qualityResult.items;
-      catalogsForUi.rootFolders = rootResult.error ? cached.rootFolders : rootResult.items;
+      catalogsForUi.rootFolders = rootResult.error
+        ? cached.rootFolders
+        : rootResult.items;
       catalogsForUi.tags = tagsResult.error ? cached.tags : tagsResult.items;
       catalogsForUi.fetchedAt = new Date().toISOString();
 
@@ -595,11 +617,17 @@ async function handleFetchDiscoveryCatalogs(
     }
   }
 
-  const reconciled = reconcileSelections(catalogsForUi, selectionsState.whisparr);
+  const reconciled = reconcileSelections(
+    catalogsForUi,
+    selectionsState.whisparr,
+  );
   if (
-    reconciled.next.qualityProfileId !== selectionsState.whisparr.qualityProfileId ||
-    reconciled.next.rootFolderPath !== selectionsState.whisparr.rootFolderPath ||
-    reconciled.next.tagIds.join(',') !== selectionsState.whisparr.tagIds.join(',')
+    reconciled.next.qualityProfileId !==
+      selectionsState.whisparr.qualityProfileId ||
+    reconciled.next.rootFolderPath !==
+      selectionsState.whisparr.rootFolderPath ||
+    reconciled.next.tagIds.join(',') !==
+      selectionsState.whisparr.tagIds.join(',')
   ) {
     await saveSelections({ whisparr: reconciled.next });
   }
@@ -720,10 +748,12 @@ async function handleAddScene(
     };
   }
 
-  const foreignId = typeof lookup.scene.foreignId === 'string'
-    ? lookup.scene.foreignId
-    : `stash:${stashId}`;
-  const title = typeof lookup.scene.title === 'string' ? lookup.scene.title : undefined;
+  const foreignId =
+    typeof lookup.scene.foreignId === 'string'
+      ? lookup.scene.foreignId
+      : `stash:${stashId}`;
+  const title =
+    typeof lookup.scene.title === 'string' ? lookup.scene.title : undefined;
 
   const payload: AddScenePayload = {
     foreignId,
@@ -1199,7 +1229,11 @@ async function handleSceneCardsCheckStatus(
 
   const items = Array.isArray(request.items) ? request.items : [];
   if (items.length === 0) {
-    return { ok: true, type: MESSAGE_TYPES_BG.sceneCardsCheckStatus, results: [] };
+    return {
+      ok: true,
+      type: MESSAGE_TYPES_BG.sceneCardsCheckStatus,
+      results: [],
+    };
   }
 
   const uniqueItems = new Map<string, { sceneId: string; sceneUrl: string }>();
@@ -1276,7 +1310,11 @@ async function handleSceneCardsCheckStatus(
 
     const first = response.json.find(isRecord);
     if (!first) {
-      const excluded = await fetchExclusionState(normalized.value, apiKey, sceneId);
+      const excluded = await fetchExclusionState(
+        normalized.value,
+        apiKey,
+        sceneId,
+      );
       sceneCardStatusCache.set(sceneId, {
         exists: false,
         excluded: excluded.excluded,
@@ -1302,7 +1340,8 @@ async function handleSceneCardsCheckStatus(
           ? first.movieFileId > 0
           : isRecord(first.movieFile)
             ? true
-            : isRecord(first.statistics) && typeof first.statistics.movieFileCount === 'number'
+            : isRecord(first.statistics) &&
+                typeof first.statistics.movieFileCount === 'number'
               ? first.statistics.movieFileCount > 0
               : typeof first.fileCount === 'number'
                 ? first.fileCount > 0
@@ -1358,7 +1397,10 @@ async function handleSceneCardTriggerSearch(
     return {
       ok: false,
       type: MESSAGE_TYPES_BG.sceneCardTriggerSearch,
-      error: { code: 'invalid_base_url', message: normalized.error ?? 'Invalid base URL.' },
+      error: {
+        code: 'invalid_base_url',
+        message: normalized.error ?? 'Invalid base URL.',
+      },
     };
   }
 
@@ -1376,7 +1418,10 @@ async function handleSceneCardTriggerSearch(
     return {
       ok: false,
       type: MESSAGE_TYPES_BG.sceneCardTriggerSearch,
-      error: { code: 'no_permissions', message: 'Permissions API not available.' },
+      error: {
+        code: 'no_permissions',
+        message: 'Permissions API not available.',
+      },
     };
   }
   const granted = await ext.permissions.contains({ origins: [origin] });
@@ -1384,7 +1429,10 @@ async function handleSceneCardTriggerSearch(
     return {
       ok: false,
       type: MESSAGE_TYPES_BG.sceneCardTriggerSearch,
-      error: { code: 'permission_missing', message: `Permission missing for ${origin}` },
+      error: {
+        code: 'permission_missing',
+        message: `Permission missing for ${origin}`,
+      },
     };
   }
 
@@ -1402,20 +1450,29 @@ async function handleSceneCardTriggerSearch(
       return {
         ok: false,
         type: MESSAGE_TYPES_BG.sceneCardTriggerSearch,
-        error: { code: 'unauthorized', message: 'Unauthorized (check API key).' },
+        error: {
+          code: 'unauthorized',
+          message: 'Unauthorized (check API key).',
+        },
       };
     }
     if (status === 400) {
       return {
         ok: false,
         type: MESSAGE_TYPES_BG.sceneCardTriggerSearch,
-        error: { code: 'validation', message: 'Validation failed (check Whisparr item).' },
+        error: {
+          code: 'validation',
+          message: 'Validation failed (check Whisparr item).',
+        },
       };
     }
     return {
       ok: false,
       type: MESSAGE_TYPES_BG.sceneCardTriggerSearch,
-      error: { code: `http_${status}`, message: response.error ?? `HTTP ${status}` },
+      error: {
+        code: `http_${status}`,
+        message: response.error ?? `HTTP ${status}`,
+      },
     };
   }
 
@@ -1435,7 +1492,9 @@ async function handleSceneCardSetExcluded(
 
   const sceneId = request.sceneId?.trim();
   const movieTitle = request.movieTitle?.trim();
-  const movieYear = Number.isFinite(Number(request.movieYear)) ? Number(request.movieYear) : undefined;
+  const movieYear = Number.isFinite(Number(request.movieYear))
+    ? Number(request.movieYear)
+    : undefined;
   const excluded = Boolean(request.excluded);
   if (!sceneId) {
     return {
@@ -1451,7 +1510,10 @@ async function handleSceneCardSetExcluded(
     return {
       ok: false,
       type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
-      error: { code: 'invalid_base_url', message: normalized.error ?? 'Invalid base URL.' },
+      error: {
+        code: 'invalid_base_url',
+        message: normalized.error ?? 'Invalid base URL.',
+      },
     };
   }
 
@@ -1469,7 +1531,10 @@ async function handleSceneCardSetExcluded(
     return {
       ok: false,
       type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
-      error: { code: 'no_permissions', message: 'Permissions API not available.' },
+      error: {
+        code: 'no_permissions',
+        message: 'Permissions API not available.',
+      },
     };
   }
   const granted = await ext.permissions.contains({ origins: [origin] });
@@ -1477,16 +1542,27 @@ async function handleSceneCardSetExcluded(
     return {
       ok: false,
       type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
-      error: { code: 'permission_missing', message: `Permission missing for ${origin}` },
+      error: {
+        code: 'permission_missing',
+        message: `Permission missing for ${origin}`,
+      },
     };
   }
 
   const existing = await fetchExclusionState(normalized.value, apiKey, sceneId);
   if (excluded && existing.excluded) {
-    return { ok: true, type: MESSAGE_TYPES_BG.sceneCardSetExcluded, excluded: true };
+    return {
+      ok: true,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      excluded: true,
+    };
   }
   if (!excluded && !existing.excluded) {
-    return { ok: true, type: MESSAGE_TYPES_BG.sceneCardSetExcluded, excluded: false };
+    return {
+      ok: true,
+      type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+      excluded: false,
+    };
   }
 
   let createdExclusionId: number | undefined;
@@ -1509,20 +1585,29 @@ async function handleSceneCardSetExcluded(
         return {
           ok: false,
           type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
-          error: { code: 'unauthorized', message: 'Unauthorized (check API key).' },
+          error: {
+            code: 'unauthorized',
+            message: 'Unauthorized (check API key).',
+          },
         };
       }
       if (status === 400) {
         return {
           ok: false,
           type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
-          error: { code: 'validation', message: 'Validation failed (check exclusion).' },
+          error: {
+            code: 'validation',
+            message: 'Validation failed (check exclusion).',
+          },
         };
       }
       return {
         ok: false,
         type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
-        error: { code: `http_${status}`, message: createResponse.error ?? `HTTP ${status}` },
+        error: {
+          code: `http_${status}`,
+          message: createResponse.error ?? `HTTP ${status}`,
+        },
       };
     }
     if (createResponse.json && isRecord(createResponse.json)) {
@@ -1543,20 +1628,28 @@ async function handleSceneCardSetExcluded(
         return {
           ok: false,
           type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
-          error: { code: 'unauthorized', message: 'Unauthorized (check API key).' },
+          error: {
+            code: 'unauthorized',
+            message: 'Unauthorized (check API key).',
+          },
         };
       }
       return {
         ok: false,
         type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
-        error: { code: `http_${status}`, message: deleteResponse.error ?? `HTTP ${status}` },
+        error: {
+          code: `http_${status}`,
+          message: deleteResponse.error ?? `HTTP ${status}`,
+        },
       };
     }
   }
 
   const updatedExcluded = excluded;
   const cached = sceneCardStatusCache.get(sceneId);
-  const exclusionId = updatedExcluded ? existing.exclusionId ?? createdExclusionId : undefined;
+  const exclusionId = updatedExcluded
+    ? (existing.exclusionId ?? createdExclusionId)
+    : undefined;
   sceneCardStatusCache.set(sceneId, {
     exists: cached?.exists ?? false,
     whisparrId: cached?.whisparrId,
@@ -1568,10 +1661,18 @@ async function handleSceneCardSetExcluded(
     fetchedAt: Date.now(),
   });
 
-  return { ok: true, type: MESSAGE_TYPES_BG.sceneCardSetExcluded, excluded: updatedExcluded };
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.sceneCardSetExcluded,
+    excluded: updatedExcluded,
+  };
 }
 
-async function fetchExclusionState(baseUrl: string, apiKey: string, sceneId: string) {
+async function fetchExclusionState(
+  baseUrl: string,
+  apiKey: string,
+  sceneId: string,
+) {
   const response = await handleFetchJson({
     type: MESSAGE_TYPES_BG.fetchJson,
     url: `${baseUrl}/api/v3/exclusions?stashId=${encodeURIComponent(sceneId)}`,
@@ -1585,7 +1686,10 @@ async function fetchExclusionState(baseUrl: string, apiKey: string, sceneId: str
     return { excluded: false, exclusionId: undefined as number | undefined };
   }
   const exclusionId = Number(match.id);
-  return { excluded: true, exclusionId: Number.isFinite(exclusionId) ? exclusionId : undefined };
+  return {
+    excluded: true,
+    exclusionId: Number.isFinite(exclusionId) ? exclusionId : undefined,
+  };
 }
 
 async function handleSceneCardAdd(
@@ -1721,7 +1825,9 @@ async function handleSceneCardAdd(
     exists: true,
     whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
     monitored:
-      response.json && isRecord(response.json) && typeof response.json.monitored === 'boolean'
+      response.json &&
+      isRecord(response.json) &&
+      typeof response.json.monitored === 'boolean'
         ? response.json.monitored
         : undefined,
     tagIds:
@@ -1826,7 +1932,11 @@ async function handleCheckSceneStatus(
 
   const first = response.json.find(isRecord);
   if (!first) {
-    const excluded = await fetchExclusionState(normalized.value, apiKey, stashId);
+    const excluded = await fetchExclusionState(
+      normalized.value,
+      apiKey,
+      stashId,
+    );
     return {
       ok: true,
       type: MESSAGE_TYPES_BG.checkSceneStatus,
@@ -1896,7 +2006,9 @@ async function handleSaveSelections(
       catalogs.rootFolders.some((item) => item.path === rootFolderPath)
         ? rootFolderPath
         : null,
-    tagIds: labelIds.filter((id) => catalogs.tags.some((item) => item.id === id)),
+    tagIds: labelIds.filter((id) =>
+      catalogs.tags.some((item) => item.id === id),
+    ),
   };
 
   const saved = await saveSelections({ whisparr: next });
@@ -1937,17 +2049,41 @@ async function handleStashFindSceneByStashdbId(
         }
         filter: { per_page: 1 }
       ) {
-        scenes {
-          id
-          title
-          paths
-        }
+          scenes {
+            id
+            title
+            code
+            details
+            director
+            url
+            urls
+            date
+            rating100
+            organized
+            o_counter
+            interactive
+            interactive_speed
+            created_at
+            updated_at
+            last_played_at
+            resume_time
+            play_duration
+            play_count
+            play_history
+            o_history
+          }
       }
     }
   `;
 
   const result = await stashGraphqlRequest<{
-    findScenes?: { scenes?: Array<{ id?: string | number; title?: string; paths?: string[] }> };
+    findScenes?: {
+      scenes?: Array<{
+        id?: string | number;
+        title?: string;
+        paths?: string[];
+      }>;
+    };
   }>(query, { stashId: stashdbSceneId });
 
   if (!result.ok) {
@@ -1991,7 +2127,7 @@ ext.runtime.onMessage.addListener(
     _sender: unknown,
     sendResponse: (response: ExtensionResponse) => void,
   ) => {
-  const respond = async (): Promise<ExtensionResponse> => {
+    const respond = async (): Promise<ExtensionResponse> => {
       if (request?.type === MESSAGE_TYPES_BG.ping) {
         return {
           ok: true,
