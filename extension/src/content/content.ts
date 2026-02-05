@@ -1,4 +1,7 @@
 import { sendMessage } from '../shared/messaging.js';
+import { createIconButton, setButtonState } from './ui/buttons.js';
+import { renderIcon } from './ui/icons.js';
+import { createStatusIndicator } from './ui/statusIndicator.js';
 import type {
   ExtensionRequest,
   ExtensionResponse,
@@ -1293,7 +1296,14 @@ class SceneCardObserver {
       statusKnown?: boolean;
     }
   >();
-  private statusIconBySceneId = new Map<string, HTMLElement>();
+  private statusIndicatorBySceneId = new Map<
+    string,
+    {
+      setState: (
+        state: 'loading' | 'in' | 'out' | 'excluded' | 'error' | 'missing',
+      ) => void;
+    }
+  >();
   private actionBySceneId = new Map<
     string,
     {
@@ -1597,63 +1607,23 @@ class SceneCardObserver {
     leftWrap.style.gap = '6px';
     container.appendChild(leftWrap);
 
-    const statusOverlay = document.createElement('div');
-    statusOverlay.className = 'stasharr-scene-card-status';
-    statusOverlay.style.position = 'absolute';
-    statusOverlay.style.top = '6px';
-    statusOverlay.style.right = '6px';
-    statusOverlay.style.display = 'inline-flex';
-    statusOverlay.style.alignItems = 'center';
-    statusOverlay.style.justifyContent = 'center';
-    statusOverlay.style.width = '26px';
-    statusOverlay.style.height = '26px';
-    statusOverlay.style.borderRadius = '999px';
-    statusOverlay.style.background = 'rgba(15, 23, 42, 0.8)';
-    statusOverlay.style.color = '#7138c8';
-    statusOverlay.style.boxShadow = '0 2px 6px rgba(15, 23, 42, 0.35)';
+    const statusIndicator = createStatusIndicator({ state: 'out' });
+    const statusOverlay = statusIndicator.element;
 
-    const statusIcon = document.createElement('span');
-    statusIcon.setAttribute('aria-hidden', 'true');
-    statusIcon.style.display = 'inline-flex';
-    statusIcon.style.alignItems = 'center';
-    statusIcon.style.justifyContent = 'center';
-    statusIcon.style.width = '16px';
-    statusIcon.style.height = '16px';
-    statusOverlay.appendChild(statusIcon);
-
-    const actionButton = document.createElement('button');
-    actionButton.type = 'button';
-    actionButton.setAttribute('aria-label', 'Add to Whisparr');
-    actionButton.style.border = '1px solid #c084fc';
-    actionButton.style.borderRadius = '999px';
-    actionButton.style.padding = '2px 8px';
-    actionButton.style.cursor = 'pointer';
-    actionButton.style.background = '#c084fc';
-    actionButton.style.color = '#ffffff';
-    actionButton.style.fontSize = '12px';
-    actionButton.style.lineHeight = '1';
-    actionButton.style.display = 'inline-flex';
-    actionButton.style.alignItems = 'center';
-    actionButton.style.justifyContent = 'center';
-    actionButton.style.gap = '4px';
-    actionButton.innerHTML = this.renderIcon('download');
+    const actionButton = createIconButton({
+      label: 'Add to Whisparr',
+      icon: 'download',
+      variant: 'action',
+    });
     leftWrap.appendChild(actionButton);
 
-    const viewWhisparrButton = document.createElement('button');
-    viewWhisparrButton.type = 'button';
-    viewWhisparrButton.setAttribute('aria-label', 'View in Whisparr');
-    viewWhisparrButton.title = 'View in Whisparr';
-    viewWhisparrButton.style.border = '1px solid #7138C8';
-    viewWhisparrButton.style.borderRadius = '999px';
-    viewWhisparrButton.style.padding = '2px';
-    viewWhisparrButton.style.cursor = 'pointer';
-    viewWhisparrButton.style.background = '#7138C8';
-    viewWhisparrButton.style.color = '#ffffff';
-    viewWhisparrButton.style.fontSize = '12px';
-    viewWhisparrButton.style.lineHeight = '1';
-    viewWhisparrButton.style.display = 'inline-flex';
-    viewWhisparrButton.style.alignItems = 'center';
-    viewWhisparrButton.style.justifyContent = 'center';
+    const viewWhisparrButton = createIconButton({
+      label: 'View in Whisparr',
+      icon: 'external-link',
+      variant: 'view-whisparr',
+      disabled: true,
+      title: 'View in Whisparr',
+    });
     const whisparrIcon = document.createElement('img');
     whisparrIcon.src =
       'https://raw.githubusercontent.com/Whisparr/Whisparr/refs/heads/eros/Logo/Whisparr.svg';
@@ -1661,36 +1631,24 @@ class SceneCardObserver {
     whisparrIcon.width = 16;
     whisparrIcon.height = 16;
     whisparrIcon.style.display = 'block';
+    viewWhisparrButton.innerHTML = '';
     viewWhisparrButton.appendChild(whisparrIcon);
-    viewWhisparrButton.disabled = true;
-    viewWhisparrButton.style.opacity = '0.6';
-    viewWhisparrButton.style.cursor = 'not-allowed';
 
-    const viewStashButton = document.createElement('button');
-    viewStashButton.type = 'button';
-    viewStashButton.setAttribute('aria-label', 'View in Stash');
-    viewStashButton.title = 'View in Stash';
-    viewStashButton.style.border = '1px solid #137cbd';
-    viewStashButton.style.borderRadius = '999px';
-    viewStashButton.style.padding = '2px';
-    viewStashButton.style.cursor = 'pointer';
-    viewStashButton.style.background = '#137cbd';
-    viewStashButton.style.color = '#ffffff';
-    viewStashButton.style.fontSize = '12px';
-    viewStashButton.style.lineHeight = '1';
-    viewStashButton.style.display = 'inline-flex';
-    viewStashButton.style.alignItems = 'center';
-    viewStashButton.style.justifyContent = 'center';
+    const viewStashButton = createIconButton({
+      label: 'View in Stash',
+      icon: 'external-link',
+      variant: 'view-stash',
+      disabled: true,
+      title: 'View in Stash',
+    });
     const stashIcon = document.createElement('img');
     stashIcon.src = 'https://stashapp.cc/images/stash.svg';
     stashIcon.alt = '';
     stashIcon.width = 16;
     stashIcon.height = 16;
     stashIcon.style.display = 'block';
+    viewStashButton.innerHTML = '';
     viewStashButton.appendChild(stashIcon);
-    viewStashButton.disabled = true;
-    viewStashButton.style.opacity = '0.6';
-    viewStashButton.style.cursor = 'not-allowed';
     const viewWrap = document.createElement('div');
     viewWrap.style.display = 'inline-flex';
     viewWrap.style.alignItems = 'center';
@@ -1707,65 +1665,31 @@ class SceneCardObserver {
     missingWrap.style.gap = '4px';
     leftWrap.appendChild(missingWrap);
 
-    const searchButton = document.createElement('button');
-    searchButton.type = 'button';
-    searchButton.setAttribute('aria-label', 'Trigger Whisparr search');
-    searchButton.title = 'Trigger Whisparr search';
-    searchButton.style.border = '1px solid #00853d';
-    searchButton.style.borderRadius = '999px';
-    searchButton.style.padding = '2px 8px';
-    searchButton.style.cursor = 'pointer';
-    searchButton.style.background = '#00853d';
-    searchButton.style.color = '#ffffff';
-    searchButton.style.fontSize = '12px';
-    searchButton.style.lineHeight = '1';
-    searchButton.style.display = 'inline-flex';
-    searchButton.style.alignItems = 'center';
-    searchButton.style.justifyContent = 'center';
-    searchButton.innerHTML = this.renderIcon('search');
+    const searchButton = createIconButton({
+      label: 'Trigger Whisparr search',
+      icon: 'search',
+      variant: 'search',
+      title: 'Trigger Whisparr search',
+    });
     missingWrap.appendChild(searchButton);
 
-    const excludeButton = document.createElement('button');
-    excludeButton.type = 'button';
-    excludeButton.setAttribute('aria-label', 'Exclude from Whisparr');
-    excludeButton.title = 'Exclude from Whisparr';
-    excludeButton.style.border = '1px solid #c4273c';
-    excludeButton.style.borderRadius = '999px';
-    excludeButton.style.padding = '2px 8px';
-    excludeButton.style.cursor = 'pointer';
-    excludeButton.style.background = '#c4273c';
-    excludeButton.style.color = '#ffffff';
-    excludeButton.style.fontSize = '12px';
-    excludeButton.style.lineHeight = '1';
-    excludeButton.style.display = 'inline-flex';
-    excludeButton.style.alignItems = 'center';
-    excludeButton.style.justifyContent = 'center';
-    excludeButton.innerHTML = this.renderIcon('ban');
-    excludeButton.disabled = true;
-    excludeButton.style.opacity = '0.6';
+    const excludeButton = createIconButton({
+      label: 'Exclude from Whisparr',
+      icon: 'ban',
+      variant: 'exclude',
+      disabled: true,
+      title: 'Exclusion status loading',
+    });
     excludeButton.setAttribute('aria-label', 'Exclusion status loading');
-    excludeButton.title = 'Exclusion status loading';
     leftWrap.appendChild(excludeButton);
 
-    const monitorButton = document.createElement('button');
-    monitorButton.type = 'button';
-    monitorButton.setAttribute('aria-label', 'Monitor in Whisparr');
-    monitorButton.title = 'Monitor in Whisparr';
-    monitorButton.style.border = '1px solid #c4337c';
-    monitorButton.style.borderRadius = '999px';
-    monitorButton.style.padding = '2px 8px';
-    monitorButton.style.cursor = 'pointer';
-    monitorButton.style.background = '#c4337c';
-    monitorButton.style.color = '#ffffff';
-    monitorButton.style.fontSize = '12px';
-    monitorButton.style.lineHeight = '1';
-    monitorButton.style.display = 'inline-flex';
-    monitorButton.style.alignItems = 'center';
-    monitorButton.style.justifyContent = 'center';
-    monitorButton.innerHTML = this.renderIcon('bookmark');
-    monitorButton.disabled = true;
-    monitorButton.style.opacity = '0.6';
-    monitorButton.style.cursor = 'not-allowed';
+    const monitorButton = createIconButton({
+      label: 'Monitor in Whisparr',
+      icon: 'bookmark',
+      variant: 'monitor',
+      disabled: true,
+      title: 'Monitor in Whisparr',
+    });
     leftWrap.appendChild(monitorButton);
 
     const setStatus = (
@@ -1773,8 +1697,7 @@ class SceneCardObserver {
     ) => {
       switch (state) {
         case 'loading':
-          statusIcon.innerHTML = this.renderIcon('spinner', true);
-          statusIcon.style.color = '#7138c8';
+          statusIndicator.setState('loading');
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.style.cursor = 'not-allowed';
@@ -1784,8 +1707,7 @@ class SceneCardObserver {
           actionButton.setAttribute('aria-label', 'Adding to Whisparr');
           return;
         case 'in':
-          statusIcon.innerHTML = this.renderIcon('circle-check');
-          statusIcon.style.color = '#16a34a';
+          statusIndicator.setState('in');
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.style.cursor = 'not-allowed';
@@ -1795,8 +1717,7 @@ class SceneCardObserver {
           actionButton.setAttribute('aria-label', 'Already in Whisparr');
           return;
         case 'missing':
-          statusIcon.innerHTML = this.renderIcon('warning');
-          statusIcon.style.color = '#f59e0b';
+          statusIndicator.setState('missing');
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.style.cursor = 'not-allowed';
@@ -1806,16 +1727,14 @@ class SceneCardObserver {
           actionButton.setAttribute('aria-label', 'In Whisparr (missing file)');
           return;
         case 'excluded':
-          statusIcon.innerHTML = this.renderIcon('ban');
-          statusIcon.style.color = '#ef4444';
+          statusIndicator.setState('excluded');
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
           actionButton.style.cursor = 'not-allowed';
           actionButton.setAttribute('aria-label', 'Excluded from Whisparr');
           return;
         case 'error':
-          statusIcon.innerHTML = this.renderIcon('ban');
-          statusIcon.style.color = '#ef4444';
+          statusIndicator.setState('error');
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
           actionButton.style.cursor = 'pointer';
@@ -1826,8 +1745,7 @@ class SceneCardObserver {
           return;
         case 'out':
         default:
-          statusIcon.innerHTML = this.renderIcon('download');
-          statusIcon.style.color = '#7138c8';
+          statusIndicator.setState('out');
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
           actionButton.style.cursor = 'pointer';
@@ -1839,28 +1757,22 @@ class SceneCardObserver {
     };
 
     const setWhisparrEnabled = (enabled: boolean) => {
-      viewWhisparrButton.disabled = !enabled;
-      viewWhisparrButton.style.opacity = enabled ? '1' : '0.6';
-      viewWhisparrButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+      setButtonState(viewWhisparrButton, enabled ? 'enabled' : 'disabled');
       viewWhisparrButton.title = enabled
         ? 'View in Whisparr'
         : 'No match in Whisparr';
     };
 
     const setStashEnabled = (enabled: boolean, title?: string) => {
-      viewStashButton.disabled = !enabled;
-      viewStashButton.style.opacity = enabled ? '1' : '0.6';
-      viewStashButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+      setButtonState(viewStashButton, enabled ? 'enabled' : 'disabled');
       viewStashButton.title =
         title ?? (enabled ? 'View in Stash' : 'No match in Stash');
     };
 
     const setStashLoading = () => {
-      viewStashButton.disabled = true;
-      viewStashButton.style.opacity = '0.6';
-      viewStashButton.style.cursor = 'not-allowed';
+      setButtonState(viewStashButton, 'disabled');
       viewStashButton.title = 'Checking Stash...';
-      viewStashButton.innerHTML = this.renderIcon('spinner', true);
+      viewStashButton.innerHTML = renderIcon('spinner', { spin: true });
     };
 
     const setMissingState = (
@@ -1873,7 +1785,7 @@ class SceneCardObserver {
           searchButton.style.background = '#69b66d';
           searchButton.style.borderColor = '#69b66d';
           searchButton.style.color = '#ffffff';
-          searchButton.innerHTML = this.renderIcon('spinner', true);
+          searchButton.innerHTML = renderIcon('spinner', { spin: true });
           return;
         case 'success':
           searchButton.disabled = true;
@@ -1881,7 +1793,7 @@ class SceneCardObserver {
           searchButton.style.background = '#69b66d';
           searchButton.style.borderColor = '#69b66d';
           searchButton.style.color = '#ffffff';
-          searchButton.innerHTML = this.renderIcon('circle-check');
+          searchButton.innerHTML = renderIcon('circle-check');
           return;
         case 'error':
           searchButton.disabled = false;
@@ -1889,7 +1801,7 @@ class SceneCardObserver {
           searchButton.style.background = '#00853d';
           searchButton.style.borderColor = '#00853d';
           searchButton.style.color = '#ffffff';
-          searchButton.innerHTML = this.renderIcon('x');
+          searchButton.innerHTML = renderIcon('x');
           return;
         case 'idle':
         default:
@@ -1898,7 +1810,7 @@ class SceneCardObserver {
           searchButton.style.background = '#00853d';
           searchButton.style.borderColor = '#00853d';
           searchButton.style.color = '#ffffff';
-          searchButton.innerHTML = this.renderIcon('search');
+          searchButton.innerHTML = renderIcon('search');
       }
     };
 
@@ -1911,13 +1823,13 @@ class SceneCardObserver {
           excludeButton.disabled = true;
           excludeButton.style.opacity = '0.6';
           excludeButton.style.cursor = 'not-allowed';
-          excludeButton.innerHTML = this.renderIcon('spinner', true);
+          excludeButton.innerHTML = renderIcon('spinner', { spin: true });
           return;
         case 'error':
           excludeButton.disabled = false;
           excludeButton.style.opacity = '1';
           excludeButton.style.cursor = 'pointer';
-          excludeButton.innerHTML = this.renderIcon('x');
+          excludeButton.innerHTML = renderIcon('x');
           return;
         case 'idle':
         default:
@@ -1925,8 +1837,8 @@ class SceneCardObserver {
           excludeButton.style.opacity = '1';
           excludeButton.style.cursor = 'pointer';
           excludeButton.innerHTML = excluded
-            ? this.renderIcon('circle-check')
-            : this.renderIcon('ban');
+            ? renderIcon('circle-check')
+            : renderIcon('ban');
           excludeButton.style.background = excluded ? '#9ca3af' : '#c4273c';
           excludeButton.style.borderColor = excluded ? '#9ca3af' : '#c4273c';
       }
@@ -1941,7 +1853,7 @@ class SceneCardObserver {
         monitorButton.disabled = true;
         monitorButton.style.opacity = '0.6';
         monitorButton.style.cursor = 'not-allowed';
-        monitorButton.innerHTML = this.renderIcon('bookmark');
+        monitorButton.innerHTML = renderIcon('bookmark');
         monitorButton.setAttribute('aria-label', 'Not in Whisparr');
         monitorButton.title = 'Not in Whisparr';
         return;
@@ -1951,7 +1863,7 @@ class SceneCardObserver {
         monitorButton.disabled = true;
         monitorButton.style.opacity = '0.6';
         monitorButton.style.cursor = 'not-allowed';
-        monitorButton.innerHTML = this.renderIcon('spinner', true);
+        monitorButton.innerHTML = renderIcon('spinner', { spin: true });
         monitorButton.setAttribute('aria-label', 'Updating monitor status');
         monitorButton.title = 'Updating monitor status';
         return;
@@ -1961,7 +1873,7 @@ class SceneCardObserver {
         monitorButton.disabled = false;
         monitorButton.style.opacity = '1';
         monitorButton.style.cursor = 'pointer';
-        monitorButton.innerHTML = this.renderIcon('x');
+        monitorButton.innerHTML = renderIcon('x');
         monitorButton.setAttribute('aria-label', 'Monitor update failed');
         monitorButton.title = 'Monitor update failed';
         return;
@@ -1971,7 +1883,7 @@ class SceneCardObserver {
       monitorButton.disabled = false;
       monitorButton.style.opacity = '1';
       monitorButton.style.cursor = 'pointer';
-      monitorButton.innerHTML = this.renderIcon(
+      monitorButton.innerHTML = renderIcon(
         isMonitored ? 'bookmark-filled' : 'bookmark',
       );
       monitorButton.setAttribute(
@@ -2251,7 +2163,9 @@ class SceneCardObserver {
       container.insertBefore(statusOverlay, container.firstChild);
     }
 
-    this.statusIconBySceneId.set(scene.sceneId, statusIcon);
+    this.statusIndicatorBySceneId.set(scene.sceneId, {
+      setState: statusIndicator.setState,
+    });
     this.actionBySceneId.set(scene.sceneId, {
       button: actionButton,
       setStatus,
@@ -2452,10 +2366,9 @@ class SceneCardObserver {
 
   private applyStatusError(sceneIds: string[]) {
     for (const sceneId of sceneIds) {
-      const icon = this.statusIconBySceneId.get(sceneId);
-      if (!icon) continue;
-      icon.innerHTML = this.renderIcon('ban');
-      icon.style.color = '#ef4444';
+      const indicator = this.statusIndicatorBySceneId.get(sceneId);
+      if (!indicator) continue;
+      indicator.setState('error');
       const action = this.actionBySceneId.get(sceneId);
       if (action) {
         action.setStatus('error');
@@ -2494,63 +2407,6 @@ class SceneCardObserver {
     return null;
   }
 
-  private ensureIconStyles() {
-    if (document.getElementById('stasharr-fa-style')) return;
-    const style = document.createElement('style');
-    style.id = 'stasharr-fa-style';
-    style.textContent =
-      '@keyframes stasharr-spin { to { transform: rotate(360deg); } }';
-    document.head.appendChild(style);
-  }
-
-  private renderIcon(
-    name:
-      | 'spinner'
-      | 'circle-check'
-      | 'download'
-      | 'ban'
-      | 'warning'
-      | 'refresh'
-      | 'x'
-      | 'search'
-      | 'external-link'
-      | 'bookmark'
-      | 'bookmark-filled',
-    spin = false,
-  ) {
-    const paths: Record<typeof name, string> = {
-      spinner: 'M12 2a10 10 0 1 0 10 10h-3a7 7 0 1 1-7-7V2z',
-      'circle-check':
-        'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm5 7-6 6-3-3 1.4-1.4L11 12.2l4.6-4.6L17 9z',
-      download: 'M12 3v9m0 0 4-4m-4 4-4-4M5 19h14',
-      ban: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-6.2 5.8L18.2 18.2M18.2 5.8 5.8 18.2',
-      warning:
-        'M12 3 1.5 21h21L12 3zm0 5.5 3.5 7H8.5L12 8.5zm-1 9.5h2v2h-2v-2z',
-      refresh:
-        'M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.3 2.3z',
-      x: 'M6 6l12 12M18 6L6 18',
-      search: 'M21 21l-4.3-4.3m1.3-5A7 7 0 1 1 10 4a7 7 0 0 1 8 7.7z',
-      'external-link': 'M14 3h7v7m0-7L10 14M5 7v12h12',
-      bookmark: 'M6 4h12v16l-6-4-6 4V4z',
-      'bookmark-filled': 'M6 4h12v16l-6-4-6 4V4z',
-    };
-    this.ensureIconStyles();
-    const spinStyle = spin
-      ? 'animation: stasharr-spin 1s linear infinite;'
-      : '';
-    const strokeIcons =
-      name === 'download' ||
-      name === 'ban' ||
-      name === 'refresh' ||
-      name === 'x' ||
-      name === 'search' ||
-      name === 'external-link' ||
-      name === 'bookmark';
-    if (strokeIcons) {
-      return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[name]}"></path></svg>`;
-    }
-    return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="currentColor"><path d="${paths[name]}"></path></svg>`;
-  }
 }
 
 const sceneCardObserver = new SceneCardObserver();
