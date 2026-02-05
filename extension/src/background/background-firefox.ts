@@ -4,6 +4,22 @@ import {
   registerBackgroundListener,
 } from './core.js';
 import {
+  MESSAGE_TYPES,
+  type DiscoveryCatalogs,
+  type DiscoverySelections,
+  type DiscoverySelectionsForUi,
+  type ExtensionSettings,
+} from '../shared/messages.js';
+import {
+  getCatalogs,
+  getSelections,
+  getSettings,
+  resetSettings,
+  saveCatalogs,
+  saveSelections,
+  saveSettings,
+} from '../shared/storage.js';
+import {
   handleAddScene as handleAddSceneShared,
   handleCheckSceneStatus as handleCheckSceneStatusShared,
   handleFetchDiscoveryCatalogs as handleFetchDiscoveryCatalogsShared,
@@ -22,66 +38,10 @@ import {
   handleStashFindSceneByStashdbId as handleStashFindSceneByStashdbIdShared,
   handleValidateStashConnection as handleValidateStashConnectionShared,
 } from './services/stash.js';
-import { fetchWithTimeout } from './http.js';
-
-const MESSAGE_TYPES = {
-  ping: 'PING',
-  fetchJson: 'FETCH_JSON',
-  validateConnection: 'VALIDATE_CONNECTION',
-  getSettings: 'GET_SETTINGS',
-  getConfigStatus: 'GET_CONFIG_STATUS',
-  saveSettings: 'SAVE_SETTINGS',
-  resetSettings: 'RESET_SETTINGS',
-  requestPermission: 'REQUEST_PERMISSION',
-  getPermission: 'GET_PERMISSION',
-  fetchDiscoveryCatalogs: 'FETCH_DISCOVERY_CATALOGS',
-  saveSelections: 'SAVE_SELECTIONS',
-  openOptionsPage: 'OPEN_OPTIONS_PAGE',
-  checkSceneStatus: 'CHECK_SCENE_STATUS',
-  updateTags: 'UPDATE_TAGS',
-  updateQualityProfile: 'UPDATE_QUALITY_PROFILE',
-  sceneCardActionRequested: 'SCENE_CARD_ACTION_REQUESTED',
-  sceneCardsCheckStatus: 'SCENE_CARDS_CHECK_STATUS',
-  sceneCardAdd: 'SCENE_CARD_ADD',
-  sceneCardTriggerSearch: 'SCENE_CARD_TRIGGER_SEARCH',
-  sceneCardSetExcluded: 'SCENE_CARD_SET_EXCLUDED',
-  addScene: 'ADD_SCENE',
-  setMonitorState: 'SET_MONITOR_STATE',
-  stashFindSceneByStashdbId: 'STASH_FIND_SCENE_BY_STASHDB_ID',
-} as const;
+import { fetchWithTimeout, handleFetchJson as handleFetchJsonShared } from './http.js';
 
 type BackgroundRequest = { type?: string; [key: string]: unknown };
 type BackgroundResponse = { [key: string]: unknown };
-
-type ExtensionSettings = {
-  whisparrBaseUrl: string;
-  whisparrApiKey: string;
-  stashBaseUrl?: string;
-  stashApiKey?: string;
-  lastValidatedAt?: string;
-  openExternalLinksInNewTab?: boolean;
-};
-
-type DiscoveryCatalogs = {
-  qualityProfiles: { id: number; name: string }[];
-  rootFolders: { id?: number; path: string }[];
-  tags: { id: number; label: string }[];
-  fetchedAt?: string;
-  baseUrl?: string;
-  apiKeyHash?: string;
-};
-
-type DiscoverySelections = {
-  qualityProfileId: number | null;
-  rootFolderPath: string | null;
-  tagIds: number[];
-};
-
-type DiscoverySelectionsForUi = {
-  qualityProfileId: number | null;
-  rootFolderPath: string | null;
-  labelIds: number[];
-};
 
 type StorageArea = {
   get: (keys?: string[] | string | null) => Promise<Record<string, unknown>>;
@@ -123,95 +83,9 @@ if (!extCandidate) {
 }
 const ext = extCandidate;
 
-const SETTINGS_KEY = 'stasharrSettings';
-const CATALOGS_KEY = 'stasharrCatalogs';
-const SELECTIONS_KEY = 'stasharrSelections';
 const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
 const SCENE_CARD_STATUS_BATCH_LIMIT = 25;
-
-async function getSettings(): Promise<ExtensionSettings> {
-  const result = await ext.storage.local.get(SETTINGS_KEY);
-  return (
-    (result[SETTINGS_KEY] as ExtensionSettings) ?? {
-      whisparrBaseUrl: '',
-      whisparrApiKey: '',
-      openExternalLinksInNewTab: true,
-    }
-  );
-}
-
-async function saveSettings(
-  partial: Partial<ExtensionSettings>,
-): Promise<ExtensionSettings> {
-  const current = await getSettings();
-  const next = { ...current, ...partial };
-  await ext.storage.local.set({ [SETTINGS_KEY]: next });
-  return next;
-}
-
-async function resetSettings(): Promise<void> {
-  await ext.storage.local.remove(SETTINGS_KEY);
-}
-
-async function getCatalogs(): Promise<{ whisparr: DiscoveryCatalogs }> {
-  const result = await ext.storage.local.get(CATALOGS_KEY);
-  return (
-    (result[CATALOGS_KEY] as { whisparr: DiscoveryCatalogs }) ?? {
-      whisparr: {
-        qualityProfiles: [],
-        rootFolders: [],
-        tags: [],
-        fetchedAt: undefined,
-        baseUrl: undefined,
-        apiKeyHash: undefined,
-      },
-    }
-  );
-}
-
-async function saveCatalogs(partial: Partial<{ whisparr: DiscoveryCatalogs }>) {
-  const current = await getCatalogs();
-  const next = {
-    ...current,
-    ...partial,
-    whisparr: {
-      ...current.whisparr,
-      ...(partial.whisparr ?? {}),
-    },
-  };
-  await ext.storage.local.set({ [CATALOGS_KEY]: next });
-  return next;
-}
-
-async function getSelections(): Promise<{ whisparr: DiscoverySelections }> {
-  const result = await ext.storage.local.get(SELECTIONS_KEY);
-  return (
-    (result[SELECTIONS_KEY] as { whisparr: DiscoverySelections }) ?? {
-      whisparr: {
-        qualityProfileId: null,
-        rootFolderPath: null,
-        tagIds: [],
-      },
-    }
-  );
-}
-
-async function saveSelections(
-  partial: Partial<{ whisparr: DiscoverySelections }>,
-) {
-  const current = await getSelections();
-  const next = {
-    ...current,
-    ...partial,
-    whisparr: {
-      ...current.whisparr,
-      ...(partial.whisparr ?? {}),
-    },
-  };
-  await ext.storage.local.set({ [SELECTIONS_KEY]: next });
-  return next;
-}
 
 function normalizeBaseUrl(raw: string): {
   ok: boolean;
@@ -267,7 +141,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-async function handleFetchJson(request: {
+async function handleFetchJsonLegacy(request: {
   url?: string;
   method?: string;
   headers?: Record<string, string>;
@@ -690,7 +564,7 @@ async function fetchSceneLookup(
   apiKey: string,
   stashId: string,
 ) {
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${baseUrl}/api/v3/lookup/scene?term=stash:${encodeURIComponent(stashId)}`,
     headers: { 'X-Api-Key': apiKey },
   });
@@ -1018,7 +892,7 @@ async function handleCheckSceneStatus(request: {
     };
   }
 
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie?stashId=${encodeURIComponent(stashId)}`,
     headers: { 'X-Api-Key': apiKey },
   });
@@ -1174,7 +1048,7 @@ async function handleAddScene(request: {
     searchForMovie: true,
   };
 
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie`,
     method: 'POST',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
@@ -1283,7 +1157,7 @@ async function handleSetMonitorState(request: {
     };
   }
 
-  const existingResponse = await handleFetchJson({
+  const existingResponse = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie/${whisparrId}`,
     headers: { 'X-Api-Key': apiKey },
   });
@@ -1311,7 +1185,7 @@ async function handleSetMonitorState(request: {
     };
   }
 
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie/${whisparrId}`,
     method: 'PUT',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
@@ -1410,7 +1284,7 @@ async function handleUpdateTags(request: {
     };
   }
 
-  const existingResponse = await handleFetchJson({
+  const existingResponse = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie/${whisparrId}`,
     headers: { 'X-Api-Key': apiKey },
   });
@@ -1438,7 +1312,7 @@ async function handleUpdateTags(request: {
     };
   }
 
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie/${whisparrId}`,
     method: 'PUT',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
@@ -1537,7 +1411,7 @@ async function handleUpdateQualityProfile(request: {
     };
   }
 
-  const existingResponse = await handleFetchJson({
+  const existingResponse = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie/${whisparrId}`,
     headers: { 'X-Api-Key': apiKey },
   });
@@ -1565,7 +1439,7 @@ async function handleUpdateQualityProfile(request: {
     };
   }
 
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie/${whisparrId}`,
     method: 'PUT',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
@@ -1701,7 +1575,7 @@ async function handleSceneCardsCheckStatus(request: {
   }
 
   for (const sceneId of uniqueItems.keys()) {
-    const response = await handleFetchJson({
+    const response = await handleFetchJsonLegacy({
       url: `${normalized.value}/api/v3/movie?stashId=${encodeURIComponent(sceneId)}`,
       headers: { 'X-Api-Key': apiKey },
     });
@@ -1855,7 +1729,7 @@ async function handleSceneCardAdd(request: {
     title,
   };
 
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/movie`,
     method: 'POST',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
@@ -1963,7 +1837,7 @@ async function handleSceneCardTriggerSearch(request: {
     };
   }
 
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${normalized.value}/api/v3/command`,
     method: 'POST',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
@@ -2096,7 +1970,7 @@ async function handleSceneCardSetExcluded(request: {
 
   let createdExclusionId: number | undefined;
   if (excluded) {
-    const createResponse = await handleFetchJson({
+    const createResponse = await handleFetchJsonLegacy({
       url: `${normalized.value}/api/v3/exclusions`,
       method: 'POST',
       headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
@@ -2143,7 +2017,7 @@ async function handleSceneCardSetExcluded(request: {
       createdExclusionId = Number.isFinite(parsedId) ? parsedId : undefined;
     }
   } else if (existing.exclusionId) {
-    const deleteResponse = await handleFetchJson({
+    const deleteResponse = await handleFetchJsonLegacy({
       url: `${normalized.value}/api/v3/exclusions/${existing.exclusionId}`,
       method: 'DELETE',
       headers: { 'X-Api-Key': apiKey },
@@ -2180,7 +2054,7 @@ async function fetchExclusionState(
   apiKey: string,
   sceneId: string,
 ) {
-  const response = await handleFetchJson({
+  const response = await handleFetchJsonLegacy({
     url: `${baseUrl}/api/v3/exclusions?stashId=${encodeURIComponent(sceneId)}`,
     headers: { 'X-Api-Key': apiKey },
   });
@@ -2310,14 +2184,7 @@ const handlers: Record<
 > = {
   ...baseHandlers,
   [MESSAGE_TYPES.fetchJson]: (request) =>
-    handleFetchJson(
-      request as {
-        url?: string;
-        method?: string;
-        headers?: Record<string, string>;
-        body?: string;
-      },
-    ),
+    handleFetchJsonShared(request as any),
   [MESSAGE_TYPES.validateConnection]: (request) =>
     (request as { kind?: string }).kind === 'stash'
       ? handleValidateStashConnectionShared(request as any)
