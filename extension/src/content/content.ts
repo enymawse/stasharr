@@ -1464,6 +1464,12 @@ class SceneCardObserver {
     container.style.color = '#0f172a';
     container.style.fontSize = '11px';
 
+    const leftWrap = document.createElement('div');
+    leftWrap.style.display = 'inline-flex';
+    leftWrap.style.alignItems = 'center';
+    leftWrap.style.gap = '6px';
+    container.appendChild(leftWrap);
+
     const statusOverlay = document.createElement('div');
     statusOverlay.className = 'stasharr-scene-card-status';
     statusOverlay.style.position = 'absolute';
@@ -1504,7 +1510,7 @@ class SceneCardObserver {
     actionButton.style.justifyContent = 'center';
     actionButton.style.gap = '4px';
     actionButton.innerHTML = this.renderIcon('download');
-    container.appendChild(actionButton);
+    leftWrap.appendChild(actionButton);
 
     const viewWhisparrButton = document.createElement('button');
     viewWhisparrButton.type = 'button';
@@ -1572,7 +1578,7 @@ class SceneCardObserver {
     missingWrap.style.display = 'none';
     missingWrap.style.alignItems = 'center';
     missingWrap.style.gap = '4px';
-    container.appendChild(missingWrap);
+    leftWrap.appendChild(missingWrap);
 
     const searchButton = document.createElement('button');
     searchButton.type = 'button';
@@ -1612,7 +1618,7 @@ class SceneCardObserver {
     excludeButton.style.opacity = '0.6';
     excludeButton.setAttribute('aria-label', 'Exclusion status loading');
     excludeButton.title = 'Exclusion status loading';
-    container.appendChild(excludeButton);
+    leftWrap.appendChild(excludeButton);
 
     const setStatus = (
       state: 'loading' | 'in' | 'out' | 'excluded' | 'error' | 'missing',
