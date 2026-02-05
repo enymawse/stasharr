@@ -361,7 +361,7 @@ Deliverables:
 - Commit:
   - "extension: harden scene card augmentation (spa + perf)"
 
-# Task 4.STASH.0
+# [x] Task 4.STASH.0
 
 You are working in enymawse/stasharr inside /extension.
 Read /extension/docs/ARCHITECTURE.md first; it is authoritative.
@@ -382,7 +382,7 @@ Commit:
 
 - "docs: add stash integration feature checklist"
 
-# Task 4.STASH.1
+# [x] Task 4.STASH.1
 
 You are working in /extension. Read ARCHITECTURE.md first.
 
@@ -416,7 +416,7 @@ Commit:
 
 - "extension: stash graphql client + background validation"
 
-# Task 4.STASH.2
+# [x] Task 4.STASH.2
 
 You are working in /extension. Read ARCHITECTURE.md first.
 
@@ -424,7 +424,7 @@ Task 4.STASH.2: Implement a single-scene lookup that finds the local Stash scene
 
 Background:
 
-- Stash stores "StashID" matches; GraphQL findScenes supports filtering by stash_id via scene_filter.stash_id_endpoint. :contentReference[oaicite:4]{index=4}
+- Stash stores "StashID" matches; GraphQL findScenes supports filtering by stash_id via scene_filter.stash_id_endpoint.
 
 Requirements:
 A) Background lookup
@@ -436,10 +436,6 @@ A) Background lookup
 3. Return normalized result:
    - { ok, found: boolean, stashSceneId?: string|number, stashScenePath?: string, title?: string }
 
-B) Caching
-
-- Cache by stashdbSceneId with TTL to avoid hammering Stash.
-
 Deliverable:
 
 - Given a stashdb scene id, background can return the corresponding local Stash scene id (if any).
@@ -448,19 +444,19 @@ Commit:
 
 - "extension: stash lookup by stashdb scene id (background)"
 
-# Task 4.STASH.3
+# [x] Task 4.STASH.3
 
 You are working in /extension. Read ARCHITECTURE.md first.
 
-Task 4.STASH.3: On stashdb Scene detail pages, show an icon-only “View in Stash” control when a matching local Stash scene exists.
+Task 4.STASH.3: On stashdb Scene detail pages, show an action “View in Stash” button on the Stasharr Extension Panel when a matching local Stash scene exists.
 
 Requirements:
 A) Content
 
 1. Reuse existing scene page parsing (stashdb sceneId).
-2. Add an icon-only button:
+2. Add an action button:
    - If configured + match found -> enabled, opens local Stash scene in a new tab
-   - If configured but no match -> disabled state (optional tooltip)
+   - If configured but no match -> disabled state
 3. Accessibility:
    - aria-label="View in Stash"
    - optional title tooltip
@@ -480,7 +476,44 @@ Commit:
 
 - "extension: scene page view-in-stash link (icon-only)"
 
-# Task 4.STASH.4
+### [x] Task 4.STASH.3.1
+
+You are working in /extension. Read ARCHITECTURE.md first.
+
+Task 4.STASH.3.1: On Stash Extension Panel put the "View in Stash" action button on its own row when a matching local Stash scene exists.
+
+### [x] Task 4.STASH.3.2
+
+You are working in /extension. Read ARCHITECTURE.md first.
+
+Task 4.STASH.3.2: On Stash Extension Panel put a "View in Whisparr" action button on the same row as "View in Stash" when a matching Whisparr scene exists.
+
+### [x] Task 4.STASH.3.3
+
+You are working in /extension. Read ARCHITECTURE.md first.
+
+Task 4.STASH.3.3: Add icon action buttons to the stasharr scene card action row for "View in Whisparr" and "View in Stash" actions.
+
+### [x] Task 4.STASH.3.4
+
+You are working in /extension. Read ARCHITECTURE.md first.
+
+Task 4.STASH.3.4: On the Stasharr Extension panel, make the "View in Stash" and "View in Whisparr" action buttons fill their available row and have "Whisparr" and "Stash" text in the button.
+
+### [x] Task 4.STASH.3.5
+
+You are working in /extension. Read ARCHITECTURE.md first.
+
+Task 4.STASH.3.5: On the Scene Card, the "View in Whisparr" and "View in Stash" buttons should use the Whisparr and Stash favicons respectively and be right adjusted in the space they are located.
+
+Requirements:
+
+1. For Whisparr, use the following icon
+   - https://raw.githubusercontent.com/Whisparr/Whisparr/refs/heads/eros/Logo/Whisparr.svg
+2. For Stash, use the following icon
+   - https://stashapp.cc/images/stash.svg
+
+# [x] Task 4.STASH.4 (OBE)
 
 You are working in /extension. Read ARCHITECTURE.md and SCENE_CARDS.md first.
 
@@ -488,7 +521,7 @@ Task 4.STASH.4: Add Stash presence indicator + icon-only “View in Stash” act
 
 Reality check:
 
-- Stash GraphQL filter currently supports single stash_id criterion; true batching may require multiple requests or OR chaining (keep modest limits). :contentReference[oaicite:6]{index=6}
+- Stash GraphQL filter currently supports single stash_id criterion; true batching may require multiple requests or OR chaining (keep modest limits).
 
 Requirements:
 A) Content
@@ -518,7 +551,7 @@ Commit:
 
 - "extension: scene cards stash presence + view-in-stash (throttled background)"
 
-# Task 4.STASH.5
+# [x] Task 4.STASH.5 (OBE)
 
 You are working in /extension. Read ARCHITECTURE.md first.
 
@@ -539,7 +572,7 @@ Commit:
 
 - "extension: stash settings UX + optional stashid endpoint support"
 
-# Tash 4.STASH.6
+# [x] Task 4.STASH.6 (OBE)
 
 You are working in /extension. Read ARCHITECTURE.md first.
 
@@ -558,6 +591,125 @@ Requirements:
 Commit:
 
 - "extension: polish stash integration icons + link behavior"
+
+# [x] Task 4.TABS.1
+
+You are working in enymawse/stasharr inside /extension.
+Read /extension/docs/ARCHITECTURE.md first; it is authoritative.
+
+Task: Implement a global “Open links in a new tab” toggle option and apply it consistently to all external navigation links
+(e.g., “View in Stash”, “View in Whisparr”).
+
+Goal:
+Users can choose whether Stasharr opens external links:
+
+- in the current tab, OR
+- in a new browser tab
+
+This setting must be respected everywhere the extension navigates to an external site.
+
+Non-negotiable constraints:
+
+- No networking changes
+- No imports from /legacy
+- No GM\_\* APIs
+- Navigation behavior must be centralized and consistent
+- Must work in both Chrome and Firefox
+
+---
+
+A) Settings schema + persistence
+
+1. Extend the extension settings schema to include:
+   - openExternalLinksInNewTab: boolean
+   - default value: true (recommended, but document clearly)
+
+2. Store this value in extension storage alongside other user preferences.
+
+3. Ensure:
+   - setting persists across restarts
+   - setting is available to content scripts via storage read (no background fetch needed)
+
+---
+
+B) Options UI
+
+1. Add a toggle control to the Options page:
+   - Label: “Open external links in a new tab”
+   - Description text (concise):
+     - “Controls whether links to Stash, Whisparr, etc. open in a new tab or replace the current page.”
+2. Toggle must:
+   - reflect current stored value on load
+   - save immediately or via an explicit Save action (match existing Options UX)
+3. No navigation logic in Options page.
+
+---
+
+C) Centralized navigation helper (required)
+
+1. Implement a shared navigation utility (e.g., src/shared/navigation.ts):
+   - openExternalLink(url: string, options?: { forceNewTab?: boolean })
+2. Behavior:
+   - Read openExternalLinksInNewTab from storage
+   - If true:
+     - open link in a new tab
+   - If false:
+     - navigate current tab to the URL
+3. Allow an optional override (forceNewTab) for rare cases if needed later.
+
+4. Implementation notes:
+   - Prefer browser.tabs.create when opening a new tab
+   - Prefer location.assign / window.location.href ONLY when explicitly navigating current tab
+   - Do not rely on <a target="_blank"> alone (must work from programmatic actions)
+
+---
+
+D) Apply behavior consistently
+
+1. Update all existing external link actions to use the centralized helper:
+   - “View in Stash” (scene page + scene cards)
+   - “View in Whisparr” (where applicable)
+2. Remove any inline usage of:
+   - target="\_blank"
+   - window.open
+   - direct location.href assignments for external links
+
+---
+
+E) Accessibility + UX
+
+1. Icon-only buttons must:
+   - retain proper aria-labels (e.g., “View in Stash”)
+   - not change visual appearance based on tab behavior
+2. Do not show separate UI for “open in new tab” vs “same tab” on the button itself;
+   the behavior is governed solely by the global toggle.
+
+---
+
+F) Guardrails
+
+1. No references to this setting should appear in background networking logic.
+2. Ensure content/options bundles still contain no API endpoint strings.
+3. Keep navigation logic testable and isolated.
+
+---
+
+Deliverables:
+
+- New “Open external links in a new tab” toggle in Options
+- Centralized navigation helper
+- All external navigation respects the toggle
+- Commit(s):
+  - "extension: add open external links in new tab setting"
+  - "extension: centralize external navigation behavior"
+
+Acceptance criteria:
+
+- Toggling the option immediately affects subsequent clicks.
+- In both Chrome and Firefox:
+  - When enabled, external links open in a new tab.
+  - When disabled, external links replace the current tab.
+- No regression in existing link functionality.
 
 # Task 4.7
 
@@ -652,3 +804,44 @@ Deliverables:
 Commit (make commitlint friendly):
 
 - "docs: add smoke test + release checklist"
+
+# Task 5.0
+
+You are working in /extension. Read ARCHITECTURE.md first.
+
+Task 5.0: Build Modernization (pre-refactor).
+
+Goal:
+Enable shared TS/ESM authoring while emitting **compatibility-correct outputs**:
+- Chrome background: ESM (MV3 service worker)
+- Firefox background: classic script (no imports)
+- Content scripts: classic script (no imports)
+- Options page: ESM allowed
+
+Requirements:
+
+1. Replace the direct `tsc --outDir` build with a bundler-based pipeline
+   that supports **multi-entry** builds and **per-entry output format**.
+2. Preserve current manifest structure and file names (e.g., `background/background.js`,
+   `background/background-firefox.js`, `content/content.js`, `content/options.js`).
+3. Keep architecture constraints intact:
+   - Background-only networking
+   - No content/options API endpoint strings
+   - No `/legacy` references
+4. Maintain tripwire checks on the built bundles.
+5. Ensure Firefox remains the correctness baseline (no CSP regressions).
+
+Deliverables:
+
+- Build pipeline that emits the same paths with correct formats per entry
+- Content scripts remain non-module at runtime
+- Options page may be module output
+
+Commit (make commitlint friendly):
+
+- "build: modernize extension build pipeline"
+
+Notes:
+
+- This task **must land before any refactor that introduces shared imports**
+  into content scripts or Firefox background.
