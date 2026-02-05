@@ -1451,11 +1451,11 @@ class SceneCardObserver {
     const actionButton = document.createElement('button');
     actionButton.type = 'button';
     actionButton.setAttribute('aria-label', 'Add to Whisparr');
-    actionButton.style.border = '1px solid #7138c8';
+    actionButton.style.border = '1px solid #2563eb';
     actionButton.style.borderRadius = '999px';
     actionButton.style.padding = '2px 8px';
     actionButton.style.cursor = 'pointer';
-    actionButton.style.background = '#7138c8';
+    actionButton.style.background = '#2563eb';
     actionButton.style.color = '#ffffff';
     actionButton.style.fontSize = '12px';
     actionButton.style.lineHeight = '1';
@@ -1470,11 +1470,11 @@ class SceneCardObserver {
     viewWhisparrButton.type = 'button';
     viewWhisparrButton.setAttribute('aria-label', 'View in Whisparr');
     viewWhisparrButton.title = 'View in Whisparr';
-    viewWhisparrButton.style.border = '1px solid #2563eb';
+    viewWhisparrButton.style.border = '1px solid #7138C8';
     viewWhisparrButton.style.borderRadius = '999px';
     viewWhisparrButton.style.padding = '2px 8px';
     viewWhisparrButton.style.cursor = 'pointer';
-    viewWhisparrButton.style.background = '#2563eb';
+    viewWhisparrButton.style.background = '#7138C8';
     viewWhisparrButton.style.color = '#ffffff';
     viewWhisparrButton.style.fontSize = '12px';
     viewWhisparrButton.style.lineHeight = '1';
@@ -1490,11 +1490,11 @@ class SceneCardObserver {
     viewStashButton.type = 'button';
     viewStashButton.setAttribute('aria-label', 'View in Stash');
     viewStashButton.title = 'View in Stash';
-    viewStashButton.style.border = '1px solid #16a34a';
+    viewStashButton.style.border = '1px solid #137cbd';
     viewStashButton.style.borderRadius = '999px';
     viewStashButton.style.padding = '2px 8px';
     viewStashButton.style.cursor = 'pointer';
-    viewStashButton.style.background = '#16a34a';
+    viewStashButton.style.background = '#137cbd';
     viewStashButton.style.color = '#ffffff';
     viewStashButton.style.fontSize = '12px';
     viewStashButton.style.lineHeight = '1';
@@ -1562,8 +1562,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#7138c8';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
-          actionButton.style.background = '#b9a2e8';
-          actionButton.style.borderColor = '#b9a2e8';
+          actionButton.style.background = '#93c5fd';
+          actionButton.style.borderColor = '#93c5fd';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Adding to Whisparr');
           return;
@@ -1572,8 +1572,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#16a34a';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
-          actionButton.style.background = '#b9a2e8';
-          actionButton.style.borderColor = '#b9a2e8';
+          actionButton.style.background = '#93c5fd';
+          actionButton.style.borderColor = '#93c5fd';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Already in Whisparr');
           return;
@@ -1582,8 +1582,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#f59e0b';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
-          actionButton.style.background = '#b9a2e8';
-          actionButton.style.borderColor = '#b9a2e8';
+          actionButton.style.background = '#93c5fd';
+          actionButton.style.borderColor = '#93c5fd';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'In Whisparr (missing file)');
           return;
@@ -1599,8 +1599,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
-          actionButton.style.background = '#7138c8';
-          actionButton.style.borderColor = '#7138c8';
+          actionButton.style.background = '#2563eb';
+          actionButton.style.borderColor = '#2563eb';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Error, try again');
           return;
@@ -1610,8 +1610,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#7138c8';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
-          actionButton.style.background = '#7138c8';
-          actionButton.style.borderColor = '#7138c8';
+          actionButton.style.background = '#2563eb';
+          actionButton.style.borderColor = '#2563eb';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Add to Whisparr');
       }
