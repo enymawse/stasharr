@@ -121,6 +121,17 @@
 - Commits: 1) feat(shared): add TTL cache + batcher. 2) refactor(background): use TTL cache for scene status. 3) refactor(content): use batcher for status queue.
 - Verification: `npm run build`; `npm run tripwire`; manual: scene list status updates remain batched and accurate.
 
+**Future Work: Firefox Background Refactor Plan**
+
+- Goal: refactor `src/background/background-firefox.ts` to use shared background core/services while preserving Firefox MV3 script output and behavior.
+- Constraints: keep `background/background-firefox.js` as a script (not a module); preserve message types/payloads/error strings; no cross-layer imports; background-only networking.
+- Phase 1 (Inventory): map each Firefox handler to shared services (`src/background/services/*`) and shared helpers (`src/shared/*`, `src/background/*`); flag Firefox-only logic.
+- Phase 2 (Core Router): add/extend shared background core router and have both entrypoints call it via a thin runtime adapter.
+- Phase 3 (Service Adoption): replace inline Firefox handlers with calls into `whisparr.ts` and `stash.ts`, preserving payloads.
+- Phase 4 (Shared Utilities): adopt shared HTTP/url/permissions/message helpers in Firefox where parity exists.
+- Phase 5 (Build Output): verify Firefox bundle remains a classic script and manifest still points to `background/background-firefox.js`.
+- Phase 6 (Validation): manual Firefox checks for add scene, set monitor, update tags, and scene card actions.
+
 **Guardrails**
 
 - Extend `scripts/tripwire.mjs` to scan content/options bundles for `/graphql` and `ApiKey:` (Stash header) in addition to existing `/api/v3` and `X-Api-Key`.
