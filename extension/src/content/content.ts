@@ -135,6 +135,11 @@ function truncate(value: string, max = 300) {
   return `${value.slice(0, max)}…`;
 }
 
+function buildWhisparrSceneUrl(baseUrl: string, whisparrId: number): string {
+  const normalized = baseUrl.replace(/\/+$/, '');
+  return `${normalized}/movie/${encodeURIComponent(String(whisparrId))}`;
+}
+
 function applyDisabledStyles(button: HTMLButtonElement, disabled: boolean) {
   button.disabled = disabled;
   if (disabled) {
@@ -185,6 +190,7 @@ if (!document.getElementById(PANEL_ID)) {
   const qualityProfileUpdateInFlight = new Set<string>();
   let tagCatalog: Array<{ id: number; label: string }> = [];
   let qualityProfileCatalog: Array<{ id: number; name: string }> = [];
+  let whisparrBaseUrl: string | null = null;
   let stashConfigured = false;
   const stashMatchCache = new Map<
     string,
@@ -282,6 +288,12 @@ if (!document.getElementById(PANEL_ID)) {
   applyDisabledStyles(addSceneButton, true);
   actionRow.appendChild(addSceneButton);
 
+  const viewRow = document.createElement('div');
+  viewRow.style.display = 'none';
+  viewRow.style.gap = '6px';
+  viewRow.style.marginTop = '6px';
+  sceneControls.appendChild(viewRow);
+
   const viewInStashButton = document.createElement('button');
   viewInStashButton.type = 'button';
   viewInStashButton.textContent = '↗';
@@ -295,7 +307,23 @@ if (!document.getElementById(PANEL_ID)) {
   viewInStashButton.style.background = '#16a34a';
   viewInStashButton.style.color = '#ffffff';
   applyDisabledStyles(viewInStashButton, true);
-  actionRow.appendChild(viewInStashButton);
+  viewRow.appendChild(viewInStashButton);
+
+  const viewInWhisparrButton = document.createElement('button');
+  viewInWhisparrButton.type = 'button';
+  viewInWhisparrButton.textContent = '↗';
+  viewInWhisparrButton.setAttribute('aria-label', 'View in Whisparr');
+  viewInWhisparrButton.title = 'View in Whisparr';
+  viewInWhisparrButton.style.padding = '6px 0';
+  viewInWhisparrButton.style.width = '32px';
+  viewInWhisparrButton.style.borderRadius = '6px';
+  viewInWhisparrButton.style.border = 'none';
+  viewInWhisparrButton.style.cursor = 'pointer';
+  viewInWhisparrButton.style.background = '#2563eb';
+  viewInWhisparrButton.style.color = '#ffffff';
+  applyDisabledStyles(viewInWhisparrButton, true);
+  viewInWhisparrButton.style.display = 'none';
+  viewRow.appendChild(viewInWhisparrButton);
 
   const monitorRow = document.createElement('div');
   monitorRow.style.display = 'flex';
@@ -579,16 +607,41 @@ if (!document.getElementById(PANEL_ID)) {
     applyDisabledStyles(monitorToggle, true);
   };
 
+  const updateViewInWhisparrButton = (sceneId?: string) => {
+    if (!sceneId || !viewRow.style.display || viewRow.style.display === 'none') {
+      applyDisabledStyles(viewInWhisparrButton, true);
+      viewInWhisparrButton.style.display = 'none';
+      viewInWhisparrButton.title = 'View in Whisparr';
+      return;
+    }
+
+    const cached = statusCache.get(sceneId);
+    if (!cached?.exists || !cached.whisparrId || !whisparrBaseUrl) {
+      applyDisabledStyles(viewInWhisparrButton, true);
+      viewInWhisparrButton.style.display = 'none';
+      viewInWhisparrButton.title = 'No match in Whisparr';
+      return;
+    }
+
+    applyDisabledStyles(viewInWhisparrButton, false);
+    viewInWhisparrButton.style.display = 'inline-flex';
+    viewInWhisparrButton.title = 'View in Whisparr';
+  };
+
   const updateViewInStashButton = async (sceneId?: string, force = false) => {
     if (!sceneId) {
       applyDisabledStyles(viewInStashButton, true);
       viewInStashButton.title = 'View in Stash';
+      viewRow.style.display = 'none';
+      updateViewInWhisparrButton(undefined);
       return;
     }
 
     if (!stashConfigured) {
       applyDisabledStyles(viewInStashButton, true);
       viewInStashButton.title = 'Stash not configured';
+      viewRow.style.display = 'none';
+      updateViewInWhisparrButton(sceneId);
       return;
     }
 
@@ -597,9 +650,13 @@ if (!document.getElementById(PANEL_ID)) {
       if (cached.found && cached.stashSceneUrl) {
         applyDisabledStyles(viewInStashButton, false);
         viewInStashButton.title = 'View in Stash';
+        viewRow.style.display = 'flex';
+        updateViewInWhisparrButton(sceneId);
       } else {
         applyDisabledStyles(viewInStashButton, true);
         viewInStashButton.title = cached.error ? 'Lookup failed' : 'No match in Stash';
+        viewRow.style.display = 'none';
+        updateViewInWhisparrButton(sceneId);
       }
       return;
     }
@@ -611,6 +668,8 @@ if (!document.getElementById(PANEL_ID)) {
     stashLookupInFlight.add(sceneId);
     applyDisabledStyles(viewInStashButton, true);
     viewInStashButton.title = 'Checking Stash...';
+    viewRow.style.display = 'none';
+    updateViewInWhisparrButton(sceneId);
 
     try {
       const response = await extContent.runtime.sendMessage({
@@ -624,6 +683,8 @@ if (!document.getElementById(PANEL_ID)) {
         });
         applyDisabledStyles(viewInStashButton, true);
         viewInStashButton.title = 'Lookup failed';
+        viewRow.style.display = 'none';
+        updateViewInWhisparrButton(sceneId);
         return;
       }
 
@@ -639,9 +700,13 @@ if (!document.getElementById(PANEL_ID)) {
       if (found && response.stashSceneUrl) {
         applyDisabledStyles(viewInStashButton, false);
         viewInStashButton.title = 'View in Stash';
+        viewRow.style.display = 'flex';
+        updateViewInWhisparrButton(sceneId);
       } else {
         applyDisabledStyles(viewInStashButton, true);
         viewInStashButton.title = 'No match in Stash';
+        viewRow.style.display = 'none';
+        updateViewInWhisparrButton(sceneId);
       }
     } catch (error) {
       stashMatchCache.set(sceneId, {
@@ -650,6 +715,8 @@ if (!document.getElementById(PANEL_ID)) {
       });
       applyDisabledStyles(viewInStashButton, true);
       viewInStashButton.title = 'Lookup failed';
+      viewRow.style.display = 'none';
+      updateViewInWhisparrButton(sceneId);
     } finally {
       stashLookupInFlight.delete(sceneId);
     }
@@ -671,12 +738,14 @@ if (!document.getElementById(PANEL_ID)) {
       qualityStatus.textContent = 'Quality: unavailable';
       currentMonitorState = null;
       await updateViewInStashButton(undefined, true);
+      updateViewInWhisparrButton(undefined);
       return;
     }
 
     checkStatusButton.disabled = false;
     applyActionState(sceneId);
     void updateViewInStashButton(sceneId, force);
+    updateViewInWhisparrButton(sceneId);
 
     if (!force) {
       const cached = statusCache.get(sceneId);
@@ -703,6 +772,7 @@ if (!document.getElementById(PANEL_ID)) {
         updateQualityControls(sceneId);
         updateTagControls(sceneId);
         updateExcludeControls(sceneId);
+        updateViewInWhisparrButton(sceneId);
         return;
       }
     }
@@ -760,6 +830,7 @@ if (!document.getElementById(PANEL_ID)) {
       updateQualityControls(sceneId);
       updateTagControls(sceneId);
       updateExcludeControls(sceneId);
+      updateViewInWhisparrButton(sceneId);
     } catch (error) {
       sceneStatusRow.textContent = `Scene status: error (${(error as Error).message})`;
     } finally {
@@ -997,6 +1068,16 @@ if (!document.getElementById(PANEL_ID)) {
     window.open(cached.stashSceneUrl, '_blank', 'noopener');
   });
 
+  viewInWhisparrButton.addEventListener('click', () => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId || !whisparrBaseUrl) return;
+    const cached = statusCache.get(sceneId);
+    if (!cached?.whisparrId) return;
+    const url = buildWhisparrSceneUrl(whisparrBaseUrl, cached.whisparrId);
+    window.open(url, '_blank', 'noopener');
+  });
+
   monitorToggle.addEventListener('click', () => {
     void updateMonitorState();
   });
@@ -1035,6 +1116,7 @@ if (!document.getElementById(PANEL_ID)) {
       const baseUrl = response.settings.whisparrBaseUrl?.trim() ?? '';
       const apiKey = response.settings.whisparrApiKey?.trim() ?? '';
       const configured = Boolean(baseUrl && apiKey);
+      whisparrBaseUrl = baseUrl || null;
       stashConfigured = Boolean(
         response.settings.stashBaseUrl?.trim() && response.settings.stashApiKey?.trim(),
       );
@@ -1043,6 +1125,7 @@ if (!document.getElementById(PANEL_ID)) {
         readiness = 'unconfigured';
         applyDisabledStyles(addSceneButton, true);
         void updateViewInStashButton(getParsedPage().stashIds[0], true);
+        updateViewInWhisparrButton(getParsedPage().stashIds[0]);
         return;
       }
       if (!response.settings.lastValidatedAt) {
@@ -1050,6 +1133,7 @@ if (!document.getElementById(PANEL_ID)) {
         readiness = 'configured';
         applyDisabledStyles(addSceneButton, true);
         void updateViewInStashButton(getParsedPage().stashIds[0], true);
+        updateViewInWhisparrButton(getParsedPage().stashIds[0]);
         return;
       }
       const validatedAt = new Date(response.settings.lastValidatedAt);
@@ -1057,12 +1141,15 @@ if (!document.getElementById(PANEL_ID)) {
       readiness = 'validated';
       applyActionState(getParsedPage().stashIds[0]);
       void updateViewInStashButton(getParsedPage().stashIds[0], true);
+      updateViewInWhisparrButton(getParsedPage().stashIds[0]);
     } catch {
       statusRow.textContent = 'Config: unavailable';
       readiness = 'unconfigured';
       applyDisabledStyles(addSceneButton, true);
       stashConfigured = false;
+      whisparrBaseUrl = null;
       void updateViewInStashButton(getParsedPage().stashIds[0], true);
+      updateViewInWhisparrButton(getParsedPage().stashIds[0]);
     }
   };
 
@@ -1121,6 +1208,21 @@ class SceneCardObserver {
       ) => void;
     }
   >();
+  private viewBySceneId = new Map<
+    string,
+    {
+      whisparrButton: HTMLButtonElement;
+      stashButton: HTMLButtonElement;
+      setWhisparrEnabled: (enabled: boolean) => void;
+      setStashEnabled: (enabled: boolean, title?: string) => void;
+    }
+  >();
+  private stashMatchBySceneId = new Map<
+    string,
+    { found: boolean; stashSceneUrl?: string; error?: string }
+  >();
+  private whisparrBaseUrl: string | null = null;
+  private stashConfigured = false;
   private excludeBySceneId = new Map<
     string,
     {
@@ -1142,6 +1244,7 @@ class SceneCardObserver {
 
   start() {
     this.scan(document.body);
+    void this.refreshLinkSettings();
     this.observer = new MutationObserver((mutations) => {
       let shouldScan = false;
       for (const mutation of mutations) {
@@ -1164,6 +1267,23 @@ class SceneCardObserver {
     };
     window.addEventListener('popstate', checkNavigation);
     window.setInterval(checkNavigation, 500);
+  }
+
+  private async refreshLinkSettings() {
+    const runtime = extContent?.runtime;
+    if (!runtime) return;
+    try {
+      const response = await runtime.sendMessage({ type: 'GET_SETTINGS' });
+      if (!response.ok || !response.settings) return;
+      const baseUrl = response.settings.whisparrBaseUrl?.trim() ?? '';
+      this.whisparrBaseUrl = baseUrl || null;
+      this.stashConfigured = Boolean(
+        response.settings.stashBaseUrl?.trim() && response.settings.stashApiKey?.trim(),
+      );
+    } catch {
+      this.whisparrBaseUrl = null;
+      this.stashConfigured = false;
+    }
   }
 
   private resetStatusCache() {
@@ -1340,6 +1460,46 @@ class SceneCardObserver {
     actionButton.innerHTML = this.renderIcon('download');
     container.appendChild(actionButton);
 
+    const viewWhisparrButton = document.createElement('button');
+    viewWhisparrButton.type = 'button';
+    viewWhisparrButton.setAttribute('aria-label', 'View in Whisparr');
+    viewWhisparrButton.title = 'View in Whisparr';
+    viewWhisparrButton.style.border = '1px solid #2563eb';
+    viewWhisparrButton.style.borderRadius = '999px';
+    viewWhisparrButton.style.padding = '2px 8px';
+    viewWhisparrButton.style.cursor = 'pointer';
+    viewWhisparrButton.style.background = '#2563eb';
+    viewWhisparrButton.style.color = '#ffffff';
+    viewWhisparrButton.style.fontSize = '12px';
+    viewWhisparrButton.style.lineHeight = '1';
+    viewWhisparrButton.style.display = 'inline-flex';
+    viewWhisparrButton.style.alignItems = 'center';
+    viewWhisparrButton.style.justifyContent = 'center';
+    viewWhisparrButton.innerHTML = this.renderIcon('external-link');
+    viewWhisparrButton.disabled = true;
+    viewWhisparrButton.style.opacity = '0.6';
+    container.appendChild(viewWhisparrButton);
+
+    const viewStashButton = document.createElement('button');
+    viewStashButton.type = 'button';
+    viewStashButton.setAttribute('aria-label', 'View in Stash');
+    viewStashButton.title = 'View in Stash';
+    viewStashButton.style.border = '1px solid #16a34a';
+    viewStashButton.style.borderRadius = '999px';
+    viewStashButton.style.padding = '2px 8px';
+    viewStashButton.style.cursor = 'pointer';
+    viewStashButton.style.background = '#16a34a';
+    viewStashButton.style.color = '#ffffff';
+    viewStashButton.style.fontSize = '12px';
+    viewStashButton.style.lineHeight = '1';
+    viewStashButton.style.display = 'inline-flex';
+    viewStashButton.style.alignItems = 'center';
+    viewStashButton.style.justifyContent = 'center';
+    viewStashButton.innerHTML = this.renderIcon('external-link');
+    viewStashButton.disabled = true;
+    viewStashButton.style.opacity = '0.6';
+    container.appendChild(viewStashButton);
+
     const missingWrap = document.createElement('div');
     missingWrap.dataset.stasharrMissing = 'true';
     missingWrap.style.display = 'none';
@@ -1451,6 +1611,31 @@ class SceneCardObserver {
       }
     };
 
+    const setWhisparrEnabled = (enabled: boolean) => {
+      viewWhisparrButton.disabled = !enabled;
+      viewWhisparrButton.style.opacity = enabled ? '1' : '0.6';
+      viewWhisparrButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+      viewWhisparrButton.title = enabled ? 'View in Whisparr' : 'No match in Whisparr';
+    };
+
+    const setStashEnabled = (enabled: boolean, title?: string) => {
+      viewStashButton.disabled = !enabled;
+      viewStashButton.style.opacity = enabled ? '1' : '0.6';
+      viewStashButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+      viewStashButton.title = title ?? (enabled ? 'View in Stash' : 'No match in Stash');
+      if (!enabled) {
+        viewStashButton.innerHTML = this.renderIcon('external-link');
+      }
+    };
+
+    const setStashLoading = () => {
+      viewStashButton.disabled = true;
+      viewStashButton.style.opacity = '0.6';
+      viewStashButton.style.cursor = 'not-allowed';
+      viewStashButton.title = 'Checking Stash...';
+      viewStashButton.innerHTML = this.renderIcon('spinner', true);
+    };
+
     const setMissingState = (state: 'idle' | 'loading' | 'success' | 'error') => {
       switch (state) {
         case 'loading':
@@ -1525,6 +1710,10 @@ class SceneCardObserver {
       }
       excludeButton.style.display = 'inline-flex';
       setExcludeState('idle', Boolean(cachedStatus.excluded));
+      setWhisparrEnabled(
+        Boolean(cachedStatus.exists && cachedStatus.whisparrId && this.whisparrBaseUrl),
+      );
+      setStashEnabled(this.stashConfigured, this.stashConfigured ? 'View in Stash' : 'Stash not configured');
       if (cachedStatus.exists) {
         excludeButton.disabled = true;
         excludeButton.style.opacity = '0.6';
@@ -1542,6 +1731,12 @@ class SceneCardObserver {
         );
         excludeButton.title = cachedStatus.excluded ? 'Remove exclusion' : 'Exclude from Whisparr';
       }
+    } else {
+      setWhisparrEnabled(false);
+      setStashEnabled(
+        this.stashConfigured,
+        this.stashConfigured ? 'View in Stash' : 'Stash not configured',
+      );
     }
 
     actionButton.addEventListener('click', async (event) => {
@@ -1562,6 +1757,62 @@ class SceneCardObserver {
         setStatus(response.ok ? 'in' : 'error');
       } catch {
         setStatus('error');
+      }
+    });
+
+    viewWhisparrButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const cached = this.statusBySceneId.get(scene.sceneId);
+      if (!cached?.whisparrId || !this.whisparrBaseUrl) return;
+      const url = buildWhisparrSceneUrl(this.whisparrBaseUrl, cached.whisparrId);
+      window.open(url, '_blank', 'noopener');
+    });
+
+    viewStashButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!this.stashConfigured) {
+        setStashEnabled(false, 'Stash not configured');
+        return;
+      }
+      const cached = this.stashMatchBySceneId.get(scene.sceneId);
+      if (cached?.found && cached.stashSceneUrl) {
+        window.open(cached.stashSceneUrl, '_blank', 'noopener');
+        return;
+      }
+      const runtime = extContent?.runtime;
+      if (!runtime) {
+        setStashEnabled(false, 'Lookup unavailable');
+        return;
+      }
+      setStashLoading();
+      try {
+        const response = await runtime.sendMessage({
+          type: 'STASH_FIND_SCENE_BY_STASHDB_ID',
+          stashdbSceneId: scene.sceneId,
+        });
+        if (!response.ok) {
+          this.stashMatchBySceneId.set(scene.sceneId, {
+            found: false,
+            error: response.error ?? 'unknown',
+          });
+          setStashEnabled(false, 'Lookup failed');
+          return;
+        }
+        const found = Boolean(response.found && response.stashSceneUrl);
+        this.stashMatchBySceneId.set(scene.sceneId, {
+          found,
+          stashSceneUrl: response.stashSceneUrl,
+        });
+        if (found && response.stashSceneUrl) {
+          setStashEnabled(true);
+          window.open(response.stashSceneUrl, '_blank', 'noopener');
+        } else {
+          setStashEnabled(false, 'No match in Stash');
+        }
+      } catch {
+        setStashEnabled(false, 'Lookup failed');
       }
     });
 
@@ -1657,6 +1908,12 @@ class SceneCardObserver {
 
     this.statusIconBySceneId.set(scene.sceneId, statusIcon);
     this.actionBySceneId.set(scene.sceneId, { button: actionButton, setStatus });
+    this.viewBySceneId.set(scene.sceneId, {
+      whisparrButton: viewWhisparrButton,
+      stashButton: viewStashButton,
+      setWhisparrEnabled,
+      setStashEnabled,
+    });
     this.missingBySceneId.set(scene.sceneId, { wrap: missingWrap, setState: setMissingState });
     this.excludeBySceneId.set(scene.sceneId, { button: excludeButton, setState: setExcludeState });
 
@@ -1756,6 +2013,17 @@ class SceneCardObserver {
           action.setStatus('out');
         }
       }
+      const view = this.viewBySceneId.get(result.sceneId);
+      if (view) {
+        const cached = this.statusBySceneId.get(result.sceneId);
+        view.setWhisparrEnabled(
+          Boolean(cached?.exists && cached.whisparrId && this.whisparrBaseUrl),
+        );
+        view.setStashEnabled(
+          this.stashConfigured,
+          this.stashConfigured ? 'View in Stash' : 'Stash not configured',
+        );
+      }
       const missing = this.missingBySceneId.get(result.sceneId);
       if (missing) {
         if (result.exists) {
@@ -1815,6 +2083,11 @@ class SceneCardObserver {
         exclude.button.setAttribute('aria-label', 'Exclusion status unavailable');
         exclude.button.title = 'Exclusion status unavailable';
       }
+      const view = this.viewBySceneId.get(sceneId);
+      if (view) {
+        view.setWhisparrEnabled(false);
+        view.setStashEnabled(false, 'Lookup unavailable');
+      }
     }
   }
 
@@ -1836,7 +2109,16 @@ class SceneCardObserver {
   }
 
   private renderIcon(
-    name: 'spinner' | 'circle-check' | 'download' | 'ban' | 'warning' | 'refresh' | 'x' | 'search',
+    name:
+      | 'spinner'
+      | 'circle-check'
+      | 'download'
+      | 'ban'
+      | 'warning'
+      | 'refresh'
+      | 'x'
+      | 'search'
+      | 'external-link',
     spin = false,
   ) {
     const paths: Record<typeof name, string> = {
@@ -1848,11 +2130,17 @@ class SceneCardObserver {
       refresh: 'M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.3 2.3z',
       x: 'M6 6l12 12M18 6L6 18',
       search: 'M21 21l-4.3-4.3m1.3-5A7 7 0 1 1 10 4a7 7 0 0 1 8 7.7z',
+      'external-link': 'M14 3h7v7m0-7L10 14M5 7v12h12',
     };
     this.ensureIconStyles();
     const spinStyle = spin ? 'animation: stasharr-spin 1s linear infinite;' : '';
     const strokeIcons =
-      name === 'download' || name === 'ban' || name === 'refresh' || name === 'x' || name === 'search';
+      name === 'download' ||
+      name === 'ban' ||
+      name === 'refresh' ||
+      name === 'x' ||
+      name === 'search' ||
+      name === 'external-link';
     if (strokeIcons) {
       return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[name]}"></path></svg>`;
     }
