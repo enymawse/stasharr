@@ -1156,13 +1156,23 @@ export async function handleSceneCardsCheckStatus(
     }
 
     if (!Array.isArray(response.json) || response.json.length === 0) {
-      results.push({ sceneId, exists: false });
+      const excluded = await fetchExclusionState(
+        normalized.value,
+        apiKey,
+        sceneId,
+      );
+      results.push({ sceneId, exists: false, excluded: excluded.excluded });
       continue;
     }
 
     const movie = response.json.find(isRecord);
     if (!movie) {
-      results.push({ sceneId, exists: false });
+      const excluded = await fetchExclusionState(
+        normalized.value,
+        apiKey,
+        sceneId,
+      );
+      results.push({ sceneId, exists: false, excluded: excluded.excluded });
       continue;
     }
 
