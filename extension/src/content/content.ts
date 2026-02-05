@@ -1227,6 +1227,7 @@ class SceneCardObserver {
     string,
     { found: boolean; stashSceneUrl?: string; error?: string }
   >();
+  private stashLookupInFlight = new Set<string>();
   private whisparrBaseUrl: string | null = null;
   private stashConfigured = false;
   private excludeBySceneId = new Map<
@@ -1289,6 +1290,45 @@ class SceneCardObserver {
     } catch {
       this.whisparrBaseUrl = null;
       this.stashConfigured = false;
+    }
+  }
+
+  private async requestStashMatch(sceneId: string) {
+    if (!this.stashConfigured) {
+      return;
+    }
+    if (this.stashMatchBySceneId.has(sceneId) || this.stashLookupInFlight.has(sceneId)) {
+      return;
+    }
+    const runtime = extContent?.runtime;
+    if (!runtime) return;
+    this.stashLookupInFlight.add(sceneId);
+    try {
+      const response = await runtime.sendMessage({
+        type: 'STASH_FIND_SCENE_BY_STASHDB_ID',
+        stashdbSceneId: sceneId,
+      });
+      if (!response.ok) {
+        this.stashMatchBySceneId.set(sceneId, {
+          found: false,
+          error: response.error ?? 'unknown',
+        });
+        return;
+      }
+      this.stashMatchBySceneId.set(sceneId, {
+        found: Boolean(response.found && response.stashSceneUrl),
+        stashSceneUrl: response.stashSceneUrl,
+      });
+    } finally {
+      this.stashLookupInFlight.delete(sceneId);
+      const view = this.viewBySceneId.get(sceneId);
+      if (view) {
+        const match = this.stashMatchBySceneId.get(sceneId);
+        view.setStashEnabled(
+          Boolean(match?.found && match.stashSceneUrl),
+          match?.found ? 'View in Stash' : 'No match in Stash',
+        );
+      }
     }
   }
 
@@ -1719,7 +1759,13 @@ class SceneCardObserver {
       setWhisparrEnabled(
         Boolean(cachedStatus.exists && cachedStatus.whisparrId && this.whisparrBaseUrl),
       );
-      setStashEnabled(this.stashConfigured, this.stashConfigured ? 'View in Stash' : 'Stash not configured');
+      const stashMatch = this.stashMatchBySceneId.get(scene.sceneId);
+      if (stashMatch?.found && stashMatch.stashSceneUrl) {
+        setStashEnabled(true, 'View in Stash');
+      } else {
+        setStashEnabled(false, this.stashConfigured ? 'Checking Stash...' : 'Stash not configured');
+      }
+      void this.requestStashMatch(scene.sceneId);
       if (cachedStatus.exists) {
         excludeButton.disabled = true;
         excludeButton.style.opacity = '0.6';
@@ -1739,10 +1785,8 @@ class SceneCardObserver {
       }
     } else {
       setWhisparrEnabled(false);
-      setStashEnabled(
-        this.stashConfigured,
-        this.stashConfigured ? 'View in Stash' : 'Stash not configured',
-      );
+      setStashEnabled(false, this.stashConfigured ? 'Checking Stash...' : 'Stash not configured');
+      void this.requestStashMatch(scene.sceneId);
     }
 
     actionButton.addEventListener('click', async (event) => {
@@ -2025,10 +2069,16 @@ class SceneCardObserver {
         view.setWhisparrEnabled(
           Boolean(cached?.exists && cached.whisparrId && this.whisparrBaseUrl),
         );
-        view.setStashEnabled(
-          this.stashConfigured,
-          this.stashConfigured ? 'View in Stash' : 'Stash not configured',
-        );
+        const stashMatch = this.stashMatchBySceneId.get(result.sceneId);
+        if (stashMatch?.found && stashMatch.stashSceneUrl) {
+          view.setStashEnabled(true, 'View in Stash');
+        } else {
+          view.setStashEnabled(
+            false,
+            this.stashConfigured ? 'Checking Stash...' : 'Stash not configured',
+          );
+          void this.requestStashMatch(result.sceneId);
+        }
       }
       const missing = this.missingBySceneId.get(result.sceneId);
       if (missing) {
