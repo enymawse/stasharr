@@ -344,7 +344,7 @@ if (!document.getElementById(PANEL_ID)) {
   monitorToggle.style.borderRadius = '6px';
   monitorToggle.style.border = 'none';
   monitorToggle.style.cursor = 'pointer';
-  monitorToggle.style.background = '#7c3aed';
+  monitorToggle.style.background = '#c084fc';
   monitorToggle.style.color = '#ffffff';
   monitorToggle.style.flex = '1';
   applyDisabledStyles(monitorToggle, true);
