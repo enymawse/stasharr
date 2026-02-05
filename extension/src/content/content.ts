@@ -35,6 +35,10 @@ type SceneCardSetExcludedRequest = {
   movieTitle?: string;
   movieYear?: number;
 };
+type StashFindSceneByStashdbIdRequest = {
+  type: 'STASH_FIND_SCENE_BY_STASHDB_ID';
+  stashdbSceneId: string;
+};
 
 type ContentRuntime = {
   runtime: {
@@ -52,13 +56,16 @@ type ContentRuntime = {
         | SceneCardsCheckStatusRequest
         | SceneCardAddRequest
         | SceneCardTriggerSearchRequest
-        | SceneCardSetExcludedRequest,
+        | SceneCardSetExcludedRequest
+        | StashFindSceneByStashdbIdRequest,
     ) => Promise<{
       ok: boolean;
       configured?: boolean;
       settings?: {
         whisparrBaseUrl?: string;
         whisparrApiKey?: string;
+        stashBaseUrl?: string;
+        stashApiKey?: string;
         lastValidatedAt?: string;
       };
       catalogs?: {
@@ -83,6 +90,10 @@ type ContentRuntime = {
         excluded?: boolean;
       }>;
       excluded?: boolean;
+      found?: boolean;
+      stashSceneId?: string | number;
+      stashScenePath?: string;
+      stashSceneUrl?: string;
     }>;
     getURL?: (path: string) => string;
     openOptionsPage?: () => void;
@@ -169,10 +180,23 @@ if (!document.getElementById(PANEL_ID)) {
     }
   >();
   const inFlight = new Set<string>();
+  const stashLookupInFlight = new Set<string>();
   const tagUpdateInFlight = new Set<string>();
   const qualityProfileUpdateInFlight = new Set<string>();
   let tagCatalog: Array<{ id: number; label: string }> = [];
   let qualityProfileCatalog: Array<{ id: number; name: string }> = [];
+  let stashConfigured = false;
+  const stashMatchCache = new Map<
+    string,
+    {
+      found: boolean;
+      stashSceneId?: string | number;
+      stashScenePath?: string;
+      stashSceneUrl?: string;
+      title?: string;
+      error?: string;
+    }
+  >();
 
   const panel = document.createElement('div');
   panel.id = PANEL_ID;
@@ -257,6 +281,21 @@ if (!document.getElementById(PANEL_ID)) {
   addSceneButton.style.flex = '1';
   applyDisabledStyles(addSceneButton, true);
   actionRow.appendChild(addSceneButton);
+
+  const viewInStashButton = document.createElement('button');
+  viewInStashButton.type = 'button';
+  viewInStashButton.textContent = '↗';
+  viewInStashButton.setAttribute('aria-label', 'View in Stash');
+  viewInStashButton.title = 'View in Stash';
+  viewInStashButton.style.padding = '6px 0';
+  viewInStashButton.style.width = '32px';
+  viewInStashButton.style.borderRadius = '6px';
+  viewInStashButton.style.border = 'none';
+  viewInStashButton.style.cursor = 'pointer';
+  viewInStashButton.style.background = '#16a34a';
+  viewInStashButton.style.color = '#ffffff';
+  applyDisabledStyles(viewInStashButton, true);
+  actionRow.appendChild(viewInStashButton);
 
   const monitorRow = document.createElement('div');
   monitorRow.style.display = 'flex';
@@ -540,6 +579,82 @@ if (!document.getElementById(PANEL_ID)) {
     applyDisabledStyles(monitorToggle, true);
   };
 
+  const updateViewInStashButton = async (sceneId?: string, force = false) => {
+    if (!sceneId) {
+      applyDisabledStyles(viewInStashButton, true);
+      viewInStashButton.title = 'View in Stash';
+      return;
+    }
+
+    if (!stashConfigured) {
+      applyDisabledStyles(viewInStashButton, true);
+      viewInStashButton.title = 'Stash not configured';
+      return;
+    }
+
+    const cached = stashMatchCache.get(sceneId);
+    if (cached && !force) {
+      if (cached.found && cached.stashSceneUrl) {
+        applyDisabledStyles(viewInStashButton, false);
+        viewInStashButton.title = 'View in Stash';
+      } else {
+        applyDisabledStyles(viewInStashButton, true);
+        viewInStashButton.title = cached.error ? 'Lookup failed' : 'No match in Stash';
+      }
+      return;
+    }
+
+    if (stashLookupInFlight.has(sceneId)) {
+      return;
+    }
+
+    stashLookupInFlight.add(sceneId);
+    applyDisabledStyles(viewInStashButton, true);
+    viewInStashButton.title = 'Checking Stash...';
+
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'STASH_FIND_SCENE_BY_STASHDB_ID',
+        stashdbSceneId: sceneId,
+      });
+      if (!response.ok) {
+        stashMatchCache.set(sceneId, {
+          found: false,
+          error: response.error ?? 'unknown',
+        });
+        applyDisabledStyles(viewInStashButton, true);
+        viewInStashButton.title = 'Lookup failed';
+        return;
+      }
+
+      const found = Boolean(response.found);
+      stashMatchCache.set(sceneId, {
+        found,
+        stashSceneId: response.stashSceneId,
+        stashScenePath: response.stashScenePath,
+        stashSceneUrl: response.stashSceneUrl,
+        title: response.title,
+      });
+
+      if (found && response.stashSceneUrl) {
+        applyDisabledStyles(viewInStashButton, false);
+        viewInStashButton.title = 'View in Stash';
+      } else {
+        applyDisabledStyles(viewInStashButton, true);
+        viewInStashButton.title = 'No match in Stash';
+      }
+    } catch (error) {
+      stashMatchCache.set(sceneId, {
+        found: false,
+        error: (error as Error).message,
+      });
+      applyDisabledStyles(viewInStashButton, true);
+      viewInStashButton.title = 'Lookup failed';
+    } finally {
+      stashLookupInFlight.delete(sceneId);
+    }
+  };
+
   const updateSceneStatus = async (force = false) => {
     const current = getParsedPage();
     const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
@@ -555,11 +670,13 @@ if (!document.getElementById(PANEL_ID)) {
       applyDisabledStyles(updateQualityButton, true);
       qualityStatus.textContent = 'Quality: unavailable';
       currentMonitorState = null;
+      await updateViewInStashButton(undefined, true);
       return;
     }
 
     checkStatusButton.disabled = false;
     applyActionState(sceneId);
+    void updateViewInStashButton(sceneId, force);
 
     if (!force) {
       const cached = statusCache.get(sceneId);
@@ -871,6 +988,15 @@ if (!document.getElementById(PANEL_ID)) {
     void addScene();
   });
 
+  viewInStashButton.addEventListener('click', () => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId) return;
+    const cached = stashMatchCache.get(sceneId);
+    if (!cached?.stashSceneUrl) return;
+    window.open(cached.stashSceneUrl, '_blank', 'noopener');
+  });
+
   monitorToggle.addEventListener('click', () => {
     void updateMonitorState();
   });
@@ -909,26 +1035,34 @@ if (!document.getElementById(PANEL_ID)) {
       const baseUrl = response.settings.whisparrBaseUrl?.trim() ?? '';
       const apiKey = response.settings.whisparrApiKey?.trim() ?? '';
       const configured = Boolean(baseUrl && apiKey);
+      stashConfigured = Boolean(
+        response.settings.stashBaseUrl?.trim() && response.settings.stashApiKey?.trim(),
+      );
       if (!configured) {
         statusRow.textContent = 'Config: not configured';
         readiness = 'unconfigured';
         applyDisabledStyles(addSceneButton, true);
+        void updateViewInStashButton(getParsedPage().stashIds[0], true);
         return;
       }
       if (!response.settings.lastValidatedAt) {
         statusRow.textContent = 'Config: configured (not validated)';
         readiness = 'configured';
         applyDisabledStyles(addSceneButton, true);
+        void updateViewInStashButton(getParsedPage().stashIds[0], true);
         return;
       }
       const validatedAt = new Date(response.settings.lastValidatedAt);
       statusRow.textContent = `Config: validated ${validatedAt.toLocaleString()}`;
       readiness = 'validated';
       applyActionState(getParsedPage().stashIds[0]);
+      void updateViewInStashButton(getParsedPage().stashIds[0], true);
     } catch {
       statusRow.textContent = 'Config: unavailable';
       readiness = 'unconfigured';
       applyDisabledStyles(addSceneButton, true);
+      stashConfigured = false;
+      void updateViewInStashButton(getParsedPage().stashIds[0], true);
     }
   };
 
@@ -944,6 +1078,8 @@ if (!document.getElementById(PANEL_ID)) {
       lastUrl = window.location.href;
       statusCache.clear();
       inFlight.clear();
+      stashMatchCache.clear();
+      stashLookupInFlight.clear();
       updateDiagnostics();
       void updateSceneStatus(true);
     }

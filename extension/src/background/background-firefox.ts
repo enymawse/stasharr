@@ -293,6 +293,12 @@ function stashGraphqlEndpoint(baseUrl: string): string {
   return `${trimmed}/graphql`;
 }
 
+// Assumes Stash UI scene route is /scenes/<id>.
+function buildStashSceneUrl(baseUrl: string, sceneId: string | number): string {
+  const normalized = baseUrl.replace(/\/+$/, '');
+  return `${normalized}/scenes/${encodeURIComponent(String(sceneId))}`;
+}
+
 async function stashGraphqlRequest<T>(
   query: string,
   variables?: Record<string, unknown>,
@@ -1617,6 +1623,13 @@ async function handleStashFindSceneByStashdbId(request: { stashdbSceneId?: strin
     };
   }
 
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.stashBaseUrl ?? '');
+  const stashSceneUrl =
+    normalized.ok && normalized.value
+      ? buildStashSceneUrl(normalized.value, scene.id ?? stashdbSceneId)
+      : undefined;
+
   return {
     ok: true,
     type: MESSAGE_TYPES.stashFindSceneByStashdbId,
@@ -1624,6 +1637,7 @@ async function handleStashFindSceneByStashdbId(request: { stashdbSceneId?: strin
     stashSceneId: scene.id,
     stashScenePath: scene.path,
     title: scene.title,
+    stashSceneUrl,
   };
 }
 

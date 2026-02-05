@@ -308,6 +308,7 @@ export type StashFindSceneByStashdbIdResponse = {
   stashSceneId?: string | number;
   stashScenePath?: string;
   title?: string;
+  stashSceneUrl?: string;
   error?: string;
 };
 

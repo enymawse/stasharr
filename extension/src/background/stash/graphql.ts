@@ -71,6 +71,21 @@ function stashGraphqlEndpoint(baseUrl: string): string {
   return `${trimmed}/graphql`;
 }
 
+export async function getNormalizedStashBaseUrl(): Promise<{
+  ok: boolean;
+  value?: string;
+  error?: string;
+}> {
+  const settings = await getSettings();
+  return normalizeBaseUrl(settings.stashBaseUrl ?? '');
+}
+
+// Assumes Stash UI scene route is /scenes/<id>.
+export function buildStashSceneUrl(baseUrl: string, sceneId: string | number): string {
+  const normalized = baseUrl.replace(/\/+$/, '');
+  return `${normalized}/scenes/${encodeURIComponent(String(sceneId))}`;
+}
+
 export async function stashGraphqlRequest<T>(
   query: string,
   variables?: Record<string, unknown>,

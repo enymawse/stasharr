@@ -30,7 +30,11 @@ import {
   saveSelections,
   saveSettings,
 } from '../shared/storage.js';
-import { stashGraphqlRequest } from './stash/graphql.js';
+import {
+  buildStashSceneUrl,
+  getNormalizedStashBaseUrl,
+  stashGraphqlRequest,
+} from './stash/graphql.js';
 
 const MESSAGE_TYPES_BG = MESSAGE_TYPES;
 
@@ -1964,6 +1968,12 @@ async function handleStashFindSceneByStashdbId(
     };
   }
 
+  const normalized = await getNormalizedStashBaseUrl();
+  const stashSceneUrl =
+    normalized.ok && normalized.value
+      ? buildStashSceneUrl(normalized.value, scene.id ?? stashdbSceneId)
+      : undefined;
+
   return {
     ok: true,
     type: MESSAGE_TYPES_BG.stashFindSceneByStashdbId,
@@ -1971,6 +1981,7 @@ async function handleStashFindSceneByStashdbId(
     stashSceneId: scene.id,
     stashScenePath: scene.path,
     title: scene.title,
+    stashSceneUrl,
   };
 }
 
