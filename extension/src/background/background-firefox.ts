@@ -1,4 +1,5 @@
 import { fetchWithTimeout } from './http.js';
+import { createTtlCache } from '../shared/cache.js';
 
 const MESSAGE_TYPES = {
   ping: 'PING',
@@ -93,7 +94,9 @@ type SceneCardStatusEntry = {
   fetchedAt: number;
 };
 
-const sceneCardStatusCache = new Map<string, SceneCardStatusEntry>();
+const sceneCardStatusCache = createTtlCache<string, SceneCardStatusEntry>({
+  ttlMs: SCENE_CARD_STATUS_TTL_MS,
+});
 
 type StorageArea = {
   get: (keys?: string[] | string | null) => Promise<Record<string, unknown>>;

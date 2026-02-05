@@ -25,6 +25,7 @@ import {
   saveCatalogs,
   saveSelections,
 } from '../../shared/storage.js';
+import { createTtlCache } from '../../shared/cache.js';
 import { fetchWithTimeout, handleFetchJson } from '../http.js';
 
 type ExtRuntimeBg = {
@@ -80,7 +81,9 @@ type SceneCardStatusEntry = {
   fetchedAt: number;
 };
 
-const sceneCardStatusCache = new Map<string, SceneCardStatusEntry>();
+const sceneCardStatusCache = createTtlCache<string, SceneCardStatusEntry>({
+  ttlMs: SCENE_CARD_STATUS_TTL_MS,
+});
 
 type UpdateScenePayload = {
   id: number;
@@ -1129,18 +1132,12 @@ export async function handleSceneCardsCheckStatus(
 
   const items = request.items ?? [];
   const results: SceneCardsCheckStatusResponse['results'] = [];
-  const now = Date.now();
-
   for (const item of items.slice(0, SCENE_CARD_STATUS_BATCH_LIMIT)) {
     const sceneId = item.sceneId;
     if (!sceneId) continue;
 
     const cached = sceneCardStatusCache.get(sceneId);
-    if (
-      cached &&
-      (SCENE_CARD_STATUS_TTL_MS === 0 ||
-        now - cached.fetchedAt <= SCENE_CARD_STATUS_TTL_MS)
-    ) {
+    if (cached) {
       results.push({
         sceneId,
         exists: cached.exists,
@@ -1167,7 +1164,7 @@ export async function handleSceneCardsCheckStatus(
     if (!Array.isArray(response.json) || response.json.length === 0) {
       const entry: SceneCardStatusEntry = {
         exists: false,
-        fetchedAt: now,
+        fetchedAt: Date.now(),
       };
       sceneCardStatusCache.set(sceneId, entry);
       results.push({ sceneId, exists: false });
@@ -1190,7 +1187,7 @@ export async function handleSceneCardsCheckStatus(
       monitored,
       tagIds,
       hasFile,
-      fetchedAt: now,
+      fetchedAt: Date.now(),
     };
 
     sceneCardStatusCache.set(sceneId, entry);
