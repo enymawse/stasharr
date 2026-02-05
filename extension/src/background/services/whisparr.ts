@@ -1416,9 +1416,9 @@ export async function handleSceneCardSetExcluded(
     }
 
     const payload = {
-      stashId: sceneId,
-      title: request.movieTitle,
-      year: request.movieYear,
+      foreignId: sceneId,
+      movieTitle: request.movieTitle ?? sceneId,
+      movieYear: request.movieYear ?? 1,
     };
     const addResponse = await handleFetchJson({
       type: MESSAGE_TYPES.fetchJson,
