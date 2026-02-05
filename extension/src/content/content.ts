@@ -1,18 +1,38 @@
 import { sendMessage } from '../shared/messaging.js';
-import type { ExtensionRequest, ExtensionResponse } from '../shared/messages.js';
+import type {
+  ExtensionRequest,
+  ExtensionResponse,
+} from '../shared/messages.js';
 
 const MESSAGE_TYPES_CONTENT = {
   getConfigStatus: 'GET_CONFIG_STATUS',
 } as const;
 
-type GetConfigStatusRequest = { type: typeof MESSAGE_TYPES_CONTENT.getConfigStatus };
+type GetConfigStatusRequest = {
+  type: typeof MESSAGE_TYPES_CONTENT.getConfigStatus;
+};
 type GetSettingsRequest = { type: 'GET_SETTINGS' };
 type OpenOptionsPageRequest = { type: 'OPEN_OPTIONS_PAGE' };
-type CheckSceneStatusRequest = { type: 'CHECK_SCENE_STATUS'; stashdbSceneId: string };
+type CheckSceneStatusRequest = {
+  type: 'CHECK_SCENE_STATUS';
+  stashdbSceneId: string;
+};
 type AddSceneRequest = { type: 'ADD_SCENE'; stashdbSceneId: string };
-type SetMonitorStateRequest = { type: 'SET_MONITOR_STATE'; whisparrId: number; monitored: boolean };
-type FetchDiscoveryCatalogsRequest = { type: 'FETCH_DISCOVERY_CATALOGS'; kind: 'whisparr'; force?: boolean };
-type UpdateTagsRequest = { type: 'UPDATE_TAGS'; whisparrId: number; tagIds: number[] };
+type SetMonitorStateRequest = {
+  type: 'SET_MONITOR_STATE';
+  whisparrId: number;
+  monitored: boolean;
+};
+type FetchDiscoveryCatalogsRequest = {
+  type: 'FETCH_DISCOVERY_CATALOGS';
+  kind: 'whisparr';
+  force?: boolean;
+};
+type UpdateTagsRequest = {
+  type: 'UPDATE_TAGS';
+  whisparrId: number;
+  tagIds: number[];
+};
 type UpdateQualityProfileRequest = {
   type: 'UPDATE_QUALITY_PROFILE';
   whisparrId: number;
@@ -105,7 +125,12 @@ type ContentRuntime = {
 
 const PANEL_ID = 'stasharr-extension-panel';
 const extContent =
-  (globalThis as typeof globalThis & { browser?: ContentRuntime; chrome?: ContentRuntime }).browser ??
+  (
+    globalThis as typeof globalThis & {
+      browser?: ContentRuntime;
+      chrome?: ContentRuntime;
+    }
+  ).browser ??
   (globalThis as typeof globalThis & { chrome?: ContentRuntime }).chrome;
 
 if (!extContent) {
@@ -113,13 +138,20 @@ if (!extContent) {
 }
 
 type NavigationBridge = {
-  openExternalLink: (url: string, options?: { forceNewTab?: boolean }) => Promise<void>;
+  openExternalLink: (
+    url: string,
+    options?: { forceNewTab?: boolean },
+  ) => Promise<void>;
 };
 
-const navigationBridge = (globalThis as { StasharrNavigation?: NavigationBridge })
-  .StasharrNavigation;
+const navigationBridge = (
+  globalThis as { StasharrNavigation?: NavigationBridge }
+).StasharrNavigation;
 
-async function openExternalLink(url: string, options?: { forceNewTab?: boolean }) {
+async function openExternalLink(
+  url: string,
+  options?: { forceNewTab?: boolean },
+) {
   if (!navigationBridge?.openExternalLink) {
     return;
   }
@@ -152,9 +184,9 @@ function truncate(value: string, max = 300) {
   return `${value.slice(0, max)}…`;
 }
 
-function buildWhisparrSceneUrl(baseUrl: string, whisparrId: number): string {
+function buildWhisparrSceneUrl(baseUrl: string, stashId: string): string {
   const normalized = baseUrl.replace(/\/+$/, '');
-  return `${normalized}/movie/${encodeURIComponent(String(whisparrId))}`;
+  return `${normalized}/movie/${encodeURIComponent(stashId)}`;
 }
 
 function applyDisabledStyles(button: HTMLButtonElement, disabled: boolean) {
@@ -170,20 +202,27 @@ function applyDisabledStyles(button: HTMLButtonElement, disabled: boolean) {
 
 function getParsedPage() {
   return (
-    globalThis as {
-      StasharrPageParser?: {
-        parseStashDbPage: (
-          doc: Document,
-          loc: Location,
-        ) => { type: string; stashIds: string[]; canonicalUrl: string | null; url: string };
-      };
+    (
+      globalThis as {
+        StasharrPageParser?: {
+          parseStashDbPage: (
+            doc: Document,
+            loc: Location,
+          ) => {
+            type: string;
+            stashIds: string[];
+            canonicalUrl: string | null;
+            url: string;
+          };
+        };
+      }
+    ).StasharrPageParser?.parseStashDbPage(document, window.location) ?? {
+      type: 'other',
+      stashIds: [],
+      canonicalUrl: null,
+      url: window.location.href,
     }
-  ).StasharrPageParser?.parseStashDbPage(document, window.location) ?? {
-    type: 'other',
-    stashIds: [],
-    canonicalUrl: null,
-    url: window.location.href,
-  };
+  );
 }
 
 if (!document.getElementById(PANEL_ID)) {
@@ -493,7 +532,9 @@ if (!document.getElementById(PANEL_ID)) {
     try {
       await sendMessage(
         extContent.runtime as {
-          sendMessage: (message: ExtensionRequest) => Promise<ExtensionResponse>;
+          sendMessage: (
+            message: ExtensionRequest,
+          ) => Promise<ExtensionResponse>;
         },
         { type: 'OPEN_OPTIONS_PAGE' },
       );
@@ -643,7 +684,7 @@ if (!document.getElementById(PANEL_ID)) {
     }
 
     const cached = statusCache.get(sceneId);
-    if (!cached?.exists || !cached.whisparrId || !whisparrBaseUrl) {
+    if (!cached?.exists || !whisparrBaseUrl) {
       applyDisabledStyles(viewInWhisparrButton, true);
       viewInWhisparrButton.title = whisparrBaseUrl
         ? 'No match in Whisparr'
@@ -681,7 +722,9 @@ if (!document.getElementById(PANEL_ID)) {
         updateViewInWhisparrButton(sceneId);
       } else {
         applyDisabledStyles(viewInStashButton, true);
-        viewInStashButton.title = cached.error ? 'Lookup failed' : 'No match in Stash';
+        viewInStashButton.title = cached.error
+          ? 'Lookup failed'
+          : 'No match in Stash';
         viewRow.style.display = 'flex';
         updateViewInWhisparrButton(sceneId);
       }
@@ -788,7 +831,9 @@ if (!document.getElementById(PANEL_ID)) {
           applyDisabledStyles(monitorToggle, false);
           if (typeof cached.monitored === 'boolean') {
             currentMonitorState = cached.monitored;
-            monitorToggle.textContent = cached.monitored ? 'Unmonitor' : 'Monitor';
+            monitorToggle.textContent = cached.monitored
+              ? 'Unmonitor'
+              : 'Monitor';
           }
           applyDisabledStyles(excludeToggle, true);
           excludeToggle.textContent = cached.excluded ? 'Excluded' : 'Exclude';
@@ -819,7 +864,10 @@ if (!document.getElementById(PANEL_ID)) {
       });
       if (!response.ok) {
         sceneStatusRow.textContent = `Scene status: error (${response.error ?? 'unknown'})`;
-        statusCache.set(sceneId, { exists: false, error: response.error ?? 'unknown' });
+        statusCache.set(sceneId, {
+          exists: false,
+          error: response.error ?? 'unknown',
+        });
         return;
       }
 
@@ -845,7 +893,9 @@ if (!document.getElementById(PANEL_ID)) {
         currentMonitorState =
           typeof response.monitored === 'boolean' ? response.monitored : null;
         if (currentMonitorState !== null) {
-          monitorToggle.textContent = currentMonitorState ? 'Unmonitor' : 'Monitor';
+          monitorToggle.textContent = currentMonitorState
+            ? 'Unmonitor'
+            : 'Monitor';
         }
         applyDisabledStyles(excludeToggle, true);
         excludeToggle.textContent = response.excluded ? 'Excluded' : 'Exclude';
@@ -925,7 +975,9 @@ if (!document.getElementById(PANEL_ID)) {
     }
     const nextState = !currentMonitorState;
     applyDisabledStyles(monitorToggle, true);
-    sceneStatusRow.textContent = nextState ? 'Scene status: enabling monitor...' : 'Scene status: disabling monitor...';
+    sceneStatusRow.textContent = nextState
+      ? 'Scene status: enabling monitor...'
+      : 'Scene status: disabling monitor...';
     try {
       const response = await extContent.runtime.sendMessage({
         type: 'SET_MONITOR_STATE',
@@ -938,7 +990,9 @@ if (!document.getElementById(PANEL_ID)) {
         return;
       }
       const monitored =
-        typeof response.monitored === 'boolean' ? response.monitored : nextState;
+        typeof response.monitored === 'boolean'
+          ? response.monitored
+          : nextState;
       currentMonitorState = monitored;
       cached.monitored = monitored;
       monitorToggle.textContent = monitored ? 'Unmonitor' : 'Monitor';
@@ -971,8 +1025,12 @@ if (!document.getElementById(PANEL_ID)) {
     }
     try {
       const headerTitle =
-        document.querySelector<HTMLHeadingElement>('.card-header h3 span')?.textContent?.trim() ??
-        document.querySelector<HTMLHeadingElement>('.card-header h3')?.textContent?.trim();
+        document
+          .querySelector<HTMLHeadingElement>('.card-header h3 span')
+          ?.textContent?.trim() ??
+        document
+          .querySelector<HTMLHeadingElement>('.card-header h3')
+          ?.textContent?.trim();
       const response = await runtime.sendMessage({
         type: 'SCENE_CARD_SET_EXCLUDED',
         sceneId,
@@ -1104,8 +1162,8 @@ if (!document.getElementById(PANEL_ID)) {
     const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
     if (!sceneId || !whisparrBaseUrl) return;
     const cached = statusCache.get(sceneId);
-    if (!cached?.whisparrId) return;
-    const url = buildWhisparrSceneUrl(whisparrBaseUrl, cached.whisparrId);
+    if (!cached?.exists) return;
+    const url = buildWhisparrSceneUrl(whisparrBaseUrl, sceneId);
     void openExternalLink(url);
   });
 
@@ -1149,7 +1207,8 @@ if (!document.getElementById(PANEL_ID)) {
       const configured = Boolean(baseUrl && apiKey);
       whisparrBaseUrl = baseUrl || null;
       stashConfigured = Boolean(
-        response.settings.stashBaseUrl?.trim() && response.settings.stashApiKey?.trim(),
+        response.settings.stashBaseUrl?.trim() &&
+        response.settings.stashApiKey?.trim(),
       );
       if (!configured) {
         statusRow.textContent = 'Config: not configured';
@@ -1208,7 +1267,12 @@ if (!document.getElementById(PANEL_ID)) {
 }
 
 type SceneCardData = { sceneId: string; sceneUrl: string };
-type SceneCardMeta = { sceneId: string; sceneUrl: string; title?: string; year?: number };
+type SceneCardMeta = {
+  sceneId: string;
+  sceneUrl: string;
+  title?: string;
+  year?: number;
+};
 
 class SceneCardObserver {
   // Dev checklist: missing indicator renders for hasFile=false, search triggers background, UI shows loading/success/error.
@@ -1259,7 +1323,10 @@ class SceneCardObserver {
     string,
     {
       button: HTMLButtonElement;
-      setState: (state: 'idle' | 'loading' | 'error', excluded: boolean) => void;
+      setState: (
+        state: 'idle' | 'loading' | 'error',
+        excluded: boolean,
+      ) => void;
     }
   >();
   private monitorBySceneId = new Map<
@@ -1291,7 +1358,10 @@ class SceneCardObserver {
     this.observer = new MutationObserver((mutations) => {
       let shouldScan = false;
       for (const mutation of mutations) {
-        if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
+        if (
+          mutation.addedNodes.length > 0 ||
+          mutation.removedNodes.length > 0
+        ) {
           shouldScan = true;
           break;
         }
@@ -1318,7 +1388,9 @@ class SceneCardObserver {
     try {
       const response = await sendMessage<'GET_SETTINGS'>(
         runtime as {
-          sendMessage: (message: ExtensionRequest) => Promise<ExtensionResponse>;
+          sendMessage: (
+            message: ExtensionRequest,
+          ) => Promise<ExtensionResponse>;
         },
         { type: 'GET_SETTINGS' },
       );
@@ -1326,7 +1398,8 @@ class SceneCardObserver {
       const baseUrl = response.settings.whisparrBaseUrl?.trim() ?? '';
       this.whisparrBaseUrl = baseUrl || null;
       this.stashConfigured = Boolean(
-        response.settings.stashBaseUrl?.trim() && response.settings.stashApiKey?.trim(),
+        response.settings.stashBaseUrl?.trim() &&
+        response.settings.stashApiKey?.trim(),
       );
     } catch {
       this.whisparrBaseUrl = null;
@@ -1338,7 +1411,10 @@ class SceneCardObserver {
     if (!this.stashConfigured) {
       return;
     }
-    if (this.stashMatchBySceneId.has(sceneId) || this.stashLookupInFlight.has(sceneId)) {
+    if (
+      this.stashMatchBySceneId.has(sceneId) ||
+      this.stashLookupInFlight.has(sceneId)
+    ) {
       return;
     }
     const runtime = extContent?.runtime;
@@ -1396,7 +1472,9 @@ class SceneCardObserver {
 
   private scan(root: ParentNode) {
     this.cleanup();
-    const anchors = Array.from(root.querySelectorAll<HTMLAnchorElement>('a[href^="/scenes/"]'));
+    const anchors = Array.from(
+      root.querySelectorAll<HTMLAnchorElement>('a[href^="/scenes/"]'),
+    );
     for (const anchor of anchors) {
       const scene = this.extractScene(anchor);
       if (!scene) continue;
@@ -1412,7 +1490,9 @@ class SceneCardObserver {
         card.dataset.stasharrAugmented = 'true';
         this.injectedByCard.set(card, injected);
       }
-      const cached = this.statusBySceneId.get(scene.sceneId) ?? { exists: false };
+      const cached = this.statusBySceneId.get(scene.sceneId) ?? {
+        exists: false,
+      };
       this.statusBySceneId.set(scene.sceneId, {
         ...cached,
         title: scene.title ?? cached.title,
@@ -1481,7 +1561,9 @@ class SceneCardObserver {
         return match;
       }
     }
-    const fallback = anchor.closest('article, li, .card, [class*="Card"], [class*="SceneCard"], [data-testid*="scene"]');
+    const fallback = anchor.closest(
+      'article, li, .card, [class*="Card"], [class*="SceneCard"], [data-testid*="scene"]',
+    );
     if (fallback instanceof HTMLElement && fallback.tagName !== 'A') {
       return fallback;
     }
@@ -1492,7 +1574,11 @@ class SceneCardObserver {
     return null;
   }
 
-  private injectControls(card: HTMLElement, scene: SceneCardMeta, anchor: HTMLAnchorElement) {
+  private injectControls(
+    card: HTMLElement,
+    scene: SceneCardMeta,
+    anchor: HTMLAnchorElement,
+  ) {
     const container = document.createElement('div');
     container.className = 'stasharr-scene-card';
     container.style.display = 'flex';
@@ -1756,14 +1842,17 @@ class SceneCardObserver {
       viewWhisparrButton.disabled = !enabled;
       viewWhisparrButton.style.opacity = enabled ? '1' : '0.6';
       viewWhisparrButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
-      viewWhisparrButton.title = enabled ? 'View in Whisparr' : 'No match in Whisparr';
+      viewWhisparrButton.title = enabled
+        ? 'View in Whisparr'
+        : 'No match in Whisparr';
     };
 
     const setStashEnabled = (enabled: boolean, title?: string) => {
       viewStashButton.disabled = !enabled;
       viewStashButton.style.opacity = enabled ? '1' : '0.6';
       viewStashButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
-      viewStashButton.title = title ?? (enabled ? 'View in Stash' : 'No match in Stash');
+      viewStashButton.title =
+        title ?? (enabled ? 'View in Stash' : 'No match in Stash');
     };
 
     const setStashLoading = () => {
@@ -1774,7 +1863,9 @@ class SceneCardObserver {
       viewStashButton.innerHTML = this.renderIcon('spinner', true);
     };
 
-    const setMissingState = (state: 'idle' | 'loading' | 'success' | 'error') => {
+    const setMissingState = (
+      state: 'idle' | 'loading' | 'success' | 'error',
+    ) => {
       switch (state) {
         case 'loading':
           searchButton.disabled = true;
@@ -1811,7 +1902,10 @@ class SceneCardObserver {
       }
     };
 
-    const setExcludeState = (state: 'idle' | 'loading' | 'error', excluded: boolean) => {
+    const setExcludeState = (
+      state: 'idle' | 'loading' | 'error',
+      excluded: boolean,
+    ) => {
       switch (state) {
         case 'loading':
           excludeButton.disabled = true;
@@ -1830,7 +1924,9 @@ class SceneCardObserver {
           excludeButton.disabled = false;
           excludeButton.style.opacity = '1';
           excludeButton.style.cursor = 'pointer';
-          excludeButton.innerHTML = excluded ? this.renderIcon('circle-check') : this.renderIcon('ban');
+          excludeButton.innerHTML = excluded
+            ? this.renderIcon('circle-check')
+            : this.renderIcon('ban');
           excludeButton.style.background = excluded ? '#9ca3af' : '#c4273c';
           excludeButton.style.borderColor = excluded ? '#9ca3af' : '#c4273c';
       }
@@ -1875,12 +1971,16 @@ class SceneCardObserver {
       monitorButton.disabled = false;
       monitorButton.style.opacity = '1';
       monitorButton.style.cursor = 'pointer';
-      monitorButton.innerHTML = this.renderIcon(isMonitored ? 'bookmark-filled' : 'bookmark');
+      monitorButton.innerHTML = this.renderIcon(
+        isMonitored ? 'bookmark-filled' : 'bookmark',
+      );
       monitorButton.setAttribute(
         'aria-label',
         isMonitored ? 'Monitored in Whisparr' : 'Unmonitored in Whisparr',
       );
-      monitorButton.title = isMonitored ? 'Monitored in Whisparr' : 'Unmonitored in Whisparr';
+      monitorButton.title = isMonitored
+        ? 'Monitored in Whisparr'
+        : 'Unmonitored in Whisparr';
     };
 
     setStatus('out');
@@ -1898,15 +1998,20 @@ class SceneCardObserver {
       }
       excludeButton.style.display = 'inline-flex';
       setExcludeState('idle', Boolean(cachedStatus.excluded));
-      setWhisparrEnabled(
-        Boolean(cachedStatus.exists && cachedStatus.whisparrId && this.whisparrBaseUrl),
+      setWhisparrEnabled(Boolean(cachedStatus.exists && this.whisparrBaseUrl));
+      setMonitorState(
+        'idle',
+        cachedStatus.monitored ?? null,
+        cachedStatus.exists,
       );
-      setMonitorState('idle', cachedStatus.monitored ?? null, cachedStatus.exists);
       const stashMatch = this.stashMatchBySceneId.get(scene.sceneId);
       if (stashMatch?.found && stashMatch.stashSceneUrl) {
         setStashEnabled(true, 'View in Stash');
       } else {
-        setStashEnabled(false, this.stashConfigured ? 'Checking Stash...' : 'Stash not configured');
+        setStashEnabled(
+          false,
+          this.stashConfigured ? 'Checking Stash...' : 'Stash not configured',
+        );
       }
       void this.requestStashMatch(scene.sceneId);
       if (cachedStatus.exists) {
@@ -1915,9 +2020,13 @@ class SceneCardObserver {
         excludeButton.style.cursor = 'not-allowed';
         excludeButton.setAttribute(
           'aria-label',
-          cachedStatus.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)',
+          cachedStatus.excluded
+            ? 'Excluded (managed outside Whisparr)'
+            : 'Exclude (managed outside Whisparr)',
         );
-        excludeButton.title = cachedStatus.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)';
+        excludeButton.title = cachedStatus.excluded
+          ? 'Excluded (managed outside Whisparr)'
+          : 'Exclude (managed outside Whisparr)';
       } else {
         excludeButton.disabled = false;
         excludeButton.style.opacity = '1';
@@ -1926,11 +2035,16 @@ class SceneCardObserver {
           'aria-label',
           cachedStatus.excluded ? 'Remove exclusion' : 'Exclude from Whisparr',
         );
-        excludeButton.title = cachedStatus.excluded ? 'Remove exclusion' : 'Exclude from Whisparr';
+        excludeButton.title = cachedStatus.excluded
+          ? 'Remove exclusion'
+          : 'Exclude from Whisparr';
       }
     } else {
       setWhisparrEnabled(false);
-      setStashEnabled(false, this.stashConfigured ? 'Checking Stash...' : 'Stash not configured');
+      setStashEnabled(
+        false,
+        this.stashConfigured ? 'Checking Stash...' : 'Stash not configured',
+      );
       void this.requestStashMatch(scene.sceneId);
       setMonitorState('idle', null, false);
     }
@@ -1960,8 +2074,8 @@ class SceneCardObserver {
       event.preventDefault();
       event.stopPropagation();
       const cached = this.statusBySceneId.get(scene.sceneId);
-      if (!cached?.whisparrId || !this.whisparrBaseUrl) return;
-      const url = buildWhisparrSceneUrl(this.whisparrBaseUrl, cached.whisparrId);
+      if (!cached?.exists || !this.whisparrBaseUrl) return;
+      const url = buildWhisparrSceneUrl(this.whisparrBaseUrl, scene.sceneId);
       void openExternalLink(url);
     });
 
@@ -2015,7 +2129,7 @@ class SceneCardObserver {
     searchButton.addEventListener('click', async (event) => {
       event.preventDefault();
       event.stopPropagation();
-    const cached = this.statusBySceneId.get(scene.sceneId);
+      const cached = this.statusBySceneId.get(scene.sceneId);
       if (!cached?.whisparrId) {
         setMissingState('error');
         return;
@@ -2138,16 +2252,28 @@ class SceneCardObserver {
     }
 
     this.statusIconBySceneId.set(scene.sceneId, statusIcon);
-    this.actionBySceneId.set(scene.sceneId, { button: actionButton, setStatus });
+    this.actionBySceneId.set(scene.sceneId, {
+      button: actionButton,
+      setStatus,
+    });
     this.viewBySceneId.set(scene.sceneId, {
       whisparrButton: viewWhisparrButton,
       stashButton: viewStashButton,
       setWhisparrEnabled,
       setStashEnabled,
     });
-    this.missingBySceneId.set(scene.sceneId, { wrap: missingWrap, setState: setMissingState });
-    this.excludeBySceneId.set(scene.sceneId, { button: excludeButton, setState: setExcludeState });
-    this.monitorBySceneId.set(scene.sceneId, { button: monitorButton, setState: setMonitorState });
+    this.missingBySceneId.set(scene.sceneId, {
+      wrap: missingWrap,
+      setState: setMissingState,
+    });
+    this.excludeBySceneId.set(scene.sceneId, {
+      button: excludeButton,
+      setState: setExcludeState,
+    });
+    this.monitorBySceneId.set(scene.sceneId, {
+      button: monitorButton,
+      setState: setMonitorState,
+    });
 
     const footer =
       card.querySelector('.card-footer') ??
@@ -2230,7 +2356,12 @@ class SceneCardObserver {
   }
 
   private applyStatusResults(
-    results: Array<{ sceneId: string; exists: boolean; hasFile?: boolean; excluded?: boolean }>,
+    results: Array<{
+      sceneId: string;
+      exists: boolean;
+      hasFile?: boolean;
+      excluded?: boolean;
+    }>,
   ) {
     for (const result of results) {
       const action = this.actionBySceneId.get(result.sceneId);
@@ -2249,7 +2380,7 @@ class SceneCardObserver {
       if (view) {
         const cached = this.statusBySceneId.get(result.sceneId);
         view.setWhisparrEnabled(
-          Boolean(cached?.exists && cached.whisparrId && this.whisparrBaseUrl),
+          Boolean(cached?.exists && this.whisparrBaseUrl),
         );
         const stashMatch = this.stashMatchBySceneId.get(result.sceneId);
         if (stashMatch?.found && stashMatch.stashSceneUrl) {
@@ -2285,9 +2416,13 @@ class SceneCardObserver {
           exclude.button.style.cursor = 'not-allowed';
           exclude.button.setAttribute(
             'aria-label',
-            result.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)',
+            result.excluded
+              ? 'Excluded (managed outside Whisparr)'
+              : 'Exclude (managed outside Whisparr)',
           );
-          exclude.button.title = result.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)';
+          exclude.button.title = result.excluded
+            ? 'Excluded (managed outside Whisparr)'
+            : 'Exclude (managed outside Whisparr)';
         } else {
           exclude.button.style.display = 'inline-flex';
           exclude.button.disabled = false;
@@ -2298,13 +2433,19 @@ class SceneCardObserver {
             'aria-label',
             result.excluded ? 'Remove exclusion' : 'Exclude from Whisparr',
           );
-          exclude.button.title = result.excluded ? 'Remove exclusion' : 'Exclude from Whisparr';
+          exclude.button.title = result.excluded
+            ? 'Remove exclusion'
+            : 'Exclude from Whisparr';
         }
       }
       const monitor = this.monitorBySceneId.get(result.sceneId);
       if (monitor) {
         const cached = this.statusBySceneId.get(result.sceneId);
-        monitor.setState('idle', cached?.monitored ?? null, Boolean(result.exists));
+        monitor.setState(
+          'idle',
+          cached?.monitored ?? null,
+          Boolean(result.exists),
+        );
       }
     }
   }
@@ -2326,7 +2467,10 @@ class SceneCardObserver {
         exclude.button.disabled = true;
         exclude.button.style.opacity = '0.6';
         exclude.button.style.cursor = 'not-allowed';
-        exclude.button.setAttribute('aria-label', 'Exclusion status unavailable');
+        exclude.button.setAttribute(
+          'aria-label',
+          'Exclusion status unavailable',
+        );
         exclude.button.title = 'Exclusion status unavailable';
       }
       const view = this.viewBySceneId.get(sceneId);
@@ -2354,7 +2498,8 @@ class SceneCardObserver {
     if (document.getElementById('stasharr-fa-style')) return;
     const style = document.createElement('style');
     style.id = 'stasharr-fa-style';
-    style.textContent = '@keyframes stasharr-spin { to { transform: rotate(360deg); } }';
+    style.textContent =
+      '@keyframes stasharr-spin { to { transform: rotate(360deg); } }';
     document.head.appendChild(style);
   }
 
@@ -2375,11 +2520,14 @@ class SceneCardObserver {
   ) {
     const paths: Record<typeof name, string> = {
       spinner: 'M12 2a10 10 0 1 0 10 10h-3a7 7 0 1 1-7-7V2z',
-      'circle-check': 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm5 7-6 6-3-3 1.4-1.4L11 12.2l4.6-4.6L17 9z',
+      'circle-check':
+        'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm5 7-6 6-3-3 1.4-1.4L11 12.2l4.6-4.6L17 9z',
       download: 'M12 3v9m0 0 4-4m-4 4-4-4M5 19h14',
       ban: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-6.2 5.8L18.2 18.2M18.2 5.8 5.8 18.2',
-      warning: 'M12 3 1.5 21h21L12 3zm0 5.5 3.5 7H8.5L12 8.5zm-1 9.5h2v2h-2v-2z',
-      refresh: 'M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.3 2.3z',
+      warning:
+        'M12 3 1.5 21h21L12 3zm0 5.5 3.5 7H8.5L12 8.5zm-1 9.5h2v2h-2v-2z',
+      refresh:
+        'M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.8-4.2L14 10h6V4l-2.3 2.3z',
       x: 'M6 6l12 12M18 6L6 18',
       search: 'M21 21l-4.3-4.3m1.3-5A7 7 0 1 1 10 4a7 7 0 0 1 8 7.7z',
       'external-link': 'M14 3h7v7m0-7L10 14M5 7v12h12',
@@ -2387,7 +2535,9 @@ class SceneCardObserver {
       'bookmark-filled': 'M6 4h12v16l-6-4-6 4V4z',
     };
     this.ensureIconStyles();
-    const spinStyle = spin ? 'animation: stasharr-spin 1s linear infinite;' : '';
+    const spinStyle = spin
+      ? 'animation: stasharr-spin 1s linear infinite;'
+      : '';
     const strokeIcons =
       name === 'download' ||
       name === 'ban' ||
