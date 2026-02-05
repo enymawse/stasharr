@@ -1,3 +1,5 @@
+import { createBatcher } from '../shared/batch.js';
+import { createTtlCache } from '../shared/cache.js';
 import { sendMessage } from '../shared/messaging.js';
 import {
   createDebouncedMutationObserver,
@@ -1265,7 +1267,7 @@ class SceneCardObserver {
   // Dev checklist: missing indicator renders for hasFile=false, search triggers background, UI shows loading/success/error.
   private observer: MutationObserver | null = null;
   private injectedByCard = new Map<HTMLElement, HTMLElement>();
-  private statusBySceneId = new Map<
+  private statusBySceneId = createTtlCache<
     string,
     {
       exists: boolean;
@@ -1278,7 +1280,7 @@ class SceneCardObserver {
       year?: number;
       statusKnown?: boolean;
     }
-  >();
+  >({ ttlMs: 0 });
   private statusIndicatorBySceneId = new Map<
     string,
     {
@@ -1340,9 +1342,11 @@ class SceneCardObserver {
       setState: (state: 'idle' | 'loading' | 'success' | 'error') => void;
     }
   >();
-  private statusQueue = new Map<string, SceneCardMeta>();
-  private statusDebounceHandle: number | null = null;
-  private statusInFlight = false;
+  private statusBatcher = createBatcher<SceneCardMeta>({
+    maxBatch: Number.POSITIVE_INFINITY,
+    maxWaitMs: 250,
+    handler: (items) => this.handleStatusBatch(items),
+  });
 
   start() {
     this.scan(document.body);
@@ -1429,8 +1433,7 @@ class SceneCardObserver {
   }
 
   private resetStatusCache() {
-    this.statusQueue.clear();
-    this.statusInFlight = false;
+    this.statusBatcher.clear();
     for (const [sceneId, entry] of this.statusBySceneId.entries()) {
       this.statusBySceneId.set(sceneId, {
         ...entry,
@@ -2022,8 +2025,8 @@ class SceneCardObserver {
         }
         setMissingState('success');
         window.setTimeout(() => {
-          this.statusQueue.set(scene.sceneId, scene);
-          void this.flushStatusQueue();
+          this.statusBatcher.enqueue(scene);
+          void this.statusBatcher.flush();
         }, 8000);
       } catch {
         setMissingState('error');
@@ -2173,37 +2176,25 @@ class SceneCardObserver {
     if (cached?.statusKnown) {
       return;
     }
-    this.statusQueue.set(scene.sceneId, scene);
-    if (this.statusDebounceHandle !== null) {
-      window.clearTimeout(this.statusDebounceHandle);
-    }
-    this.statusDebounceHandle = window.setTimeout(() => {
-      this.statusDebounceHandle = null;
-      void this.flushStatusQueue();
-    }, 250);
+    this.statusBatcher.enqueue(scene);
   }
 
-  private async flushStatusQueue() {
-    if (this.statusInFlight) {
-      return;
-    }
-    if (this.statusQueue.size === 0) {
-      return;
-    }
+  private async handleStatusBatch(items: SceneCardMeta[]) {
+    if (items.length === 0) return;
     const runtime = extContent?.runtime;
-    if (!runtime) {
-      return;
+    if (!runtime) return;
+    const deduped = new Map<string, SceneCardMeta>();
+    for (const item of items) {
+      deduped.set(item.sceneId, item);
     }
-    const items = Array.from(this.statusQueue.values());
-    this.statusQueue.clear();
-    this.statusInFlight = true;
+    const requestItems = Array.from(deduped.values());
     try {
       const response = await runtime.sendMessage({
         type: 'SCENE_CARDS_CHECK_STATUS',
-        items,
+        items: requestItems,
       });
       if (!response.ok || !response.results) {
-        this.applyStatusError(items.map((item) => item.sceneId));
+        this.applyStatusError(requestItems.map((item) => item.sceneId));
         return;
       }
       for (const result of response.results) {
@@ -2222,9 +2213,7 @@ class SceneCardObserver {
       }
       this.applyStatusResults(response.results);
     } catch {
-      this.applyStatusError(items.map((item) => item.sceneId));
-    } finally {
-      this.statusInFlight = false;
+      this.applyStatusError(requestItems.map((item) => item.sceneId));
     }
   }
 
