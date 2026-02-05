@@ -1,5 +1,3 @@
-import { openExternalLink } from '../shared/navigation.js';
-
 const MESSAGE_TYPES_CONTENT = {
   getConfigStatus: 'GET_CONFIG_STATUS',
 } as const;
@@ -109,6 +107,20 @@ const extContent =
 
 if (!extContent) {
   throw new Error('Extension runtime not available.');
+}
+
+type NavigationBridge = {
+  openExternalLink: (url: string, options?: { forceNewTab?: boolean }) => Promise<void>;
+};
+
+const navigationBridge = (globalThis as { StasharrNavigation?: NavigationBridge })
+  .StasharrNavigation;
+
+async function openExternalLink(url: string, options?: { forceNewTab?: boolean }) {
+  if (!navigationBridge?.openExternalLink) {
+    return;
+  }
+  await navigationBridge.openExternalLink(url, options);
 }
 
 const __DEV__ = true;
