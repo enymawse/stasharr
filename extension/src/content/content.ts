@@ -1237,6 +1237,17 @@ class SceneCardObserver {
       setState: (state: 'idle' | 'loading' | 'error', excluded: boolean) => void;
     }
   >();
+  private monitorBySceneId = new Map<
+    string,
+    {
+      button: HTMLButtonElement;
+      setState: (
+        state: 'idle' | 'loading' | 'error',
+        monitored: boolean | null,
+        exists: boolean,
+      ) => void;
+    }
+  >();
   private missingBySceneId = new Map<
     string,
     {
@@ -1620,6 +1631,27 @@ class SceneCardObserver {
     excludeButton.title = 'Exclusion status loading';
     leftWrap.appendChild(excludeButton);
 
+    const monitorButton = document.createElement('button');
+    monitorButton.type = 'button';
+    monitorButton.setAttribute('aria-label', 'Monitor in Whisparr');
+    monitorButton.title = 'Monitor in Whisparr';
+    monitorButton.style.border = '1px solid #c4337c';
+    monitorButton.style.borderRadius = '999px';
+    monitorButton.style.padding = '2px 8px';
+    monitorButton.style.cursor = 'pointer';
+    monitorButton.style.background = '#c4337c';
+    monitorButton.style.color = '#ffffff';
+    monitorButton.style.fontSize = '12px';
+    monitorButton.style.lineHeight = '1';
+    monitorButton.style.display = 'inline-flex';
+    monitorButton.style.alignItems = 'center';
+    monitorButton.style.justifyContent = 'center';
+    monitorButton.innerHTML = this.renderIcon('bookmark');
+    monitorButton.disabled = true;
+    monitorButton.style.opacity = '0.6';
+    monitorButton.style.cursor = 'not-allowed';
+    leftWrap.appendChild(monitorButton);
+
     const setStatus = (
       state: 'loading' | 'in' | 'out' | 'excluded' | 'error' | 'missing',
     ) => {
@@ -1771,6 +1803,53 @@ class SceneCardObserver {
       }
     };
 
+    const setMonitorState = (
+      state: 'idle' | 'loading' | 'error',
+      monitored: boolean | null,
+      exists: boolean,
+    ) => {
+      if (!exists) {
+        monitorButton.disabled = true;
+        monitorButton.style.opacity = '0.6';
+        monitorButton.style.cursor = 'not-allowed';
+        monitorButton.innerHTML = this.renderIcon('bookmark');
+        monitorButton.setAttribute('aria-label', 'Not in Whisparr');
+        monitorButton.title = 'Not in Whisparr';
+        return;
+      }
+
+      if (state === 'loading') {
+        monitorButton.disabled = true;
+        monitorButton.style.opacity = '0.6';
+        monitorButton.style.cursor = 'not-allowed';
+        monitorButton.innerHTML = this.renderIcon('spinner', true);
+        monitorButton.setAttribute('aria-label', 'Updating monitor status');
+        monitorButton.title = 'Updating monitor status';
+        return;
+      }
+
+      if (state === 'error') {
+        monitorButton.disabled = false;
+        monitorButton.style.opacity = '1';
+        monitorButton.style.cursor = 'pointer';
+        monitorButton.innerHTML = this.renderIcon('x');
+        monitorButton.setAttribute('aria-label', 'Monitor update failed');
+        monitorButton.title = 'Monitor update failed';
+        return;
+      }
+
+      const isMonitored = Boolean(monitored);
+      monitorButton.disabled = false;
+      monitorButton.style.opacity = '1';
+      monitorButton.style.cursor = 'pointer';
+      monitorButton.innerHTML = this.renderIcon(isMonitored ? 'bookmark-filled' : 'bookmark');
+      monitorButton.setAttribute(
+        'aria-label',
+        isMonitored ? 'Monitored in Whisparr' : 'Unmonitored in Whisparr',
+      );
+      monitorButton.title = isMonitored ? 'Monitored in Whisparr' : 'Unmonitored in Whisparr';
+    };
+
     setStatus('out');
     const cachedStatus = this.statusBySceneId.get(scene.sceneId);
     if (cachedStatus) {
@@ -1789,6 +1868,7 @@ class SceneCardObserver {
       setWhisparrEnabled(
         Boolean(cachedStatus.exists && cachedStatus.whisparrId && this.whisparrBaseUrl),
       );
+      setMonitorState('idle', cachedStatus.monitored ?? null, cachedStatus.exists);
       const stashMatch = this.stashMatchBySceneId.get(scene.sceneId);
       if (stashMatch?.found && stashMatch.stashSceneUrl) {
         setStashEnabled(true, 'View in Stash');
@@ -1817,6 +1897,7 @@ class SceneCardObserver {
       setWhisparrEnabled(false);
       setStashEnabled(false, this.stashConfigured ? 'Checking Stash...' : 'Stash not configured');
       void this.requestStashMatch(scene.sceneId);
+      setMonitorState('idle', null, false);
     }
 
     actionButton.addEventListener('click', async (event) => {
@@ -1969,6 +2050,38 @@ class SceneCardObserver {
       }
     });
 
+    monitorButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const cached = this.statusBySceneId.get(scene.sceneId);
+      if (!cached?.exists || !cached.whisparrId) {
+        setMonitorState('idle', cached?.monitored ?? null, false);
+        return;
+      }
+      const nextState = !Boolean(cached.monitored);
+      setMonitorState('loading', cached.monitored ?? null, true);
+      const runtime = extContent?.runtime;
+      if (!runtime) {
+        setMonitorState('error', cached.monitored ?? null, true);
+        return;
+      }
+      try {
+        const response = await runtime.sendMessage({
+          type: 'SET_MONITOR_STATE',
+          whisparrId: cached.whisparrId,
+          monitored: nextState,
+        });
+        if (!response.ok) {
+          setMonitorState('error', cached.monitored ?? null, true);
+          return;
+        }
+        cached.monitored = response.monitored ?? nextState;
+        setMonitorState('idle', cached.monitored ?? null, true);
+      } catch {
+        setMonitorState('error', cached.monitored ?? null, true);
+      }
+    });
+
     container.dataset.sceneId = scene.sceneId;
     container.dataset.sceneStatus = 'out';
 
@@ -1996,6 +2109,7 @@ class SceneCardObserver {
     });
     this.missingBySceneId.set(scene.sceneId, { wrap: missingWrap, setState: setMissingState });
     this.excludeBySceneId.set(scene.sceneId, { button: excludeButton, setState: setExcludeState });
+    this.monitorBySceneId.set(scene.sceneId, { button: monitorButton, setState: setMonitorState });
 
     const footer =
       card.querySelector('.card-footer') ??
@@ -2147,6 +2261,11 @@ class SceneCardObserver {
           exclude.button.title = result.excluded ? 'Remove exclusion' : 'Exclude from Whisparr';
         }
       }
+      const monitor = this.monitorBySceneId.get(result.sceneId);
+      if (monitor) {
+        const cached = this.statusBySceneId.get(result.sceneId);
+        monitor.setState('idle', cached?.monitored ?? null, Boolean(result.exists));
+      }
     }
   }
 
@@ -2173,6 +2292,10 @@ class SceneCardObserver {
       if (view) {
         view.setWhisparrEnabled(false);
         view.setStashEnabled(false, 'Lookup unavailable');
+      }
+      const monitor = this.monitorBySceneId.get(sceneId);
+      if (monitor) {
+        monitor.setState('error', null, false);
       }
     }
   }
@@ -2204,7 +2327,9 @@ class SceneCardObserver {
       | 'refresh'
       | 'x'
       | 'search'
-      | 'external-link',
+      | 'external-link'
+      | 'bookmark'
+      | 'bookmark-filled',
     spin = false,
   ) {
     const paths: Record<typeof name, string> = {
@@ -2217,6 +2342,8 @@ class SceneCardObserver {
       x: 'M6 6l12 12M18 6L6 18',
       search: 'M21 21l-4.3-4.3m1.3-5A7 7 0 1 1 10 4a7 7 0 0 1 8 7.7z',
       'external-link': 'M14 3h7v7m0-7L10 14M5 7v12h12',
+      bookmark: 'M6 4h12v16l-6-4-6 4V4z',
+      'bookmark-filled': 'M6 4h12v16l-6-4-6 4V4z',
     };
     this.ensureIconStyles();
     const spinStyle = spin ? 'animation: stasharr-spin 1s linear infinite;' : '';
@@ -2226,7 +2353,8 @@ class SceneCardObserver {
       name === 'refresh' ||
       name === 'x' ||
       name === 'search' ||
-      name === 'external-link';
+      name === 'external-link' ||
+      name === 'bookmark';
     if (strokeIcons) {
       return `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[name]}"></path></svg>`;
     }
