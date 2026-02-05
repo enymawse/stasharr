@@ -36,6 +36,7 @@ import {
   stashGraphqlRequest,
 } from './stash/graphql.js';
 import { createMessageRouter } from '../shared/messaging.js';
+import { fetchWithTimeout } from './http.js';
 
 const MESSAGE_TYPES_BG = MESSAGE_TYPES;
 
@@ -244,10 +245,10 @@ async function fetchQualityProfiles(
   baseUrl: string,
   apiKey: string,
 ): Promise<{ items: DiscoveryCatalogs['qualityProfiles']; error?: string }> {
-  const response = await handleFetchJson({
-    type: MESSAGE_TYPES_BG.fetchJson,
+  const response = await fetchWithTimeout({
     url: `${baseUrl}/api/v3/qualityprofile`,
     headers: { 'X-Api-Key': apiKey },
+    timeoutMs: REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {
@@ -278,10 +279,10 @@ async function fetchRootFolders(
   baseUrl: string,
   apiKey: string,
 ): Promise<{ items: DiscoveryCatalogs['rootFolders']; error?: string }> {
-  const response = await handleFetchJson({
-    type: MESSAGE_TYPES_BG.fetchJson,
+  const response = await fetchWithTimeout({
     url: `${baseUrl}/api/v3/rootfolder`,
     headers: { 'X-Api-Key': apiKey },
+    timeoutMs: REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {
@@ -315,10 +316,10 @@ async function fetchTags(
   baseUrl: string,
   apiKey: string,
 ): Promise<{ items: DiscoveryCatalogs['tags']; error?: string }> {
-  const response = await handleFetchJson({
-    type: MESSAGE_TYPES_BG.fetchJson,
+  const response = await fetchWithTimeout({
     url: `${baseUrl}/api/v3/tag`,
     headers: { 'X-Api-Key': apiKey },
+    timeoutMs: REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {
@@ -487,12 +488,12 @@ async function handleValidateConnection(
   }
 
   const targetUrl = `${normalized.value}/api/v3/system/status`;
-  const response = await handleFetchJson({
-    type: MESSAGE_TYPES_BG.fetchJson,
+  const response = await fetchWithTimeout({
     url: targetUrl,
     headers: {
       'X-Api-Key': apiKey.trim(),
     },
+    timeoutMs: REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {

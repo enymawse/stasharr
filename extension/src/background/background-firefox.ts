@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from './http.js';
+
 const MESSAGE_TYPES = {
   ping: 'PING',
   fetchJson: 'FETCH_JSON',
@@ -535,9 +537,10 @@ async function handleValidateConnection(request: {
     };
   }
 
-  const response = await handleFetchJson({
+  const response = await fetchWithTimeout({
     url: `${normalized.value}/api/v3/system/status`,
     headers: { 'X-Api-Key': request.apiKey.trim() },
+    timeoutMs: REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {
@@ -559,9 +562,10 @@ async function handleValidateConnection(request: {
 }
 
 async function fetchQualityProfiles(baseUrl: string, apiKey: string) {
-  const response = await handleFetchJson({
+  const response = await fetchWithTimeout({
     url: `${normalizedBaseUrl(baseUrl)}/api/v3/qualityprofile`,
     headers: { 'X-Api-Key': apiKey },
+    timeoutMs: REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {
@@ -589,9 +593,10 @@ async function fetchQualityProfiles(baseUrl: string, apiKey: string) {
 }
 
 async function fetchRootFolders(baseUrl: string, apiKey: string) {
-  const response = await handleFetchJson({
+  const response = await fetchWithTimeout({
     url: `${normalizedBaseUrl(baseUrl)}/api/v3/rootfolder`,
     headers: { 'X-Api-Key': apiKey },
+    timeoutMs: REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {
@@ -622,9 +627,10 @@ async function fetchRootFolders(baseUrl: string, apiKey: string) {
 }
 
 async function fetchTags(baseUrl: string, apiKey: string) {
-  const response = await handleFetchJson({
+  const response = await fetchWithTimeout({
     url: `${normalizedBaseUrl(baseUrl)}/api/v3/tag`,
     headers: { 'X-Api-Key': apiKey },
+    timeoutMs: REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {
