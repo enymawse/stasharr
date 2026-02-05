@@ -328,7 +328,7 @@ if (!document.getElementById(PANEL_ID)) {
   viewInWhisparrButton.style.justifyContent = 'center';
   viewInWhisparrButton.style.flex = '1';
   applyDisabledStyles(viewInWhisparrButton, true);
-  viewInWhisparrButton.style.display = 'none';
+  viewInWhisparrButton.style.display = 'inline-flex';
   viewRow.appendChild(viewInWhisparrButton);
 
   const monitorRow = document.createElement('div');
@@ -614,9 +614,8 @@ if (!document.getElementById(PANEL_ID)) {
   };
 
   const updateViewInWhisparrButton = (sceneId?: string) => {
-    if (!sceneId || !viewRow.style.display || viewRow.style.display === 'none') {
+    if (!sceneId) {
       applyDisabledStyles(viewInWhisparrButton, true);
-      viewInWhisparrButton.style.display = 'none';
       viewInWhisparrButton.title = 'View in Whisparr';
       return;
     }
@@ -624,13 +623,13 @@ if (!document.getElementById(PANEL_ID)) {
     const cached = statusCache.get(sceneId);
     if (!cached?.exists || !cached.whisparrId || !whisparrBaseUrl) {
       applyDisabledStyles(viewInWhisparrButton, true);
-      viewInWhisparrButton.style.display = 'none';
-      viewInWhisparrButton.title = 'No match in Whisparr';
+      viewInWhisparrButton.title = whisparrBaseUrl
+        ? 'No match in Whisparr'
+        : 'Whisparr not configured';
       return;
     }
 
     applyDisabledStyles(viewInWhisparrButton, false);
-    viewInWhisparrButton.style.display = 'inline-flex';
     viewInWhisparrButton.title = 'View in Whisparr';
   };
 
@@ -646,7 +645,7 @@ if (!document.getElementById(PANEL_ID)) {
     if (!stashConfigured) {
       applyDisabledStyles(viewInStashButton, true);
       viewInStashButton.title = 'Stash not configured';
-      viewRow.style.display = 'none';
+      viewRow.style.display = 'flex';
       updateViewInWhisparrButton(sceneId);
       return;
     }
@@ -661,7 +660,7 @@ if (!document.getElementById(PANEL_ID)) {
       } else {
         applyDisabledStyles(viewInStashButton, true);
         viewInStashButton.title = cached.error ? 'Lookup failed' : 'No match in Stash';
-        viewRow.style.display = 'none';
+        viewRow.style.display = 'flex';
         updateViewInWhisparrButton(sceneId);
       }
       return;
@@ -674,7 +673,7 @@ if (!document.getElementById(PANEL_ID)) {
     stashLookupInFlight.add(sceneId);
     applyDisabledStyles(viewInStashButton, true);
     viewInStashButton.title = 'Checking Stash...';
-    viewRow.style.display = 'none';
+    viewRow.style.display = 'flex';
     updateViewInWhisparrButton(sceneId);
 
     try {
@@ -689,7 +688,7 @@ if (!document.getElementById(PANEL_ID)) {
         });
         applyDisabledStyles(viewInStashButton, true);
         viewInStashButton.title = 'Lookup failed';
-        viewRow.style.display = 'none';
+        viewRow.style.display = 'flex';
         updateViewInWhisparrButton(sceneId);
         return;
       }
@@ -711,7 +710,7 @@ if (!document.getElementById(PANEL_ID)) {
       } else {
         applyDisabledStyles(viewInStashButton, true);
         viewInStashButton.title = 'No match in Stash';
-        viewRow.style.display = 'none';
+        viewRow.style.display = 'flex';
         updateViewInWhisparrButton(sceneId);
       }
     } catch (error) {
@@ -721,7 +720,7 @@ if (!document.getElementById(PANEL_ID)) {
       });
       applyDisabledStyles(viewInStashButton, true);
       viewInStashButton.title = 'Lookup failed';
-      viewRow.style.display = 'none';
+      viewRow.style.display = 'flex';
       updateViewInWhisparrButton(sceneId);
     } finally {
       stashLookupInFlight.delete(sceneId);
@@ -748,6 +747,7 @@ if (!document.getElementById(PANEL_ID)) {
       return;
     }
 
+    viewRow.style.display = 'flex';
     checkStatusButton.disabled = false;
     applyActionState(sceneId);
     void updateViewInStashButton(sceneId, force);
