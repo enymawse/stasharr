@@ -1,10 +1,7 @@
 import { cp, mkdir, rm } from 'node:fs/promises';
-import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { promisify } from 'node:util';
-
-const execFileAsync = promisify(execFile);
+import { build } from 'esbuild';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
 
@@ -19,7 +16,41 @@ const distDir = resolve(rootDir, 'dist', target);
 await rm(distDir, { recursive: true, force: true });
 await mkdir(distDir, { recursive: true });
 
-await execFileAsync('tsc', ['-p', 'tsconfig.json', '--outDir', distDir], { cwd: rootDir });
+const srcDir = resolve(rootDir, 'src');
+const commonIifeEntries = [
+  resolve(srcDir, 'content', 'content.ts'),
+  resolve(srcDir, 'content', 'pageParser.ts'),
+  resolve(srcDir, 'shared', 'navigation.ts'),
+];
+
+const esmEntries = [resolve(srcDir, 'content', 'options.ts')];
+if (target === 'chrome') {
+  esmEntries.push(resolve(srcDir, 'background', 'background.ts'));
+}
+
+const iifeEntries = [...commonIifeEntries];
+if (target === 'firefox') {
+  iifeEntries.push(resolve(srcDir, 'background', 'background-firefox.ts'));
+}
+
+const buildGroup = async (entryPoints, format) => {
+  if (entryPoints.length === 0) return;
+  await build({
+    entryPoints,
+    bundle: true,
+    format,
+    platform: 'browser',
+    target: 'es2022',
+    outdir: distDir,
+    outbase: srcDir,
+    sourcemap: false,
+    splitting: false,
+    legalComments: 'none',
+  });
+};
+
+await buildGroup(iifeEntries, 'iife');
+await buildGroup(esmEntries, 'esm');
 
 await cp(resolve(rootDir, 'manifest', target, 'manifest.json'), resolve(distDir, 'manifest.json'));
 await cp(

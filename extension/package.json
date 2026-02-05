@@ -14,6 +14,7 @@
     "tripwire": "node scripts/tripwire.mjs"
   },
   "devDependencies": {
+    "esbuild": "0.25.9",
     "typescript": "5.9.3"
   }
 }
