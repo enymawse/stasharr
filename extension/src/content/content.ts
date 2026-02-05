@@ -303,7 +303,7 @@ if (!document.getElementById(PANEL_ID)) {
   viewInStashButton.style.borderRadius = '6px';
   viewInStashButton.style.border = 'none';
   viewInStashButton.style.cursor = 'pointer';
-  viewInStashButton.style.background = '#16a34a';
+  viewInStashButton.style.background = '#137cbd';
   viewInStashButton.style.color = '#ffffff';
   viewInStashButton.style.flex = '1';
   applyDisabledStyles(viewInStashButton, true);
@@ -318,7 +318,7 @@ if (!document.getElementById(PANEL_ID)) {
   viewInWhisparrButton.style.borderRadius = '6px';
   viewInWhisparrButton.style.border = 'none';
   viewInWhisparrButton.style.cursor = 'pointer';
-  viewInWhisparrButton.style.background = '#2563eb';
+  viewInWhisparrButton.style.background = '#7138C8';
   viewInWhisparrButton.style.color = '#ffffff';
   viewInWhisparrButton.style.flex = '1';
   applyDisabledStyles(viewInWhisparrButton, true);
