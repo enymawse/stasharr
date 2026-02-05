@@ -21,6 +21,7 @@ export const MESSAGE_TYPES = {
   sceneCardAdd: 'SCENE_CARD_ADD',
   sceneCardTriggerSearch: 'SCENE_CARD_TRIGGER_SEARCH',
   sceneCardSetExcluded: 'SCENE_CARD_SET_EXCLUDED',
+  stashFindSceneByStashdbId: 'STASH_FIND_SCENE_BY_STASHDB_ID',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -295,6 +296,21 @@ export type SceneCardSetExcludedResponse = {
   error?: { code: string; message: string };
 };
 
+export type StashFindSceneByStashdbIdRequest = {
+  type: typeof MESSAGE_TYPES.stashFindSceneByStashdbId;
+  stashdbSceneId: string;
+};
+
+export type StashFindSceneByStashdbIdResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.stashFindSceneByStashdbId;
+  found: boolean;
+  stashSceneId?: string | number;
+  stashScenePath?: string;
+  title?: string;
+  error?: string;
+};
+
 export type SaveSelectionsRequest = {
   type: typeof MESSAGE_TYPES.saveSelections;
   selections: {
@@ -342,7 +358,8 @@ export type ExtensionRequest =
   | SceneCardsCheckStatusRequest
   | SceneCardAddRequest
   | SceneCardTriggerSearchRequest
-  | SceneCardSetExcludedRequest;
+  | SceneCardSetExcludedRequest
+  | StashFindSceneByStashdbIdRequest;
 
 export type ExtensionResponse =
   | PingResponse
@@ -367,4 +384,5 @@ export type ExtensionResponse =
   | SceneCardAddResponse
   | SceneCardTriggerSearchResponse
   | SceneCardSetExcludedResponse
+  | StashFindSceneByStashdbIdResponse
   | { ok: false; type: MessageType; error: string };

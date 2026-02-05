@@ -19,6 +19,7 @@ import {
   type SceneCardAddResponse,
   type SceneCardTriggerSearchResponse,
   type SceneCardSetExcludedResponse,
+  type StashFindSceneByStashdbIdResponse,
 } from '../shared/messages.js';
 import {
   getCatalogs,
@@ -1902,6 +1903,77 @@ async function handleSaveSelections(
   };
 }
 
+async function handleStashFindSceneByStashdbId(
+  request: ExtensionRequest,
+): Promise<StashFindSceneByStashdbIdResponse> {
+  if (request.type !== MESSAGE_TYPES_BG.stashFindSceneByStashdbId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.stashFindSceneByStashdbId,
+      found: false,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashdbSceneId = request.stashdbSceneId?.trim();
+  if (!stashdbSceneId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.stashFindSceneByStashdbId,
+      found: false,
+      error: 'StashDB scene ID is required.',
+    };
+  }
+
+  const query = `
+    query StasharrFindSceneByStashId($stashId: String!) {
+      findScenes(
+        scene_filter: {
+          stash_id_endpoint: { stash_id: $stashId }
+        }
+        filter: { per_page: 1 }
+      ) {
+        scenes {
+          id
+          title
+          path
+        }
+      }
+    }
+  `;
+
+  const result = await stashGraphqlRequest<{
+    findScenes?: { scenes?: Array<{ id?: string | number; title?: string; path?: string }> };
+  }>(query, { stashId: stashdbSceneId });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES_BG.stashFindSceneByStashdbId,
+      found: false,
+      error: result.error.message,
+    };
+  }
+
+  const scene = result.data.findScenes?.scenes?.[0];
+  if (!scene) {
+    return {
+      ok: true,
+      type: MESSAGE_TYPES_BG.stashFindSceneByStashdbId,
+      found: false,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES_BG.stashFindSceneByStashdbId,
+    found: true,
+    stashSceneId: scene.id,
+    stashScenePath: scene.path,
+    title: scene.title,
+  };
+}
+
 ext.runtime.onMessage.addListener(
   (
     request: ExtensionRequest,
@@ -1999,6 +2071,10 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.sceneCardSetExcluded) {
         return handleSceneCardSetExcluded(request);
+      }
+
+      if (request?.type === MESSAGE_TYPES_BG.stashFindSceneByStashdbId) {
+        return handleStashFindSceneByStashdbId(request);
       }
 
       if (request?.type === MESSAGE_TYPES_BG.requestPermission) {

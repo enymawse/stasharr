@@ -21,6 +21,7 @@ const MESSAGE_TYPES = {
   sceneCardSetExcluded: 'SCENE_CARD_SET_EXCLUDED',
   addScene: 'ADD_SCENE',
   setMonitorState: 'SET_MONITOR_STATE',
+  stashFindSceneByStashdbId: 'STASH_FIND_SCENE_BY_STASHDB_ID',
 } as const;
 
 type ExtensionSettings = {
@@ -1566,6 +1567,66 @@ async function fetchExclusionState(baseUrl: string, apiKey: string, sceneId: str
   return { excluded: true, exclusionId: Number.isFinite(exclusionId) ? exclusionId : undefined };
 }
 
+async function handleStashFindSceneByStashdbId(request: { stashdbSceneId?: string }) {
+  const stashdbSceneId = request.stashdbSceneId?.trim();
+  if (!stashdbSceneId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.stashFindSceneByStashdbId,
+      found: false,
+      error: 'StashDB scene ID is required.',
+    };
+  }
+
+  const query = `
+    query StasharrFindSceneByStashId($stashId: String!) {
+      findScenes(
+        scene_filter: {
+          stash_id_endpoint: { stash_id: $stashId }
+        }
+        filter: { per_page: 1 }
+      ) {
+        scenes {
+          id
+          title
+          path
+        }
+      }
+    }
+  `;
+
+  const result = await stashGraphqlRequest<{
+    findScenes?: { scenes?: Array<{ id?: string | number; title?: string; path?: string }> };
+  }>(query, { stashId: stashdbSceneId });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.stashFindSceneByStashdbId,
+      found: false,
+      error: result.error.message,
+    };
+  }
+
+  const scene = result.data.findScenes?.scenes?.[0];
+  if (!scene) {
+    return {
+      ok: true,
+      type: MESSAGE_TYPES.stashFindSceneByStashdbId,
+      found: false,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.stashFindSceneByStashdbId,
+    found: true,
+    stashSceneId: scene.id,
+    stashScenePath: scene.path,
+    title: scene.title,
+  };
+}
+
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
     if (request?.type === MESSAGE_TYPES.ping) {
@@ -1658,6 +1719,10 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request?.type === MESSAGE_TYPES.sceneCardSetExcluded) {
       return handleSceneCardSetExcluded(request);
+    }
+
+    if (request?.type === MESSAGE_TYPES.stashFindSceneByStashdbId) {
+      return handleStashFindSceneByStashdbId(request as { stashdbSceneId?: string });
     }
 
     if (request?.type === MESSAGE_TYPES.requestPermission) {
