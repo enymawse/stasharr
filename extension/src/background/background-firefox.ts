@@ -1,3 +1,8 @@
+import {
+  createBackgroundHandler,
+  createBaseHandlers,
+  registerBackgroundListener,
+} from './core.js';
 import { fetchWithTimeout } from './http.js';
 import { createTtlCache } from '../shared/cache.js';
 
@@ -27,31 +32,8 @@ const MESSAGE_TYPES = {
   stashFindSceneByStashdbId: 'STASH_FIND_SCENE_BY_STASHDB_ID',
 } as const;
 
-type MessageRouter = {
-  handle: (request: { type?: string; [key: string]: unknown }) => Promise<{
-    [key: string]: unknown;
-  }> | null;
-};
-
-function createMessageRouter(
-  handlers: Partial<
-    Record<
-      string,
-      (
-        request: { type?: string; [key: string]: unknown },
-      ) => Promise<{ [key: string]: unknown }> | { [key: string]: unknown }
-    >
-  >,
-): MessageRouter {
-  return {
-    handle(request) {
-      const key = request?.type ?? '';
-      const handler = handlers[key];
-      if (!handler) return null;
-      return Promise.resolve(handler(request));
-    },
-  };
-}
+type BackgroundRequest = { type?: string; [key: string]: unknown };
+type BackgroundResponse = { [key: string]: unknown };
 
 type ExtensionSettings = {
   whisparrBaseUrl: string;
@@ -2354,193 +2336,124 @@ async function handleStashFindSceneByStashdbId(request: {
   };
 }
 
-ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-  const respond = async () => {
-    const router = createMessageRouter({
-      [MESSAGE_TYPES.ping]: async () => ({
-        ok: true,
-        type: MESSAGE_TYPES.ping,
-        version: VERSION,
-        timestamp: new Date().toISOString(),
-      }),
-      [MESSAGE_TYPES.getSettings]: async () => {
-        const settings = await getSettings();
-        return { ok: true, type: MESSAGE_TYPES.getSettings, settings };
+const baseHandlers = createBaseHandlers({
+  messageTypes: {
+    ping: MESSAGE_TYPES.ping,
+    getSettings: MESSAGE_TYPES.getSettings,
+    getConfigStatus: MESSAGE_TYPES.getConfigStatus,
+    openOptionsPage: MESSAGE_TYPES.openOptionsPage,
+  },
+  version: VERSION,
+  getSettings,
+  openOptionsPage: ext.runtime.openOptionsPage,
+});
+
+const handlers: Record<
+  string,
+  (request: BackgroundRequest) => Promise<BackgroundResponse> | BackgroundResponse
+> = {
+  ...baseHandlers,
+  [MESSAGE_TYPES.fetchJson]: (request) =>
+    handleFetchJson(
+      request as {
+        url?: string;
+        method?: string;
+        headers?: Record<string, string>;
+        body?: string;
       },
-      [MESSAGE_TYPES.getConfigStatus]: async () => {
-        const settings = await getSettings();
-        return {
-          ok: true,
-          type: MESSAGE_TYPES.getConfigStatus,
-          configured: Boolean(
-            settings.whisparrBaseUrl && settings.whisparrApiKey,
-          ),
-        };
-      },
-      [MESSAGE_TYPES.openOptionsPage]: async () => {
-        if (ext.runtime.openOptionsPage) {
-          ext.runtime.openOptionsPage();
-          return { ok: true, type: MESSAGE_TYPES.openOptionsPage };
-        }
-        return {
-          ok: false,
-          type: MESSAGE_TYPES.openOptionsPage,
-          error: 'openOptionsPage not available.',
-        };
-      },
-    });
-
-    const routed = router.handle(request);
-    if (routed) {
-      return routed;
-    }
-
-    if (request?.type === MESSAGE_TYPES.fetchJson) {
-      return handleFetchJson(
-        request as {
-          url?: string;
-          method?: string;
-          headers?: Record<string, string>;
-          body?: string;
-        },
-      );
-    }
-
-    if (request?.type === MESSAGE_TYPES.validateConnection) {
-      return handleValidateConnection(
-        request as { baseUrl?: string; apiKey?: string; kind?: string },
-      );
-    }
-
-    if (request?.type === MESSAGE_TYPES.saveSettings) {
-      const { settings } = request as { settings: Partial<ExtensionSettings> };
-      const next = await saveSettings(settings);
-      return { ok: true, type: MESSAGE_TYPES.saveSettings, settings: next };
-    }
-
-    if (request?.type === MESSAGE_TYPES.resetSettings) {
-      await resetSettings();
-      return { ok: true, type: MESSAGE_TYPES.resetSettings };
-    }
-
-    if (request?.type === MESSAGE_TYPES.fetchDiscoveryCatalogs) {
-      return handleFetchDiscoveryCatalogs(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.saveSelections) {
-      return handleSaveSelections(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.checkSceneStatus) {
-      return handleCheckSceneStatus(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.addScene) {
-      return handleAddScene(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.setMonitorState) {
-      return handleSetMonitorState(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.updateTags) {
-      return handleUpdateTags(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.updateQualityProfile) {
-      return handleUpdateQualityProfile(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.sceneCardActionRequested) {
-      return handleSceneCardAction(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.sceneCardsCheckStatus) {
-      return handleSceneCardsCheckStatus(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.sceneCardAdd) {
-      return handleSceneCardAdd(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.sceneCardTriggerSearch) {
-      return handleSceneCardTriggerSearch(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.sceneCardSetExcluded) {
-      return handleSceneCardSetExcluded(request);
-    }
-
-    if (request?.type === MESSAGE_TYPES.stashFindSceneByStashdbId) {
-      return handleStashFindSceneByStashdbId(
-        request as { stashdbSceneId?: string },
-      );
-    }
-
-    if (request?.type === MESSAGE_TYPES.requestPermission) {
-      if (!ext.permissions?.request) {
-        return {
-          ok: false,
-          type: MESSAGE_TYPES.requestPermission,
-          granted: false,
-          error: 'Permissions API not available.',
-        };
-      }
-      try {
-        const granted = await ext.permissions.request({
-          origins: [(request as { origin: string }).origin],
-        });
-        return { ok: true, type: MESSAGE_TYPES.requestPermission, granted };
-      } catch (error) {
-        return {
-          ok: false,
-          type: MESSAGE_TYPES.requestPermission,
-          granted: false,
-          error: (error as Error).message,
-        };
-      }
-    }
-
-    if (request?.type === MESSAGE_TYPES.getPermission) {
-      if (!ext.permissions?.contains) {
-        return {
-          ok: false,
-          type: MESSAGE_TYPES.getPermission,
-          granted: false,
-          error: 'Permissions API not available.',
-        };
-      }
-      try {
-        const granted = await ext.permissions.contains({
-          origins: [(request as { origin: string }).origin],
-        });
-        return { ok: true, type: MESSAGE_TYPES.getPermission, granted };
-      } catch (error) {
-        return {
-          ok: false,
-          type: MESSAGE_TYPES.getPermission,
-          granted: false,
-          error: (error as Error).message,
-        };
-      }
-    }
-
-    return {
-      ok: false,
-      type: MESSAGE_TYPES.fetchJson,
-      error: 'Unknown message type',
-    };
-  };
-
-  respond()
-    .then((response) => sendResponse(response))
-    .catch((error) =>
-      sendResponse({
+    ),
+  [MESSAGE_TYPES.validateConnection]: (request) =>
+    handleValidateConnection(
+      request as { baseUrl?: string; apiKey?: string; kind?: string },
+    ),
+  [MESSAGE_TYPES.saveSettings]: async (request) => {
+    const { settings } = request as { settings: Partial<ExtensionSettings> };
+    const next = await saveSettings(settings);
+    return { ok: true, type: MESSAGE_TYPES.saveSettings, settings: next };
+  },
+  [MESSAGE_TYPES.resetSettings]: async () => {
+    await resetSettings();
+    return { ok: true, type: MESSAGE_TYPES.resetSettings };
+  },
+  [MESSAGE_TYPES.fetchDiscoveryCatalogs]: handleFetchDiscoveryCatalogs,
+  [MESSAGE_TYPES.saveSelections]: handleSaveSelections,
+  [MESSAGE_TYPES.checkSceneStatus]: handleCheckSceneStatus,
+  [MESSAGE_TYPES.addScene]: handleAddScene,
+  [MESSAGE_TYPES.setMonitorState]: handleSetMonitorState,
+  [MESSAGE_TYPES.updateTags]: handleUpdateTags,
+  [MESSAGE_TYPES.updateQualityProfile]: handleUpdateQualityProfile,
+  [MESSAGE_TYPES.sceneCardActionRequested]: handleSceneCardAction,
+  [MESSAGE_TYPES.sceneCardsCheckStatus]: handleSceneCardsCheckStatus,
+  [MESSAGE_TYPES.sceneCardAdd]: handleSceneCardAdd,
+  [MESSAGE_TYPES.sceneCardTriggerSearch]: handleSceneCardTriggerSearch,
+  [MESSAGE_TYPES.sceneCardSetExcluded]: handleSceneCardSetExcluded,
+  [MESSAGE_TYPES.stashFindSceneByStashdbId]: (request) =>
+    handleStashFindSceneByStashdbId(
+      request as { stashdbSceneId?: string },
+    ),
+  [MESSAGE_TYPES.requestPermission]: async (request) => {
+    if (!ext.permissions?.request) {
+      return {
         ok: false,
-        type: MESSAGE_TYPES.fetchJson,
-        error: `Unhandled error: ${(error as Error).message}`,
-      }),
-    );
+        type: MESSAGE_TYPES.requestPermission,
+        granted: false,
+        error: 'Permissions API not available.',
+      };
+    }
+    try {
+      const granted = await ext.permissions.request({
+        origins: [(request as { origin: string }).origin],
+      });
+      return { ok: true, type: MESSAGE_TYPES.requestPermission, granted };
+    } catch (error) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.requestPermission,
+        granted: false,
+        error: (error as Error).message,
+      };
+    }
+  },
+  [MESSAGE_TYPES.getPermission]: async (request) => {
+    if (!ext.permissions?.contains) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.getPermission,
+        granted: false,
+        error: 'Permissions API not available.',
+      };
+    }
+    try {
+      const granted = await ext.permissions.contains({
+        origins: [(request as { origin: string }).origin],
+      });
+      return { ok: true, type: MESSAGE_TYPES.getPermission, granted };
+    } catch (error) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.getPermission,
+        granted: false,
+        error: (error as Error).message,
+      };
+    }
+  },
+};
 
-  return true;
+const handleMessage = createBackgroundHandler({
+  handlers,
+  unknownResponse: {
+    ok: false,
+    type: MESSAGE_TYPES.fetchJson,
+    error: 'Unknown message type',
+  },
+});
+
+registerBackgroundListener({
+  ext,
+  handleMessage,
+  onError: (error) => ({
+    ok: false,
+    type: MESSAGE_TYPES.fetchJson,
+    error: `Unhandled error: ${error.message}`,
+  }),
 });
