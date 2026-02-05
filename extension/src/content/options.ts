@@ -4,6 +4,8 @@ import {
   type FetchDiscoveryCatalogsResponse,
   type SaveSelectionsResponse,
 } from '../shared/messages.js';
+import { sendMessage } from '../shared/messaging.js';
+import type { ExtensionRequest, ExtensionResponse } from '../shared/messages.js';
 
 type ExtRuntime = {
   runtime: {
@@ -179,7 +181,14 @@ let currentSelections: UiSelections = {
 };
 
 async function loadSettings() {
-  const response = await ext.runtime.sendMessage({ type: MESSAGE_TYPES.getSettings });
+  const response = await sendMessage<'GET_SETTINGS'>(
+    ext.runtime as {
+      sendMessage: (message: ExtensionRequest) => Promise<ExtensionResponse>;
+    },
+    {
+      type: MESSAGE_TYPES.getSettings,
+    },
+  );
   if (!response.ok || !response.settings) {
     setStatus('Unable to load settings.', true);
     return;

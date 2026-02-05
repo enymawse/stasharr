@@ -35,6 +35,7 @@ import {
   getNormalizedStashBaseUrl,
   stashGraphqlRequest,
 } from './stash/graphql.js';
+import { createMessageRouter } from '../shared/messaging.js';
 
 const MESSAGE_TYPES_BG = MESSAGE_TYPES;
 
@@ -2128,13 +2129,44 @@ ext.runtime.onMessage.addListener(
     sendResponse: (response: ExtensionResponse) => void,
   ) => {
     const respond = async (): Promise<ExtensionResponse> => {
-      if (request?.type === MESSAGE_TYPES_BG.ping) {
-        return {
+      const router = createMessageRouter({
+        [MESSAGE_TYPES_BG.ping]: async () => ({
           ok: true,
           type: MESSAGE_TYPES_BG.ping,
           version: VERSION,
           timestamp: new Date().toISOString(),
-        };
+        }),
+        [MESSAGE_TYPES_BG.getSettings]: async () => {
+          const settings = await getSettings();
+          return { ok: true, type: MESSAGE_TYPES_BG.getSettings, settings };
+        },
+        [MESSAGE_TYPES_BG.getConfigStatus]: async () => {
+          const settings = await getSettings();
+          const configured = Boolean(
+            settings.whisparrBaseUrl && settings.whisparrApiKey,
+          );
+          return {
+            ok: true,
+            type: MESSAGE_TYPES_BG.getConfigStatus,
+            configured,
+          };
+        },
+        [MESSAGE_TYPES_BG.openOptionsPage]: async () => {
+          if (ext.runtime.openOptionsPage) {
+            ext.runtime.openOptionsPage();
+            return { ok: true, type: MESSAGE_TYPES_BG.openOptionsPage };
+          }
+          return {
+            ok: false,
+            type: MESSAGE_TYPES_BG.openOptionsPage,
+            error: 'openOptionsPage not available.',
+          };
+        },
+      });
+
+      const routed = router.handle(request);
+      if (routed) {
+        return routed;
       }
 
       if (request?.type === MESSAGE_TYPES_BG.fetchJson) {
@@ -2143,23 +2175,6 @@ ext.runtime.onMessage.addListener(
 
       if (request?.type === MESSAGE_TYPES_BG.validateConnection) {
         return handleValidateConnection(request);
-      }
-
-      if (request?.type === MESSAGE_TYPES_BG.getSettings) {
-        const settings = await getSettings();
-        return { ok: true, type: MESSAGE_TYPES_BG.getSettings, settings };
-      }
-
-      if (request?.type === MESSAGE_TYPES_BG.getConfigStatus) {
-        const settings = await getSettings();
-        const configured = Boolean(
-          settings.whisparrBaseUrl && settings.whisparrApiKey,
-        );
-        return {
-          ok: true,
-          type: MESSAGE_TYPES_BG.getConfigStatus,
-          configured,
-        };
       }
 
       if (request?.type === MESSAGE_TYPES_BG.saveSettings) {
@@ -2278,18 +2293,6 @@ ext.runtime.onMessage.addListener(
             error: (error as Error).message,
           };
         }
-      }
-
-      if (request?.type === MESSAGE_TYPES_BG.openOptionsPage) {
-        if (ext.runtime.openOptionsPage) {
-          ext.runtime.openOptionsPage();
-          return { ok: true, type: MESSAGE_TYPES_BG.openOptionsPage };
-        }
-        return {
-          ok: false,
-          type: MESSAGE_TYPES_BG.openOptionsPage,
-          error: 'openOptionsPage not available.',
-        };
       }
 
       return {

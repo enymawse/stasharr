@@ -24,6 +24,32 @@ const MESSAGE_TYPES = {
   stashFindSceneByStashdbId: 'STASH_FIND_SCENE_BY_STASHDB_ID',
 } as const;
 
+type MessageRouter = {
+  handle: (request: { type?: string; [key: string]: unknown }) => Promise<{
+    [key: string]: unknown;
+  }> | null;
+};
+
+function createMessageRouter(
+  handlers: Partial<
+    Record<
+      string,
+      (
+        request: { type?: string; [key: string]: unknown },
+      ) => Promise<{ [key: string]: unknown }> | { [key: string]: unknown }
+    >
+  >,
+): MessageRouter {
+  return {
+    handle(request) {
+      const key = request?.type ?? '';
+      const handler = handlers[key];
+      if (!handler) return null;
+      return Promise.resolve(handler(request));
+    },
+  };
+}
+
 type ExtensionSettings = {
   whisparrBaseUrl: string;
   whisparrApiKey: string;
@@ -2321,13 +2347,43 @@ async function handleStashFindSceneByStashdbId(request: {
 
 ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   const respond = async () => {
-    if (request?.type === MESSAGE_TYPES.ping) {
-      return {
+    const router = createMessageRouter({
+      [MESSAGE_TYPES.ping]: async () => ({
         ok: true,
         type: MESSAGE_TYPES.ping,
         version: VERSION,
         timestamp: new Date().toISOString(),
-      };
+      }),
+      [MESSAGE_TYPES.getSettings]: async () => {
+        const settings = await getSettings();
+        return { ok: true, type: MESSAGE_TYPES.getSettings, settings };
+      },
+      [MESSAGE_TYPES.getConfigStatus]: async () => {
+        const settings = await getSettings();
+        return {
+          ok: true,
+          type: MESSAGE_TYPES.getConfigStatus,
+          configured: Boolean(
+            settings.whisparrBaseUrl && settings.whisparrApiKey,
+          ),
+        };
+      },
+      [MESSAGE_TYPES.openOptionsPage]: async () => {
+        if (ext.runtime.openOptionsPage) {
+          ext.runtime.openOptionsPage();
+          return { ok: true, type: MESSAGE_TYPES.openOptionsPage };
+        }
+        return {
+          ok: false,
+          type: MESSAGE_TYPES.openOptionsPage,
+          error: 'openOptionsPage not available.',
+        };
+      },
+    });
+
+    const routed = router.handle(request);
+    if (routed) {
+      return routed;
     }
 
     if (request?.type === MESSAGE_TYPES.fetchJson) {
@@ -2345,22 +2401,6 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       return handleValidateConnection(
         request as { baseUrl?: string; apiKey?: string; kind?: string },
       );
-    }
-
-    if (request?.type === MESSAGE_TYPES.getSettings) {
-      const settings = await getSettings();
-      return { ok: true, type: MESSAGE_TYPES.getSettings, settings };
-    }
-
-    if (request?.type === MESSAGE_TYPES.getConfigStatus) {
-      const settings = await getSettings();
-      return {
-        ok: true,
-        type: MESSAGE_TYPES.getConfigStatus,
-        configured: Boolean(
-          settings.whisparrBaseUrl && settings.whisparrApiKey,
-        ),
-      };
     }
 
     if (request?.type === MESSAGE_TYPES.saveSettings) {
@@ -2474,18 +2514,6 @@ ext.runtime.onMessage.addListener((request, _sender, sendResponse) => {
           error: (error as Error).message,
         };
       }
-    }
-
-    if (request?.type === MESSAGE_TYPES.openOptionsPage) {
-      if (ext.runtime.openOptionsPage) {
-        ext.runtime.openOptionsPage();
-        return { ok: true, type: MESSAGE_TYPES.openOptionsPage };
-      }
-      return {
-        ok: false,
-        type: MESSAGE_TYPES.openOptionsPage,
-        error: 'openOptionsPage not available.',
-      };
     }
 
     return {

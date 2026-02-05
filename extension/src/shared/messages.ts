@@ -388,3 +388,30 @@ export type ExtensionResponse =
   | SceneCardSetExcludedResponse
   | StashFindSceneByStashdbIdResponse
   | { ok: false; type: MessageType; error: string };
+
+export type MessageMap = {
+  [MESSAGE_TYPES.ping]: {
+    request: PingRequest;
+    response: PingResponse;
+  };
+  [MESSAGE_TYPES.getSettings]: {
+    request: GetSettingsRequest;
+    response: {
+      ok: true;
+      type: typeof MESSAGE_TYPES.getSettings;
+      settings: ExtensionSettings;
+    };
+  };
+  [MESSAGE_TYPES.getConfigStatus]: {
+    request: GetConfigStatusRequest;
+    response: {
+      ok: true;
+      type: typeof MESSAGE_TYPES.getConfigStatus;
+      configured: boolean;
+    };
+  };
+  [MESSAGE_TYPES.openOptionsPage]: {
+    request: OpenOptionsPageRequest;
+    response: OpenOptionsPageResponse;
+  };
+};

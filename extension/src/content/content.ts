@@ -1,3 +1,6 @@
+import { sendMessage } from '../shared/messaging.js';
+import type { ExtensionRequest, ExtensionResponse } from '../shared/messages.js';
+
 const MESSAGE_TYPES_CONTENT = {
   getConfigStatus: 'GET_CONFIG_STATUS',
 } as const;
@@ -488,7 +491,12 @@ if (!document.getElementById(PANEL_ID)) {
     }
 
     try {
-      await extContent.runtime.sendMessage({ type: 'OPEN_OPTIONS_PAGE' });
+      await sendMessage(
+        extContent.runtime as {
+          sendMessage: (message: ExtensionRequest) => Promise<ExtensionResponse>;
+        },
+        { type: 'OPEN_OPTIONS_PAGE' },
+      );
     } catch (error) {
       console.warn('Open options failed:', error);
     }
@@ -1308,7 +1316,12 @@ class SceneCardObserver {
     const runtime = extContent?.runtime;
     if (!runtime) return;
     try {
-      const response = await runtime.sendMessage({ type: 'GET_SETTINGS' });
+      const response = await sendMessage<'GET_SETTINGS'>(
+        runtime as {
+          sendMessage: (message: ExtensionRequest) => Promise<ExtensionResponse>;
+        },
+        { type: 'GET_SETTINGS' },
+      );
       if (!response.ok || !response.settings) return;
       const baseUrl = response.settings.whisparrBaseUrl?.trim() ?? '';
       this.whisparrBaseUrl = baseUrl || null;
