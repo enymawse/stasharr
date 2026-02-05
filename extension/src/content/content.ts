@@ -1451,11 +1451,11 @@ class SceneCardObserver {
     const actionButton = document.createElement('button');
     actionButton.type = 'button';
     actionButton.setAttribute('aria-label', 'Add to Whisparr');
-    actionButton.style.border = '1px solid #2563eb';
+    actionButton.style.border = '1px solid #c084fc';
     actionButton.style.borderRadius = '999px';
     actionButton.style.padding = '2px 8px';
     actionButton.style.cursor = 'pointer';
-    actionButton.style.background = '#2563eb';
+    actionButton.style.background = '#c084fc';
     actionButton.style.color = '#ffffff';
     actionButton.style.fontSize = '12px';
     actionButton.style.lineHeight = '1';
@@ -1517,11 +1517,11 @@ class SceneCardObserver {
     searchButton.type = 'button';
     searchButton.setAttribute('aria-label', 'Trigger Whisparr search');
     searchButton.title = 'Trigger Whisparr search';
-    searchButton.style.border = '1px solid #f59e0b';
+    searchButton.style.border = '1px solid #00853d';
     searchButton.style.borderRadius = '999px';
     searchButton.style.padding = '2px 8px';
     searchButton.style.cursor = 'pointer';
-    searchButton.style.background = '#f59e0b';
+    searchButton.style.background = '#00853d';
     searchButton.style.color = '#ffffff';
     searchButton.style.fontSize = '12px';
     searchButton.style.lineHeight = '1';
@@ -1535,11 +1535,11 @@ class SceneCardObserver {
     excludeButton.type = 'button';
     excludeButton.setAttribute('aria-label', 'Exclude from Whisparr');
     excludeButton.title = 'Exclude from Whisparr';
-    excludeButton.style.border = '1px solid #ef4444';
+    excludeButton.style.border = '1px solid #c4273c';
     excludeButton.style.borderRadius = '999px';
     excludeButton.style.padding = '2px 8px';
     excludeButton.style.cursor = 'pointer';
-    excludeButton.style.background = '#ef4444';
+    excludeButton.style.background = '#c4273c';
     excludeButton.style.color = '#ffffff';
     excludeButton.style.fontSize = '12px';
     excludeButton.style.lineHeight = '1';
@@ -1562,8 +1562,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#7138c8';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
-          actionButton.style.background = '#93c5fd';
-          actionButton.style.borderColor = '#93c5fd';
+          actionButton.style.background = '#d8b4fe';
+          actionButton.style.borderColor = '#d8b4fe';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Adding to Whisparr');
           return;
@@ -1572,8 +1572,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#16a34a';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
-          actionButton.style.background = '#93c5fd';
-          actionButton.style.borderColor = '#93c5fd';
+          actionButton.style.background = '#d8b4fe';
+          actionButton.style.borderColor = '#d8b4fe';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Already in Whisparr');
           return;
@@ -1582,8 +1582,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#f59e0b';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
-          actionButton.style.background = '#93c5fd';
-          actionButton.style.borderColor = '#93c5fd';
+          actionButton.style.background = '#d8b4fe';
+          actionButton.style.borderColor = '#d8b4fe';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'In Whisparr (missing file)');
           return;
@@ -1599,8 +1599,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
-          actionButton.style.background = '#2563eb';
-          actionButton.style.borderColor = '#2563eb';
+          actionButton.style.background = '#c084fc';
+          actionButton.style.borderColor = '#c084fc';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Error, try again');
           return;
@@ -1610,8 +1610,8 @@ class SceneCardObserver {
           statusIcon.style.color = '#7138c8';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
-          actionButton.style.background = '#2563eb';
-          actionButton.style.borderColor = '#2563eb';
+          actionButton.style.background = '#c084fc';
+          actionButton.style.borderColor = '#c084fc';
           actionButton.style.color = '#ffffff';
           actionButton.setAttribute('aria-label', 'Add to Whisparr');
       }
@@ -1647,24 +1647,24 @@ class SceneCardObserver {
         case 'loading':
           searchButton.disabled = true;
           searchButton.style.opacity = '0.6';
-          searchButton.style.background = '#f3c46b';
-          searchButton.style.borderColor = '#f3c46b';
+          searchButton.style.background = '#69b66d';
+          searchButton.style.borderColor = '#69b66d';
           searchButton.style.color = '#ffffff';
           searchButton.innerHTML = this.renderIcon('spinner', true);
           return;
         case 'success':
           searchButton.disabled = true;
           searchButton.style.opacity = '0.8';
-          searchButton.style.background = '#f3c46b';
-          searchButton.style.borderColor = '#f3c46b';
+          searchButton.style.background = '#69b66d';
+          searchButton.style.borderColor = '#69b66d';
           searchButton.style.color = '#ffffff';
           searchButton.innerHTML = this.renderIcon('circle-check');
           return;
         case 'error':
           searchButton.disabled = false;
           searchButton.style.opacity = '1';
-          searchButton.style.background = '#f59e0b';
-          searchButton.style.borderColor = '#f59e0b';
+          searchButton.style.background = '#00853d';
+          searchButton.style.borderColor = '#00853d';
           searchButton.style.color = '#ffffff';
           searchButton.innerHTML = this.renderIcon('x');
           return;
@@ -1672,8 +1672,8 @@ class SceneCardObserver {
         default:
           searchButton.disabled = false;
           searchButton.style.opacity = '1';
-          searchButton.style.background = '#f59e0b';
-          searchButton.style.borderColor = '#f59e0b';
+          searchButton.style.background = '#00853d';
+          searchButton.style.borderColor = '#00853d';
           searchButton.style.color = '#ffffff';
           searchButton.innerHTML = this.renderIcon('search');
       }
@@ -1696,8 +1696,8 @@ class SceneCardObserver {
           excludeButton.disabled = false;
           excludeButton.style.opacity = '1';
           excludeButton.innerHTML = excluded ? this.renderIcon('circle-check') : this.renderIcon('ban');
-          excludeButton.style.background = excluded ? '#9ca3af' : '#ef4444';
-          excludeButton.style.borderColor = excluded ? '#9ca3af' : '#ef4444';
+          excludeButton.style.background = excluded ? '#9ca3af' : '#c4273c';
+          excludeButton.style.borderColor = excluded ? '#9ca3af' : '#c4273c';
       }
     };
 
