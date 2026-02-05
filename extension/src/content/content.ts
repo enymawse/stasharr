@@ -305,6 +305,9 @@ if (!document.getElementById(PANEL_ID)) {
   viewInStashButton.style.cursor = 'pointer';
   viewInStashButton.style.background = '#137cbd';
   viewInStashButton.style.color = '#ffffff';
+  viewInStashButton.style.display = 'inline-flex';
+  viewInStashButton.style.alignItems = 'center';
+  viewInStashButton.style.justifyContent = 'center';
   viewInStashButton.style.flex = '1';
   applyDisabledStyles(viewInStashButton, true);
   viewRow.appendChild(viewInStashButton);
@@ -320,6 +323,9 @@ if (!document.getElementById(PANEL_ID)) {
   viewInWhisparrButton.style.cursor = 'pointer';
   viewInWhisparrButton.style.background = '#7138C8';
   viewInWhisparrButton.style.color = '#ffffff';
+  viewInWhisparrButton.style.display = 'inline-flex';
+  viewInWhisparrButton.style.alignItems = 'center';
+  viewInWhisparrButton.style.justifyContent = 'center';
   viewInWhisparrButton.style.flex = '1';
   applyDisabledStyles(viewInWhisparrButton, true);
   viewInWhisparrButton.style.display = 'none';
