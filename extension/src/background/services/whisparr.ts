@@ -25,7 +25,6 @@ import {
   saveCatalogs,
   saveSelections,
 } from '../../shared/storage.js';
-import { createTtlCache } from '../../shared/cache.js';
 import { fetchWithTimeout, handleFetchJson } from '../http.js';
 
 type ExtRuntimeBg = {
@@ -50,7 +49,6 @@ if (!extCandidate) {
 const ext = extCandidate;
 
 const REQUEST_TIMEOUT_MS = 10_000;
-const SCENE_CARD_STATUS_TTL_MS = 0;
 const SCENE_CARD_STATUS_BATCH_LIMIT = 25;
 
 type DiscoveryErrors = {
@@ -70,20 +68,6 @@ type AddScenePayload = {
   title?: string;
 };
 
-type SceneCardStatusEntry = {
-  exists: boolean;
-  whisparrId?: number;
-  monitored?: boolean;
-  tagIds?: number[];
-  hasFile?: boolean;
-  excluded?: boolean;
-  exclusionId?: number;
-  fetchedAt: number;
-};
-
-const sceneCardStatusCache = createTtlCache<string, SceneCardStatusEntry>({
-  ttlMs: SCENE_CARD_STATUS_TTL_MS,
-});
 
 type UpdateScenePayload = {
   id: number;
@@ -1136,20 +1120,6 @@ export async function handleSceneCardsCheckStatus(
     const sceneId = item.sceneId;
     if (!sceneId) continue;
 
-    const cached = sceneCardStatusCache.get(sceneId);
-    if (cached) {
-      results.push({
-        sceneId,
-        exists: cached.exists,
-        whisparrId: cached.whisparrId,
-        monitored: cached.monitored,
-        tagIds: cached.tagIds,
-        hasFile: cached.hasFile,
-        excluded: cached.excluded,
-      });
-      continue;
-    }
-
     const response = await handleFetchJson({
       type: MESSAGE_TYPES.fetchJson,
       url: `${normalized.value}/api/v3/movie?stashId=${encodeURIComponent(sceneId)}`,
@@ -1162,11 +1132,6 @@ export async function handleSceneCardsCheckStatus(
     }
 
     if (!Array.isArray(response.json) || response.json.length === 0) {
-      const entry: SceneCardStatusEntry = {
-        exists: false,
-        fetchedAt: Date.now(),
-      };
-      sceneCardStatusCache.set(sceneId, entry);
       results.push({ sceneId, exists: false });
       continue;
     }
@@ -1181,24 +1146,14 @@ export async function handleSceneCardsCheckStatus(
     const monitored = Boolean(movie.monitored);
     const tagIds = normalizeTags(movie.tags);
     const hasFile = Boolean(movie.hasFile);
-    const entry: SceneCardStatusEntry = {
+    results.push({
+      sceneId,
       exists: true,
       whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
       monitored,
       tagIds,
       hasFile,
-      fetchedAt: Date.now(),
-    };
-
-    sceneCardStatusCache.set(sceneId, entry);
-    results.push({
-      sceneId,
-      exists: entry.exists,
-      whisparrId: entry.whisparrId,
-      monitored: entry.monitored,
-      tagIds: entry.tagIds,
-      hasFile: entry.hasFile,
-      excluded: entry.excluded,
+      excluded: undefined,
     });
   }
 
@@ -1399,12 +1354,6 @@ export async function handleSceneCardSetExcluded(
 
   if (request.excluded) {
     if (exclusionId) {
-      sceneCardStatusCache.set(sceneId, {
-        exists: true,
-        excluded: true,
-        exclusionId,
-        fetchedAt: Date.now(),
-      });
       return {
         ok: true,
         type: MESSAGE_TYPES.sceneCardSetExcluded,
@@ -1456,15 +1405,6 @@ export async function handleSceneCardSetExcluded(
       };
     }
 
-    const newId = isRecord(addResponse.json)
-      ? Number(addResponse.json.id)
-      : undefined;
-    sceneCardStatusCache.set(sceneId, {
-      exists: true,
-      excluded: true,
-      exclusionId: Number.isFinite(newId) ? newId : undefined,
-      fetchedAt: Date.now(),
-    });
     return {
       ok: true,
       type: MESSAGE_TYPES.sceneCardSetExcluded,
@@ -1473,11 +1413,6 @@ export async function handleSceneCardSetExcluded(
   }
 
   if (!exclusionId) {
-    sceneCardStatusCache.set(sceneId, {
-      exists: true,
-      excluded: false,
-      fetchedAt: Date.now(),
-    });
     return {
       ok: true,
       type: MESSAGE_TYPES.sceneCardSetExcluded,
@@ -1523,11 +1458,6 @@ export async function handleSceneCardSetExcluded(
     };
   }
 
-  sceneCardStatusCache.set(sceneId, {
-    exists: true,
-    excluded: false,
-    fetchedAt: Date.now(),
-  });
   return {
     ok: true,
     type: MESSAGE_TYPES.sceneCardSetExcluded,
@@ -1667,11 +1597,6 @@ export async function handleSceneCardAdd(
   }
 
   const whisparrId = Number(response.json.id);
-  sceneCardStatusCache.set(sceneId, {
-    exists: true,
-    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
-    fetchedAt: Date.now(),
-  });
   return {
     ok: true,
     type: MESSAGE_TYPES.sceneCardAdd,

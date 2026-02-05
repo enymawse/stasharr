@@ -4,7 +4,6 @@ import {
   registerBackgroundListener,
 } from './core.js';
 import { fetchWithTimeout } from './http.js';
-import { createTtlCache } from '../shared/cache.js';
 
 const MESSAGE_TYPES = {
   ping: 'PING',
@@ -65,17 +64,6 @@ type DiscoverySelectionsForUi = {
   labelIds: number[];
 };
 
-type SceneCardStatusEntry = {
-  exists: boolean;
-  whisparrId?: number;
-  monitored?: boolean;
-  tagIds?: number[];
-  hasFile?: boolean;
-  excluded?: boolean;
-  exclusionId?: number;
-  fetchedAt: number;
-};
-
 type StorageArea = {
   get: (keys?: string[] | string | null) => Promise<Record<string, unknown>>;
   set: (items: Record<string, unknown>) => Promise<void>;
@@ -121,12 +109,7 @@ const CATALOGS_KEY = 'stasharrCatalogs';
 const SELECTIONS_KEY = 'stasharrSelections';
 const VERSION = '0.1.0';
 const REQUEST_TIMEOUT_MS = 10_000;
-const SCENE_CARD_STATUS_TTL_MS = 0;
 const SCENE_CARD_STATUS_BATCH_LIMIT = 25;
-
-const sceneCardStatusCache = createTtlCache<string, SceneCardStatusEntry>({
-  ttlMs: SCENE_CARD_STATUS_TTL_MS,
-});
 
 async function getSettings(): Promise<ExtensionSettings> {
   const result = await ext.storage.local.get(SETTINGS_KEY);
@@ -1652,7 +1635,6 @@ async function handleSceneCardsCheckStatus(request: {
     uniqueItems.set(sceneId, { sceneId, sceneUrl });
   }
 
-  const now = Date.now();
   const results: Array<{
     sceneId: string;
     exists: boolean;
@@ -1722,12 +1704,6 @@ async function handleSceneCardsCheckStatus(request: {
         apiKey,
         sceneId,
       );
-      sceneCardStatusCache.set(sceneId, {
-        exists: false,
-        excluded: excluded.excluded,
-        exclusionId: excluded.exclusionId,
-        fetchedAt: now,
-      });
       results.push({ sceneId, exists: false, excluded: excluded.excluded });
       continue;
     }
@@ -1750,24 +1726,14 @@ async function handleSceneCardsCheckStatus(request: {
                 ? first.fileCount > 0
                 : undefined;
     const excluded = typeof monitored === 'boolean' ? !monitored : undefined;
-    const entry: SceneCardStatusEntry = {
+    results.push({
+      sceneId,
       exists: true,
       whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
       monitored,
       tagIds,
       hasFile,
       excluded,
-      fetchedAt: now,
-    };
-    sceneCardStatusCache.set(sceneId, entry);
-    results.push({
-      sceneId,
-      exists: entry.exists,
-      whisparrId: entry.whisparrId,
-      monitored: entry.monitored,
-      tagIds: entry.tagIds,
-      hasFile: entry.hasFile,
-      excluded: entry.excluded,
     });
   }
 
@@ -1904,21 +1870,6 @@ async function handleSceneCardAdd(request: {
     response.json && isRecord(response.json)
       ? Number(response.json.id)
       : undefined;
-  sceneCardStatusCache.set(sceneId, {
-    exists: true,
-    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
-    monitored:
-      response.json &&
-      isRecord(response.json) &&
-      typeof response.json.monitored === 'boolean'
-        ? response.json.monitored
-        : undefined,
-    tagIds:
-      response.json && isRecord(response.json)
-        ? normalizeTags(response.json.tags)
-        : undefined,
-    fetchedAt: Date.now(),
-  });
 
   return {
     ok: true,
@@ -2201,20 +2152,6 @@ async function handleSceneCardSetExcluded(request: {
       };
     }
   }
-
-  const cached = sceneCardStatusCache.get(sceneId);
-  sceneCardStatusCache.set(sceneId, {
-    exists: cached?.exists ?? false,
-    whisparrId: cached?.whisparrId,
-    monitored: cached?.monitored,
-    tagIds: cached?.tagIds,
-    hasFile: cached?.hasFile,
-    excluded,
-    exclusionId: excluded
-      ? (existing.exclusionId ?? createdExclusionId)
-      : undefined,
-    fetchedAt: Date.now(),
-  });
 
   return { ok: true, type: MESSAGE_TYPES.sceneCardSetExcluded, excluded };
 }
