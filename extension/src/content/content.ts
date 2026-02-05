@@ -1623,6 +1623,7 @@ class SceneCardObserver {
           statusIcon.style.color = '#7138c8';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.style.cursor = 'not-allowed';
           actionButton.style.background = '#d8b4fe';
           actionButton.style.borderColor = '#d8b4fe';
           actionButton.style.color = '#ffffff';
@@ -1633,6 +1634,7 @@ class SceneCardObserver {
           statusIcon.style.color = '#16a34a';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.style.cursor = 'not-allowed';
           actionButton.style.background = '#d8b4fe';
           actionButton.style.borderColor = '#d8b4fe';
           actionButton.style.color = '#ffffff';
@@ -1643,6 +1645,7 @@ class SceneCardObserver {
           statusIcon.style.color = '#f59e0b';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.style.cursor = 'not-allowed';
           actionButton.style.background = '#d8b4fe';
           actionButton.style.borderColor = '#d8b4fe';
           actionButton.style.color = '#ffffff';
@@ -1653,6 +1656,7 @@ class SceneCardObserver {
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = true;
           actionButton.style.opacity = '0.6';
+          actionButton.style.cursor = 'not-allowed';
           actionButton.setAttribute('aria-label', 'Excluded from Whisparr');
           return;
         case 'error':
@@ -1660,6 +1664,7 @@ class SceneCardObserver {
           statusIcon.style.color = '#ef4444';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
+          actionButton.style.cursor = 'pointer';
           actionButton.style.background = '#c084fc';
           actionButton.style.borderColor = '#c084fc';
           actionButton.style.color = '#ffffff';
@@ -1671,6 +1676,7 @@ class SceneCardObserver {
           statusIcon.style.color = '#7138c8';
           actionButton.disabled = false;
           actionButton.style.opacity = '1';
+          actionButton.style.cursor = 'pointer';
           actionButton.style.background = '#c084fc';
           actionButton.style.borderColor = '#c084fc';
           actionButton.style.color = '#ffffff';
