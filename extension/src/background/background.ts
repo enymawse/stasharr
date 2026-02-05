@@ -1933,21 +1933,21 @@ async function handleStashFindSceneByStashdbId(
     query StasharrFindSceneByStashId($stashId: String!) {
       findScenes(
         scene_filter: {
-          stash_id_endpoint: { stash_id: $stashId }
+          stash_id_endpoint: { stash_id: $stashId, modifier: EQUALS }
         }
         filter: { per_page: 1 }
       ) {
         scenes {
           id
           title
-          path
+          paths
         }
       }
     }
   `;
 
   const result = await stashGraphqlRequest<{
-    findScenes?: { scenes?: Array<{ id?: string | number; title?: string; path?: string }> };
+    findScenes?: { scenes?: Array<{ id?: string | number; title?: string; paths?: string[] }> };
   }>(query, { stashId: stashdbSceneId });
 
   if (!result.ok) {
@@ -1979,7 +1979,7 @@ async function handleStashFindSceneByStashdbId(
     type: MESSAGE_TYPES_BG.stashFindSceneByStashdbId,
     found: true,
     stashSceneId: scene.id,
-    stashScenePath: scene.path,
+    stashScenePath: Array.isArray(scene.paths) ? scene.paths[0] : undefined,
     title: scene.title,
     stashSceneUrl,
   };
