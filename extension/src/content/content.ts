@@ -1789,17 +1789,20 @@ class SceneCardObserver {
         case 'loading':
           excludeButton.disabled = true;
           excludeButton.style.opacity = '0.6';
+          excludeButton.style.cursor = 'not-allowed';
           excludeButton.innerHTML = this.renderIcon('spinner', true);
           return;
         case 'error':
           excludeButton.disabled = false;
           excludeButton.style.opacity = '1';
+          excludeButton.style.cursor = 'pointer';
           excludeButton.innerHTML = this.renderIcon('x');
           return;
         case 'idle':
         default:
           excludeButton.disabled = false;
           excludeButton.style.opacity = '1';
+          excludeButton.style.cursor = 'pointer';
           excludeButton.innerHTML = excluded ? this.renderIcon('circle-check') : this.renderIcon('ban');
           excludeButton.style.background = excluded ? '#9ca3af' : '#c4273c';
           excludeButton.style.borderColor = excluded ? '#9ca3af' : '#c4273c';
@@ -1882,6 +1885,7 @@ class SceneCardObserver {
       if (cachedStatus.exists) {
         excludeButton.disabled = true;
         excludeButton.style.opacity = '0.6';
+        excludeButton.style.cursor = 'not-allowed';
         excludeButton.setAttribute(
           'aria-label',
           cachedStatus.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)',
@@ -1890,6 +1894,7 @@ class SceneCardObserver {
       } else {
         excludeButton.disabled = false;
         excludeButton.style.opacity = '1';
+        excludeButton.style.cursor = 'pointer';
         excludeButton.setAttribute(
           'aria-label',
           cachedStatus.excluded ? 'Remove exclusion' : 'Exclude from Whisparr',
@@ -2250,6 +2255,7 @@ class SceneCardObserver {
           exclude.setState('idle', Boolean(result.excluded));
           exclude.button.disabled = true;
           exclude.button.style.opacity = '0.6';
+          exclude.button.style.cursor = 'not-allowed';
           exclude.button.setAttribute(
             'aria-label',
             result.excluded ? 'Excluded (managed outside Whisparr)' : 'Exclude (managed outside Whisparr)',
@@ -2259,6 +2265,7 @@ class SceneCardObserver {
           exclude.button.style.display = 'inline-flex';
           exclude.button.disabled = false;
           exclude.button.style.opacity = '1';
+          exclude.button.style.cursor = 'pointer';
           exclude.setState('idle', Boolean(result.excluded));
           exclude.button.setAttribute(
             'aria-label',
@@ -2291,6 +2298,7 @@ class SceneCardObserver {
         exclude.setState('error', false);
         exclude.button.disabled = true;
         exclude.button.style.opacity = '0.6';
+        exclude.button.style.cursor = 'not-allowed';
         exclude.button.setAttribute('aria-label', 'Exclusion status unavailable');
         exclude.button.title = 'Exclusion status unavailable';
       }
