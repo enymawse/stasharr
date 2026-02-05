@@ -1,3 +1,5 @@
+import { openExternalLink } from '../shared/navigation.js';
+
 const MESSAGE_TYPES_CONTENT = {
   getConfigStatus: 'GET_CONFIG_STATUS',
 } as const;
@@ -1074,7 +1076,7 @@ if (!document.getElementById(PANEL_ID)) {
     if (!sceneId) return;
     const cached = stashMatchCache.get(sceneId);
     if (!cached?.stashSceneUrl) return;
-    window.open(cached.stashSceneUrl, '_blank', 'noopener');
+    void openExternalLink(cached.stashSceneUrl);
   });
 
   viewInWhisparrButton.addEventListener('click', () => {
@@ -1084,7 +1086,7 @@ if (!document.getElementById(PANEL_ID)) {
     const cached = statusCache.get(sceneId);
     if (!cached?.whisparrId) return;
     const url = buildWhisparrSceneUrl(whisparrBaseUrl, cached.whisparrId);
-    window.open(url, '_blank', 'noopener');
+    void openExternalLink(url);
   });
 
   monitorToggle.addEventListener('click', () => {
@@ -1935,7 +1937,7 @@ class SceneCardObserver {
       const cached = this.statusBySceneId.get(scene.sceneId);
       if (!cached?.whisparrId || !this.whisparrBaseUrl) return;
       const url = buildWhisparrSceneUrl(this.whisparrBaseUrl, cached.whisparrId);
-      window.open(url, '_blank', 'noopener');
+      void openExternalLink(url);
     });
 
     viewStashButton.addEventListener('click', async (event) => {
@@ -1947,7 +1949,7 @@ class SceneCardObserver {
       }
       const cached = this.stashMatchBySceneId.get(scene.sceneId);
       if (cached?.found && cached.stashSceneUrl) {
-        window.open(cached.stashSceneUrl, '_blank', 'noopener');
+        void openExternalLink(cached.stashSceneUrl);
         return;
       }
       const runtime = extContent?.runtime;
@@ -1976,7 +1978,7 @@ class SceneCardObserver {
         });
         if (found && response.stashSceneUrl) {
           setStashEnabled(true);
-          window.open(response.stashSceneUrl, '_blank', 'noopener');
+          void openExternalLink(response.stashSceneUrl);
         } else {
           setStashEnabled(false, 'No match in Stash');
         }
