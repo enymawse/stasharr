@@ -1512,7 +1512,7 @@ class SceneCardObserver {
     viewWhisparrButton.title = 'View in Whisparr';
     viewWhisparrButton.style.border = '1px solid #7138C8';
     viewWhisparrButton.style.borderRadius = '999px';
-    viewWhisparrButton.style.padding = '2px 8px';
+    viewWhisparrButton.style.padding = '2px';
     viewWhisparrButton.style.cursor = 'pointer';
     viewWhisparrButton.style.background = '#7138C8';
     viewWhisparrButton.style.color = '#ffffff';
@@ -1521,10 +1521,16 @@ class SceneCardObserver {
     viewWhisparrButton.style.display = 'inline-flex';
     viewWhisparrButton.style.alignItems = 'center';
     viewWhisparrButton.style.justifyContent = 'center';
-    viewWhisparrButton.innerHTML = this.renderIcon('external-link');
+    const whisparrIcon = document.createElement('img');
+    whisparrIcon.src =
+      'https://raw.githubusercontent.com/Whisparr/Whisparr/refs/heads/eros/Logo/Whisparr.svg';
+    whisparrIcon.alt = '';
+    whisparrIcon.width = 16;
+    whisparrIcon.height = 16;
+    whisparrIcon.style.display = 'block';
+    viewWhisparrButton.appendChild(whisparrIcon);
     viewWhisparrButton.disabled = true;
     viewWhisparrButton.style.opacity = '0.6';
-    container.appendChild(viewWhisparrButton);
 
     const viewStashButton = document.createElement('button');
     viewStashButton.type = 'button';
@@ -1532,7 +1538,7 @@ class SceneCardObserver {
     viewStashButton.title = 'View in Stash';
     viewStashButton.style.border = '1px solid #137cbd';
     viewStashButton.style.borderRadius = '999px';
-    viewStashButton.style.padding = '2px 8px';
+    viewStashButton.style.padding = '2px';
     viewStashButton.style.cursor = 'pointer';
     viewStashButton.style.background = '#137cbd';
     viewStashButton.style.color = '#ffffff';
@@ -1541,10 +1547,23 @@ class SceneCardObserver {
     viewStashButton.style.display = 'inline-flex';
     viewStashButton.style.alignItems = 'center';
     viewStashButton.style.justifyContent = 'center';
-    viewStashButton.innerHTML = this.renderIcon('external-link');
+    const stashIcon = document.createElement('img');
+    stashIcon.src = 'https://stashapp.cc/images/stash.svg';
+    stashIcon.alt = '';
+    stashIcon.width = 16;
+    stashIcon.height = 16;
+    stashIcon.style.display = 'block';
+    viewStashButton.appendChild(stashIcon);
     viewStashButton.disabled = true;
     viewStashButton.style.opacity = '0.6';
-    container.appendChild(viewStashButton);
+    const viewWrap = document.createElement('div');
+    viewWrap.style.display = 'inline-flex';
+    viewWrap.style.alignItems = 'center';
+    viewWrap.style.gap = '6px';
+    viewWrap.style.marginLeft = 'auto';
+    viewWrap.appendChild(viewWhisparrButton);
+    viewWrap.appendChild(viewStashButton);
+    container.appendChild(viewWrap);
 
     const missingWrap = document.createElement('div');
     missingWrap.dataset.stasharrMissing = 'true';
