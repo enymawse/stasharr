@@ -270,7 +270,7 @@ if (!document.getElementById(PANEL_ID)) {
   checkStatusButton.style.borderRadius = '6px';
   checkStatusButton.style.border = 'none';
   checkStatusButton.style.cursor = 'pointer';
-  checkStatusButton.style.background = '#0f766e';
+  checkStatusButton.style.background = '#00853d';
   checkStatusButton.style.color = '#ffffff';
   checkStatusButton.style.flex = '1';
   actionRow.appendChild(checkStatusButton);
@@ -282,7 +282,7 @@ if (!document.getElementById(PANEL_ID)) {
   addSceneButton.style.borderRadius = '6px';
   addSceneButton.style.border = 'none';
   addSceneButton.style.cursor = 'pointer';
-  addSceneButton.style.background = '#2563eb';
+  addSceneButton.style.background = '#c084fc';
   addSceneButton.style.color = '#ffffff';
   addSceneButton.style.flex = '1';
   applyDisabledStyles(addSceneButton, true);
@@ -344,7 +344,7 @@ if (!document.getElementById(PANEL_ID)) {
   monitorToggle.style.borderRadius = '6px';
   monitorToggle.style.border = 'none';
   monitorToggle.style.cursor = 'pointer';
-  monitorToggle.style.background = '#c084fc';
+  monitorToggle.style.background = '#c4337c';
   monitorToggle.style.color = '#ffffff';
   monitorToggle.style.flex = '1';
   applyDisabledStyles(monitorToggle, true);
@@ -357,7 +357,7 @@ if (!document.getElementById(PANEL_ID)) {
   excludeToggle.style.borderRadius = '6px';
   excludeToggle.style.border = 'none';
   excludeToggle.style.cursor = 'pointer';
-  excludeToggle.style.background = '#ef4444';
+  excludeToggle.style.background = '#c4273c';
   excludeToggle.style.color = '#ffffff';
   excludeToggle.style.flex = '1';
   applyDisabledStyles(excludeToggle, true);
