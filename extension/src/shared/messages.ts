@@ -335,6 +335,7 @@ export type ExtensionSettings = {
   stashBaseUrl?: string;
   stashApiKey?: string;
   lastValidatedAt?: string;
+  openExternalLinksInNewTab?: boolean;
 };
 
 export type ExtensionRequest =

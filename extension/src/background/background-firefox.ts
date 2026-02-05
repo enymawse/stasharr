@@ -30,6 +30,7 @@ type ExtensionSettings = {
   stashBaseUrl?: string;
   stashApiKey?: string;
   lastValidatedAt?: string;
+  openExternalLinksInNewTab?: boolean;
 };
 
 type DiscoveryCatalogs = {
@@ -120,6 +121,7 @@ async function getSettings(): Promise<ExtensionSettings> {
     (result[SETTINGS_KEY] as ExtensionSettings) ?? {
       whisparrBaseUrl: '',
       whisparrApiKey: '',
+      openExternalLinksInNewTab: true,
     }
   );
 }

@@ -38,6 +38,7 @@ type FormState = {
   whisparrBaseUrl: string;
   whisparrApiKey: string;
   lastValidatedAt?: string;
+  openExternalLinksInNewTab?: boolean;
 };
 
 const elements = {
@@ -50,6 +51,9 @@ const elements = {
   reveal: document.querySelector('[data-action="reveal"]') as HTMLButtonElement,
   refresh: document.querySelector('[data-action="refresh"]') as HTMLButtonElement,
   whisparrSpinner: document.querySelector('[data-whisparr-spinner]') as HTMLElement,
+  openExternalLinksInNewTab: document.querySelector(
+    '[data-field="openExternalLinksInNewTab"]',
+  ) as HTMLInputElement,
   stashBaseUrl: document.querySelector('[data-field="stashBaseUrl"]') as HTMLInputElement,
   stashApiKey: document.querySelector('[data-field="stashApiKey"]') as HTMLInputElement,
   stashStatus: document.querySelector('[data-stash-status]') as HTMLElement,
@@ -77,6 +81,7 @@ if (
   !elements.reveal ||
   !elements.refresh ||
   !elements.whisparrSpinner ||
+  !elements.openExternalLinksInNewTab ||
   !elements.stashBaseUrl ||
   !elements.stashApiKey ||
   !elements.stashStatus ||
@@ -185,6 +190,8 @@ async function loadSettings() {
   elements.apiKey.value = settings.whisparrApiKey ?? '';
   elements.stashBaseUrl.value = settings.stashBaseUrl ?? '';
   elements.stashApiKey.value = settings.stashApiKey ?? '';
+  elements.openExternalLinksInNewTab.checked =
+    settings.openExternalLinksInNewTab ?? true;
 
   const configured =
     Boolean(settings.whisparrBaseUrl) && Boolean(settings.whisparrApiKey);
@@ -616,6 +623,22 @@ async function validateSettings() {
   setWhisparrBusy(false);
 }
 
+async function saveExternalLinkPreference() {
+  const response = await ext.runtime.sendMessage({
+    type: MESSAGE_TYPES.saveSettings,
+    settings: {
+      openExternalLinksInNewTab: elements.openExternalLinksInNewTab.checked,
+    },
+  });
+
+  if (!response.ok) {
+    setStatus(response.error ?? 'Save failed.', true);
+    return;
+  }
+
+  setStatus('Preference saved.');
+}
+
 async function saveStashSettings() {
   const normalized = normalizeBaseUrl(elements.stashBaseUrl.value);
   if (!normalized.ok || !normalized.value) {
@@ -723,6 +746,10 @@ elements.reveal.addEventListener('click', () => {
     elements.apiKey.type = 'password';
     elements.reveal.textContent = 'Show';
   }
+});
+
+elements.openExternalLinksInNewTab.addEventListener('change', () => {
+  void saveExternalLinkPreference();
 });
 
 elements.stashSave.addEventListener('click', () => {
