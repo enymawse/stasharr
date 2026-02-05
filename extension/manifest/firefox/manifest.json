@@ -13,7 +13,8 @@
     {
       "matches": ["https://stashdb.org/*"],
       "js": ["content/pageParser.js", "content/content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "type": "module"
     }
   ],
   "options_ui": {
