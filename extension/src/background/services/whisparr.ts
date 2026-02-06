@@ -17,6 +17,12 @@ import {
   type SceneCardTriggerSearchResponse,
   type SceneCardSetExcludedResponse,
   type SaveSelectionsResponse,
+  type PerformerCheckStatusResponse,
+  type PerformerAddResponse,
+  type PerformerSetMonitorResponse,
+  type StudioCheckStatusResponse,
+  type StudioAddResponse,
+  type StudioSetMonitorResponse,
 } from '../../shared/messages.js';
 import {
   getCatalogs,
@@ -68,6 +74,12 @@ type AddScenePayload = {
   addOptions: {
     searchForMovie: boolean;
   };
+};
+
+type AddEntityPayload = {
+  foreignId: string;
+  name: string;
+  monitored: boolean;
 };
 
 type UpdateScenePayload = {
@@ -364,6 +376,52 @@ async function fetchSceneLookup(
   }
 
   return { scene: first.movie };
+}
+
+function extractEntityRecord(
+  payload: unknown,
+): { id: number; monitored?: boolean; name?: string } | null {
+  const record = Array.isArray(payload)
+    ? payload.find(isRecord)
+    : isRecord(payload)
+      ? payload
+      : null;
+  if (!record) return null;
+  const id = Number(record.id);
+  if (!Number.isFinite(id)) return null;
+  const monitored =
+    typeof record.monitored === 'boolean' ? record.monitored : undefined;
+  const name =
+    typeof record.name === 'string'
+      ? record.name
+      : typeof record.title === 'string'
+        ? record.title
+        : undefined;
+  return { id, monitored, name };
+}
+
+async function fetchEntityByStashId(
+  baseUrl: string,
+  apiKey: string,
+  kind: 'performer' | 'studio',
+  stashId: string,
+): Promise<{ entity?: { id: number; monitored?: boolean; name?: string }; error?: string }> {
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${baseUrl}/api/v3/${kind}?stashId=${encodeURIComponent(stashId)}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!response.ok) {
+    return { error: response.error ?? 'Lookup failed.' };
+  }
+
+  const entity = extractEntityRecord(response.json);
+  if (!entity) {
+    return { entity: undefined };
+  }
+
+  return { entity };
 }
 
 export async function handleValidateWhisparrConnection(
@@ -1654,6 +1712,624 @@ export async function handleSceneCardAdd(
     ok: true,
     type: MESSAGE_TYPES.sceneCardAdd,
     whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+  };
+}
+
+export async function handlePerformerCheckStatus(
+  request: ExtensionRequest,
+): Promise<PerformerCheckStatusResponse> {
+  if (request.type !== MESSAGE_TYPES.performerCheckStatus) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashId = request.stashdbPerformerId?.trim();
+  if (!stashId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+      error: 'Performer ID is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const lookup = await fetchEntityByStashId(
+    normalized.value,
+    apiKey,
+    'performer',
+    stashId,
+  );
+  if (lookup.error) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+      error: lookup.error,
+    };
+  }
+
+  if (!lookup.entity) {
+    return {
+      ok: true,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.performerCheckStatus,
+    exists: true,
+    whisparrId: lookup.entity.id,
+    monitored: lookup.entity.monitored,
+    name: lookup.entity.name,
+  };
+}
+
+export async function handlePerformerAdd(
+  request: ExtensionRequest,
+): Promise<PerformerAddResponse> {
+  if (request.type !== MESSAGE_TYPES.performerAdd) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashId = request.stashdbPerformerId?.trim();
+  if (!stashId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: 'Performer ID is required.',
+    };
+  }
+
+  const name = request.name?.trim();
+  if (!name) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: 'Performer name is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const payload: AddEntityPayload = {
+    foreignId: `stash:${stashId}`,
+    name,
+    monitored: true,
+  };
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${normalized.value}/api/v3/performer`,
+    method: 'POST',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.performerAdd,
+        error: 'Unauthorized (check API key).',
+      };
+    }
+    if (status === 400) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.performerAdd,
+        error: 'Validation failed (check name).',
+      };
+    }
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: response.error ?? `HTTP ${status}`,
+    };
+  }
+
+  if (!isRecord(response.json)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: 'Unexpected response payload.',
+    };
+  }
+
+  const whisparrId = Number(response.json.id);
+  const monitored =
+    typeof response.json.monitored === 'boolean'
+      ? response.json.monitored
+      : true;
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.performerAdd,
+    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+    monitored,
+  };
+}
+
+export async function handlePerformerSetMonitor(
+  request: ExtensionRequest,
+): Promise<PerformerSetMonitorResponse> {
+  if (request.type !== MESSAGE_TYPES.performerSetMonitor) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: false,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: false,
+      error: 'Performer ID is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: false,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: false,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: false,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: false,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${normalized.value}/api/v3/performer/${encodeURIComponent(String(whisparrId))}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: whisparrId, monitored: request.monitored }),
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: request.monitored,
+      error: response.error ?? `HTTP ${response.status ?? 0}`,
+    };
+  }
+
+  const monitored =
+    isRecord(response.json) && typeof response.json.monitored === 'boolean'
+      ? response.json.monitored
+      : request.monitored;
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.performerSetMonitor,
+    monitored,
+  };
+}
+
+export async function handleStudioCheckStatus(
+  request: ExtensionRequest,
+): Promise<StudioCheckStatusResponse> {
+  if (request.type !== MESSAGE_TYPES.studioCheckStatus) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashId = request.stashdbStudioId?.trim();
+  if (!stashId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+      error: 'Studio ID is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const lookup = await fetchEntityByStashId(
+    normalized.value,
+    apiKey,
+    'studio',
+    stashId,
+  );
+  if (lookup.error) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+      error: lookup.error,
+    };
+  }
+
+  if (!lookup.entity) {
+    return {
+      ok: true,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.studioCheckStatus,
+    exists: true,
+    whisparrId: lookup.entity.id,
+    monitored: lookup.entity.monitored,
+    name: lookup.entity.name,
+  };
+}
+
+export async function handleStudioAdd(
+  request: ExtensionRequest,
+): Promise<StudioAddResponse> {
+  if (request.type !== MESSAGE_TYPES.studioAdd) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashId = request.stashdbStudioId?.trim();
+  if (!stashId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: 'Studio ID is required.',
+    };
+  }
+
+  const name = request.name?.trim();
+  if (!name) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: 'Studio name is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const payload: AddEntityPayload = {
+    foreignId: `stash:${stashId}`,
+    name,
+    monitored: true,
+  };
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${normalized.value}/api/v3/studio`,
+    method: 'POST',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const status = response.status ?? 0;
+    if (status === 401) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.studioAdd,
+        error: 'Unauthorized (check API key).',
+      };
+    }
+    if (status === 400) {
+      return {
+        ok: false,
+        type: MESSAGE_TYPES.studioAdd,
+        error: 'Validation failed (check name).',
+      };
+    }
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: response.error ?? `HTTP ${status}`,
+    };
+  }
+
+  if (!isRecord(response.json)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: 'Unexpected response payload.',
+    };
+  }
+
+  const whisparrId = Number(response.json.id);
+  const monitored =
+    isRecord(response.json) && typeof response.json.monitored === 'boolean'
+      ? response.json.monitored
+      : true;
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.studioAdd,
+    whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+    monitored,
+  };
+}
+
+export async function handleStudioSetMonitor(
+  request: ExtensionRequest,
+): Promise<StudioSetMonitorResponse> {
+  if (request.type !== MESSAGE_TYPES.studioSetMonitor) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: false,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const whisparrId = Number(request.whisparrId);
+  if (!Number.isFinite(whisparrId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: false,
+      error: 'Studio ID is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: false,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: false,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: false,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: false,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${normalized.value}/api/v3/studio/${encodeURIComponent(String(whisparrId))}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: whisparrId, monitored: request.monitored }),
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: request.monitored,
+      error: response.error ?? `HTTP ${response.status ?? 0}`,
+    };
+  }
+
+  const monitored =
+    isRecord(response.json) && typeof response.json.monitored === 'boolean'
+      ? response.json.monitored
+      : request.monitored;
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.studioSetMonitor,
+    monitored,
   };
 }
 

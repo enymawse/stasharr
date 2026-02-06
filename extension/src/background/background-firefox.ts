@@ -24,6 +24,12 @@ import {
   handleUpdateQualityProfile,
   handleUpdateTags,
   handleValidateWhisparrConnection,
+  handlePerformerAdd,
+  handlePerformerCheckStatus,
+  handlePerformerSetMonitor,
+  handleStudioAdd,
+  handleStudioCheckStatus,
+  handleStudioSetMonitor,
 } from './services/whisparr.js';
 import {
   handleStashFindSceneByStashdbId,
@@ -108,6 +114,12 @@ const handlers: Record<
   [MESSAGE_TYPES_BG.sceneCardAdd]: handleSceneCardAdd,
   [MESSAGE_TYPES_BG.sceneCardTriggerSearch]: handleSceneCardTriggerSearch,
   [MESSAGE_TYPES_BG.sceneCardSetExcluded]: handleSceneCardSetExcluded,
+  [MESSAGE_TYPES_BG.performerCheckStatus]: handlePerformerCheckStatus,
+  [MESSAGE_TYPES_BG.performerAdd]: handlePerformerAdd,
+  [MESSAGE_TYPES_BG.performerSetMonitor]: handlePerformerSetMonitor,
+  [MESSAGE_TYPES_BG.studioCheckStatus]: handleStudioCheckStatus,
+  [MESSAGE_TYPES_BG.studioAdd]: handleStudioAdd,
+  [MESSAGE_TYPES_BG.studioSetMonitor]: handleStudioSetMonitor,
   [MESSAGE_TYPES_BG.stashFindSceneByStashdbId]: handleStashFindSceneByStashdbId,
   [MESSAGE_TYPES_BG.requestPermission]: async (request) => {
     if (!ext.permissions?.request) {

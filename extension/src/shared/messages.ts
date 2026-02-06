@@ -22,6 +22,12 @@ export const MESSAGE_TYPES = {
   sceneCardTriggerSearch: 'SCENE_CARD_TRIGGER_SEARCH',
   sceneCardSetExcluded: 'SCENE_CARD_SET_EXCLUDED',
   stashFindSceneByStashdbId: 'STASH_FIND_SCENE_BY_STASHDB_ID',
+  performerCheckStatus: 'PERFORMER_CHECK_STATUS',
+  performerAdd: 'PERFORMER_ADD',
+  performerSetMonitor: 'PERFORMER_SET_MONITOR',
+  studioCheckStatus: 'STUDIO_CHECK_STATUS',
+  studioAdd: 'STUDIO_ADD',
+  studioSetMonitor: 'STUDIO_SET_MONITOR',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -298,6 +304,90 @@ export type SceneCardSetExcludedResponse = {
   error?: { code: string; message: string };
 };
 
+export type PerformerCheckStatusRequest = {
+  type: typeof MESSAGE_TYPES.performerCheckStatus;
+  stashdbPerformerId: string;
+};
+
+export type PerformerCheckStatusResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.performerCheckStatus;
+  exists: boolean;
+  whisparrId?: number;
+  monitored?: boolean;
+  name?: string;
+  error?: string;
+};
+
+export type PerformerAddRequest = {
+  type: typeof MESSAGE_TYPES.performerAdd;
+  stashdbPerformerId: string;
+  name?: string;
+};
+
+export type PerformerAddResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.performerAdd;
+  whisparrId?: number;
+  monitored?: boolean;
+  error?: string;
+};
+
+export type PerformerSetMonitorRequest = {
+  type: typeof MESSAGE_TYPES.performerSetMonitor;
+  whisparrId: number;
+  monitored: boolean;
+};
+
+export type PerformerSetMonitorResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.performerSetMonitor;
+  monitored: boolean;
+  error?: string;
+};
+
+export type StudioCheckStatusRequest = {
+  type: typeof MESSAGE_TYPES.studioCheckStatus;
+  stashdbStudioId: string;
+};
+
+export type StudioCheckStatusResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.studioCheckStatus;
+  exists: boolean;
+  whisparrId?: number;
+  monitored?: boolean;
+  name?: string;
+  error?: string;
+};
+
+export type StudioAddRequest = {
+  type: typeof MESSAGE_TYPES.studioAdd;
+  stashdbStudioId: string;
+  name?: string;
+};
+
+export type StudioAddResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.studioAdd;
+  whisparrId?: number;
+  monitored?: boolean;
+  error?: string;
+};
+
+export type StudioSetMonitorRequest = {
+  type: typeof MESSAGE_TYPES.studioSetMonitor;
+  whisparrId: number;
+  monitored: boolean;
+};
+
+export type StudioSetMonitorResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.studioSetMonitor;
+  monitored: boolean;
+  error?: string;
+};
+
 export type StashFindSceneByStashdbIdRequest = {
   type: typeof MESSAGE_TYPES.stashFindSceneByStashdbId;
   stashdbSceneId: string;
@@ -364,6 +454,12 @@ export type ExtensionRequest =
   | SceneCardAddRequest
   | SceneCardTriggerSearchRequest
   | SceneCardSetExcludedRequest
+  | PerformerCheckStatusRequest
+  | PerformerAddRequest
+  | PerformerSetMonitorRequest
+  | StudioCheckStatusRequest
+  | StudioAddRequest
+  | StudioSetMonitorRequest
   | StashFindSceneByStashdbIdRequest;
 
 export type ExtensionResponse =
@@ -389,6 +485,12 @@ export type ExtensionResponse =
   | SceneCardAddResponse
   | SceneCardTriggerSearchResponse
   | SceneCardSetExcludedResponse
+  | PerformerCheckStatusResponse
+  | PerformerAddResponse
+  | PerformerSetMonitorResponse
+  | StudioCheckStatusResponse
+  | StudioAddResponse
+  | StudioSetMonitorResponse
   | StashFindSceneByStashdbIdResponse
   | { ok: false; type: MessageType; error: string };
 
