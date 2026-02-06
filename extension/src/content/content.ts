@@ -27,7 +27,11 @@ type CheckSceneStatusRequest = {
   type: 'CHECK_SCENE_STATUS';
   stashdbSceneId: string;
 };
-type AddSceneRequest = { type: 'ADD_SCENE'; stashdbSceneId: string };
+type AddSceneRequest = {
+  type: 'ADD_SCENE';
+  stashdbSceneId: string;
+  searchOnAdd?: boolean;
+};
 type SetMonitorStateRequest = {
   type: 'SET_MONITOR_STATE';
   whisparrId: number;
@@ -56,6 +60,7 @@ type SceneCardAddRequest = {
   type: 'SCENE_CARD_ADD';
   sceneId: string;
   sceneUrl: string;
+  searchOnAdd?: boolean;
 };
 type SceneCardTriggerSearchRequest = {
   type: 'SCENE_CARD_TRIGGER_SEARCH';
@@ -100,6 +105,7 @@ type ContentRuntime = {
         stashBaseUrl?: string;
         stashApiKey?: string;
         lastValidatedAt?: string;
+        searchOnAdd?: boolean;
       };
       catalogs?: {
         qualityProfiles?: Array<{ id: number; name: string }>;
@@ -237,6 +243,7 @@ if (!document.getElementById(PANEL_ID)) {
   let qualityProfileCatalog: Array<{ id: number; name: string }> = [];
   let whisparrBaseUrl: string | null = null;
   let stashConfigured = false;
+  let searchOnAdd = true;
   const stashMatchCache = new Map<
     string,
     {
@@ -922,6 +929,7 @@ if (!document.getElementById(PANEL_ID)) {
       const response = await extContent.runtime.sendMessage({
         type: 'ADD_SCENE',
         stashdbSceneId: sceneId,
+        searchOnAdd,
       });
       if (!response.ok) {
         sceneStatusRow.textContent = `Scene status: add failed (${response.error ?? 'unknown'})`;
@@ -1199,6 +1207,7 @@ if (!document.getElementById(PANEL_ID)) {
         response.settings.stashBaseUrl?.trim() &&
         response.settings.stashApiKey?.trim(),
       );
+      searchOnAdd = response.settings.searchOnAdd ?? true;
       if (!configured) {
         statusRow.textContent = 'Config: not configured';
         readiness = 'unconfigured';
@@ -1314,6 +1323,7 @@ class SceneCardObserver {
   private stashLookupInFlight = new Set<string>();
   private whisparrBaseUrl: string | null = null;
   private stashConfigured = false;
+  private searchOnAdd = true;
   private excludeBySceneId = new Map<
     string,
     {
@@ -1384,6 +1394,7 @@ class SceneCardObserver {
         response.settings.stashBaseUrl?.trim() &&
         response.settings.stashApiKey?.trim(),
       );
+      this.searchOnAdd = response.settings.searchOnAdd ?? true;
     } catch {
       this.whisparrBaseUrl = null;
       this.stashConfigured = false;
@@ -1937,6 +1948,7 @@ class SceneCardObserver {
           type: 'SCENE_CARD_ADD',
           sceneId: scene.sceneId,
           sceneUrl: scene.sceneUrl,
+          searchOnAdd: this.searchOnAdd,
         });
         setStatus(response.ok ? 'in' : 'error');
       } catch {
