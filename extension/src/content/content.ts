@@ -866,6 +866,8 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       performerStatusRow.textContent = 'Performer status: unavailable';
       applyDisabledStyles(performerAddButton, true);
       applyDisabledStyles(performerMonitorToggle, true);
+      applyDisabledStyles(performerCheckButton, true);
+      applyDisabledStyles(performerViewButton, true);
       performerWhisparrId = null;
       performerMonitored = null;
       return;
@@ -874,8 +876,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       performerStatusRow.textContent = 'Performer status: config not validated';
       applyDisabledStyles(performerAddButton, true);
       applyDisabledStyles(performerMonitorToggle, true);
+      applyDisabledStyles(performerCheckButton, true);
+      applyDisabledStyles(performerViewButton, true);
       return;
     }
+    applyDisabledStyles(performerCheckButton, false);
     performerStatusRow.textContent = 'Performer status: checking...';
     try {
       const response = await extContent.runtime.sendMessage({
@@ -886,6 +891,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         performerStatusRow.textContent = `Performer status: error (${response.error ?? 'unknown'})`;
         applyDisabledStyles(performerAddButton, true);
         applyDisabledStyles(performerMonitorToggle, true);
+        applyDisabledStyles(performerViewButton, true);
         return;
       }
       performerWhisparrId = response.whisparrId ?? null;
@@ -900,15 +906,21 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         performerMonitorToggle.textContent = performerMonitored
           ? 'Unmonitor'
           : 'Monitor';
+        applyDisabledStyles(
+          performerViewButton,
+          !(whisparrBaseUrl && performerWhisparrId),
+        );
       } else {
         performerStatusRow.textContent = 'Performer status: not in Whisparr';
         applyDisabledStyles(performerAddButton, false);
         applyDisabledStyles(performerMonitorToggle, true);
+        applyDisabledStyles(performerViewButton, true);
       }
     } catch (error) {
       performerStatusRow.textContent = `Performer status: error (${(error as Error).message})`;
       applyDisabledStyles(performerAddButton, true);
       applyDisabledStyles(performerMonitorToggle, true);
+      applyDisabledStyles(performerViewButton, true);
     }
   };
 
@@ -920,6 +932,8 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       studioStatusRow.textContent = 'Studio status: unavailable';
       applyDisabledStyles(studioAddButton, true);
       applyDisabledStyles(studioMonitorToggle, true);
+      applyDisabledStyles(studioCheckButton, true);
+      applyDisabledStyles(studioViewButton, true);
       studioWhisparrId = null;
       studioMonitored = null;
       return;
@@ -928,8 +942,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       studioStatusRow.textContent = 'Studio status: config not validated';
       applyDisabledStyles(studioAddButton, true);
       applyDisabledStyles(studioMonitorToggle, true);
+      applyDisabledStyles(studioCheckButton, true);
+      applyDisabledStyles(studioViewButton, true);
       return;
     }
+    applyDisabledStyles(studioCheckButton, false);
     studioStatusRow.textContent = 'Studio status: checking...';
     try {
       const response = await extContent.runtime.sendMessage({
@@ -940,6 +957,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         studioStatusRow.textContent = `Studio status: error (${response.error ?? 'unknown'})`;
         applyDisabledStyles(studioAddButton, true);
         applyDisabledStyles(studioMonitorToggle, true);
+        applyDisabledStyles(studioViewButton, true);
         return;
       }
       studioWhisparrId = response.whisparrId ?? null;
@@ -954,15 +972,21 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         studioMonitorToggle.textContent = studioMonitored
           ? 'Unmonitor'
           : 'Monitor';
+        applyDisabledStyles(
+          studioViewButton,
+          !(whisparrBaseUrl && studioWhisparrId),
+        );
       } else {
         studioStatusRow.textContent = 'Studio status: not in Whisparr';
         applyDisabledStyles(studioAddButton, false);
         applyDisabledStyles(studioMonitorToggle, true);
+        applyDisabledStyles(studioViewButton, true);
       }
     } catch (error) {
       studioStatusRow.textContent = `Studio status: error (${(error as Error).message})`;
       applyDisabledStyles(studioAddButton, true);
       applyDisabledStyles(studioMonitorToggle, true);
+      applyDisabledStyles(studioViewButton, true);
     }
   };
 
