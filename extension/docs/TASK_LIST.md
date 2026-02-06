@@ -137,17 +137,38 @@
 
 **Task 10**
 
-- Scope: add bulk actions UI for scene list pages in `src/content/content.ts` with confirmation prompts and a progress modal; add background batch handlers in `src/background/services/whisparr.ts`.
-- Invariants: bulk flows use modal for feedback (no toasts); empty-state shows info message; skipped counts use consistent wording; no dummy success items.
-- Commits: 1) feat(content): bulk actions dropdown + confirmations. 2) feat(content): progress modal + state management. 3) feat(background): bulk add/search/missing handlers with suppressed toasts.
-- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: Add All / Search All / Add Missing work and show correct progress/summary.
+- Scope: bring performer/studio extension panel sections in `src/content/content.ts` up to scene panel parity: status row, explicit "Check status" action, and Whisparr view link button (openExternalLink) with the same disabled/ready states.
+- Invariants: no new networking in content/options; preserve `/edit/*` no-UI rule; keep scene panel behavior unchanged; reuse existing styling and aria labels where possible.
+- Commits: 1) feat(content): add status/check/view controls for performer+studio panels. 2) refactor(content): align button state/labels with scene panel conventions.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: performer/studio pages show status, check, add/monitor, and view link with correct enabled/disabled states.
 
 **Task 11**
+
+- Scope: align performer/studio panel state handling with scenes: clear state on SPA navigation, refresh status after add/monitor actions, and surface errors consistently in the status row.
+- Invariants: no new API endpoints in content/options; no toasts; no console noise; preserve existing scene card observer behavior.
+- Commits: 1) refactor(content): add navigation-aware state resets for performer/studio. 2) refactor(content): unify status text/error handling across panel sections.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: navigating between scene/performer/studio pages refreshes panel states without stale data.
+
+**Task 12**
+
+- Scope: extend performer panel to support editing tags + quality profile and confirm monitor toggle presence; verify the scene panel already exposes tag/quality editing + monitor toggle and align any missing UI states or disabled logic for parity.
+- Invariants: no new networking in content/options; re-use discovery catalogs + selections; preserve existing scene panel behavior unless explicitly missing; avoid new toasts.
+- Commits: 1) feat(content): add performer tag/quality controls + save actions. 2) refactor(content): align panel disabled/ready states for tag/quality/monitor controls.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: performer panel can edit tags/quality and monitor toggle behaves; scene panel still edits tags/quality and monitor toggle remains functional.
+
+**Task 13**
 
 - Scope: add copy-to-clipboard for StashDB scene IDs on scene cards and the scene details panel in `src/content/content.ts`.
 - Invariants: no networking; no layout regressions; provide visible success/failure feedback without toasts.
 - Commits: 1) feat(content): add copy buttons + clipboard helper. 2) refactor(content): wire copy buttons into scene card and panel UI.
 - Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: copy works on cards and scene page, including fallback for restricted clipboard.
+
+**Task 14**
+
+- Scope: add bulk actions UI for scene list pages in `src/content/content.ts` with confirmation prompts and a progress modal; add background batch handlers in `src/background/services/whisparr.ts`.
+- Invariants: bulk flows use modal for feedback (no toasts); empty-state shows info message; skipped counts use consistent wording; no dummy success items.
+- Commits: 1) feat(content): bulk actions dropdown + confirmations. 2) feat(content): progress modal + state management. 3) feat(background): bulk add/search/missing handlers with suppressed toasts.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: Add All / Search All / Add Missing work and show correct progress/summary.
 
 **Future Work: Firefox Background Refactor Plan**
 
