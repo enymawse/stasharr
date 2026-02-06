@@ -638,6 +638,10 @@ export async function handleAddScene(
       : `stash:${stashId}`;
   const title =
     typeof lookup.scene.title === 'string' ? lookup.scene.title : undefined;
+  const searchOnAdd =
+    typeof request.searchOnAdd === 'boolean'
+      ? request.searchOnAdd
+      : settings.searchOnAdd ?? true;
 
   const payload: AddScenePayload = {
     foreignId,
@@ -646,7 +650,7 @@ export async function handleAddScene(
     rootFolderPath,
     tags: selections.whisparr.tagIds ?? [],
     addOptions: {
-      searchForMovie: true,
+      searchForMovie: searchOnAdd,
     },
   };
 
@@ -1590,6 +1594,10 @@ export async function handleSceneCardAdd(
       : `stash:${sceneId}`;
   const title =
     typeof lookup.scene.title === 'string' ? lookup.scene.title : undefined;
+  const searchOnAdd =
+    typeof request.searchOnAdd === 'boolean'
+      ? request.searchOnAdd
+      : settings.searchOnAdd ?? true;
 
   const payload: AddScenePayload = {
     foreignId,
@@ -1598,7 +1606,7 @@ export async function handleSceneCardAdd(
     rootFolderPath,
     tags: selections.whisparr.tagIds ?? [],
     addOptions: {
-      searchForMovie: true,
+      searchForMovie: searchOnAdd,
     },
   };
 
