@@ -41,6 +41,7 @@ type FormState = {
   whisparrApiKey: string;
   lastValidatedAt?: string;
   openExternalLinksInNewTab?: boolean;
+  searchOnAdd?: boolean;
 };
 
 const elements = {
@@ -56,6 +57,7 @@ const elements = {
   openExternalLinksInNewTab: document.querySelector(
     '[data-field="openExternalLinksInNewTab"]',
   ) as HTMLInputElement,
+  searchOnAdd: document.querySelector('[data-field="searchOnAdd"]') as HTMLInputElement,
   stashBaseUrl: document.querySelector('[data-field="stashBaseUrl"]') as HTMLInputElement,
   stashApiKey: document.querySelector('[data-field="stashApiKey"]') as HTMLInputElement,
   stashStatus: document.querySelector('[data-stash-status]') as HTMLElement,
@@ -84,6 +86,7 @@ if (
   !elements.refresh ||
   !elements.whisparrSpinner ||
   !elements.openExternalLinksInNewTab ||
+  !elements.searchOnAdd ||
   !elements.stashBaseUrl ||
   !elements.stashApiKey ||
   !elements.stashStatus ||
@@ -201,6 +204,7 @@ async function loadSettings() {
   elements.stashApiKey.value = settings.stashApiKey ?? '';
   elements.openExternalLinksInNewTab.checked =
     settings.openExternalLinksInNewTab ?? true;
+  elements.searchOnAdd.checked = settings.searchOnAdd ?? true;
 
   const configured =
     Boolean(settings.whisparrBaseUrl) && Boolean(settings.whisparrApiKey);
@@ -648,6 +652,22 @@ async function saveExternalLinkPreference() {
   setStatus('Preference saved.');
 }
 
+async function saveSearchOnAddPreference() {
+  const response = await ext.runtime.sendMessage({
+    type: MESSAGE_TYPES.saveSettings,
+    settings: {
+      searchOnAdd: elements.searchOnAdd.checked,
+    },
+  });
+
+  if (!response.ok) {
+    setStatus(response.error ?? 'Save failed.', true);
+    return;
+  }
+
+  setStatus('Preference saved.');
+}
+
 async function saveStashSettings() {
   const normalized = normalizeBaseUrl(elements.stashBaseUrl.value);
   if (!normalized.ok || !normalized.value) {
@@ -759,6 +779,10 @@ elements.reveal.addEventListener('click', () => {
 
 elements.openExternalLinksInNewTab.addEventListener('change', () => {
   void saveExternalLinkPreference();
+});
+
+elements.searchOnAdd.addEventListener('change', () => {
+  void saveSearchOnAddPreference();
 });
 
 elements.stashSave.addEventListener('click', () => {

@@ -176,6 +176,7 @@ export type CheckSceneStatusResponse = {
 export type AddSceneRequest = {
   type: typeof MESSAGE_TYPES.addScene;
   stashdbSceneId: string;
+  searchOnAdd?: boolean;
 };
 
 export type AddSceneResponse = {
@@ -261,6 +262,7 @@ export type SceneCardAddRequest = {
   type: typeof MESSAGE_TYPES.sceneCardAdd;
   sceneId: string;
   sceneUrl: string;
+  searchOnAdd?: boolean;
 };
 
 export type SceneCardAddResponse = {
@@ -336,6 +338,7 @@ export type ExtensionSettings = {
   stashApiKey?: string;
   lastValidatedAt?: string;
   openExternalLinksInNewTab?: boolean;
+  searchOnAdd?: boolean;
 };
 
 export type ExtensionRequest =

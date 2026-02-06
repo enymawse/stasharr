@@ -44,6 +44,7 @@ export async function getSettings(): Promise<ExtensionSettings> {
     whisparrBaseUrl: '',
     whisparrApiKey: '',
     openExternalLinksInNewTab: true,
+    searchOnAdd: true,
   };
 }
 
