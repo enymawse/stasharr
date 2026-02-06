@@ -240,14 +240,14 @@ function buildWhisparrSceneUrl(baseUrl: string, stashId: string): string {
   return `${normalized}/movie/${encodeURIComponent(stashId)}`;
 }
 
-function buildWhisparrPerformerUrl(baseUrl: string, whisparrId: number): string {
+function buildWhisparrPerformerUrl(baseUrl: string, stashId: string): string {
   const normalized = baseUrl.replace(/\/+$/, '');
-  return `${normalized}/performer/${encodeURIComponent(String(whisparrId))}`;
+  return `${normalized}/performer/${encodeURIComponent(stashId)}`;
 }
 
-function buildWhisparrStudioUrl(baseUrl: string, whisparrId: number): string {
+function buildWhisparrStudioUrl(baseUrl: string, stashId: string): string {
   const normalized = baseUrl.replace(/\/+$/, '');
-  return `${normalized}/studio/${encodeURIComponent(String(whisparrId))}`;
+  return `${normalized}/studio/${encodeURIComponent(stashId)}`;
 }
 
 function applyDisabledStyles(button: HTMLButtonElement, disabled: boolean) {
@@ -908,7 +908,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
           : 'Monitor';
         applyDisabledStyles(
           performerViewButton,
-          !(whisparrBaseUrl && performerWhisparrId),
+          !(whisparrBaseUrl && performerId),
         );
       } else {
         performerStatusRow.textContent = 'Performer status: not in Whisparr';
@@ -974,7 +974,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
           : 'Monitor';
         applyDisabledStyles(
           studioViewButton,
-          !(whisparrBaseUrl && studioWhisparrId),
+          !(whisparrBaseUrl && studioId),
         );
       } else {
         studioStatusRow.textContent = 'Studio status: not in Whisparr';
@@ -1696,8 +1696,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   });
 
   performerViewButton.addEventListener('click', () => {
-    if (!whisparrBaseUrl || !performerWhisparrId) return;
-    const url = buildWhisparrPerformerUrl(whisparrBaseUrl, performerWhisparrId);
+    const current = getParsedPage();
+    const performerId =
+      current.type === 'performer' ? current.stashIds[0] : undefined;
+    if (!whisparrBaseUrl || !performerId) return;
+    const url = buildWhisparrPerformerUrl(whisparrBaseUrl, performerId);
     void openExternalLink(url);
   });
 
@@ -1714,8 +1717,10 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   });
 
   studioViewButton.addEventListener('click', () => {
-    if (!whisparrBaseUrl || !studioWhisparrId) return;
-    const url = buildWhisparrStudioUrl(whisparrBaseUrl, studioWhisparrId);
+    const current = getParsedPage();
+    const studioId = current.type === 'studio' ? current.stashIds[0] : undefined;
+    if (!whisparrBaseUrl || !studioId) return;
+    const url = buildWhisparrStudioUrl(whisparrBaseUrl, studioId);
     void openExternalLink(url);
   });
 
