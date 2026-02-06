@@ -78,8 +78,11 @@ type AddScenePayload = {
 
 type AddEntityPayload = {
   foreignId: string;
-  name: string;
   monitored: boolean;
+  rootFolderPath: string;
+  searchOnAdd: boolean;
+  qualityProfileId: number;
+  tags: number[];
 };
 
 type UpdateScenePayload = {
@@ -408,9 +411,13 @@ async function fetchEntityByStashId(
 ): Promise<{ entity?: { id: number; monitored?: boolean; name?: string }; error?: string }> {
   const response = await handleFetchJson({
     type: MESSAGE_TYPES.fetchJson,
-    url: `${baseUrl}/api/v3/${kind}?stashId=${encodeURIComponent(stashId)}`,
+    url: `${baseUrl}/api/v3/${kind}/${encodeURIComponent(stashId)}`,
     headers: { 'X-Api-Key': apiKey },
   });
+
+  if (!response.ok && response.status === 404) {
+    return { entity: undefined };
+  }
 
   if (!response.ok) {
     return { error: response.error ?? 'Lookup failed.' };
@@ -1830,15 +1837,6 @@ export async function handlePerformerAdd(
     };
   }
 
-  const name = request.name?.trim();
-  if (!name) {
-    return {
-      ok: false,
-      type: MESSAGE_TYPES.performerAdd,
-      error: 'Performer name is required.',
-    };
-  }
-
   const settings = await getSettings();
   const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
   if (!normalized.ok || !normalized.value) {
@@ -1875,10 +1873,24 @@ export async function handlePerformerAdd(
     };
   }
 
+  const selections = await getSelections();
+  const qualityProfileId = selections.whisparr.qualityProfileId;
+  const rootFolderPath = selections.whisparr.rootFolderPath;
+  if (!qualityProfileId || !rootFolderPath) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerAdd,
+      error: 'Missing quality profile or root folder selection.',
+    };
+  }
+
   const payload: AddEntityPayload = {
-    foreignId: `stash:${stashId}`,
-    name,
-    monitored: true,
+    foreignId: stashId,
+    monitored: false,
+    rootFolderPath,
+    searchOnAdd: false,
+    qualityProfileId,
+    tags: selections.whisparr.tagIds ?? [],
   };
 
   const response = await handleFetchJson({
@@ -2184,10 +2196,24 @@ export async function handleStudioAdd(
     };
   }
 
+  const selections = await getSelections();
+  const qualityProfileId = selections.whisparr.qualityProfileId;
+  const rootFolderPath = selections.whisparr.rootFolderPath;
+  if (!qualityProfileId || !rootFolderPath) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioAdd,
+      error: 'Missing quality profile or root folder selection.',
+    };
+  }
+
   const payload: AddEntityPayload = {
-    foreignId: `stash:${stashId}`,
-    name,
-    monitored: true,
+    foreignId: stashId,
+    monitored: false,
+    rootFolderPath,
+    searchOnAdd: false,
+    qualityProfileId,
+    tags: selections.whisparr.tagIds ?? [],
   };
 
   const response = await handleFetchJson({

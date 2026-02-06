@@ -689,10 +689,10 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   const getEntityTitle = () => {
     const headerTitle =
       document
-        .querySelector<HTMLHeadingElement>('.card-header h3 span')
+        .querySelector<HTMLHeadingElement>('.studio-title h3 span')
         ?.textContent?.trim() ||
       document
-        .querySelector<HTMLHeadingElement>('.card-header h3')
+        .querySelector<HTMLHeadingElement>('.studio-title h3')
         ?.textContent?.trim() ||
       document.querySelector<HTMLHeadingElement>('h1')?.textContent?.trim();
     return headerTitle || undefined;
@@ -782,7 +782,8 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
 
   const updatePerformerStatus = async () => {
     const current = getParsedPage();
-    const performerId = current.type === 'performer' ? current.stashIds[0] : undefined;
+    const performerId =
+      current.type === 'performer' ? current.stashIds[0] : undefined;
     if (!performerId) {
       performerStatusRow.textContent = 'Performer status: unavailable';
       applyDisabledStyles(performerAddButton, true);
@@ -818,7 +819,9 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
           : 'Performer status: unmonitored';
         applyDisabledStyles(performerAddButton, true);
         applyDisabledStyles(performerMonitorToggle, false);
-        performerMonitorToggle.textContent = performerMonitored ? 'Unmonitor' : 'Monitor';
+        performerMonitorToggle.textContent = performerMonitored
+          ? 'Unmonitor'
+          : 'Monitor';
       } else {
         performerStatusRow.textContent = 'Performer status: not in Whisparr';
         applyDisabledStyles(performerAddButton, false);
@@ -833,7 +836,8 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
 
   const updateStudioStatus = async () => {
     const current = getParsedPage();
-    const studioId = current.type === 'studio' ? current.stashIds[0] : undefined;
+    const studioId =
+      current.type === 'studio' ? current.stashIds[0] : undefined;
     if (!studioId) {
       studioStatusRow.textContent = 'Studio status: unavailable';
       applyDisabledStyles(studioAddButton, true);
@@ -869,7 +873,9 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
           : 'Studio status: unmonitored';
         applyDisabledStyles(studioAddButton, true);
         applyDisabledStyles(studioMonitorToggle, false);
-        studioMonitorToggle.textContent = studioMonitored ? 'Unmonitor' : 'Monitor';
+        studioMonitorToggle.textContent = studioMonitored
+          ? 'Unmonitor'
+          : 'Monitor';
       } else {
         studioStatusRow.textContent = 'Studio status: not in Whisparr';
         applyDisabledStyles(studioAddButton, false);
@@ -1215,18 +1221,12 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       performerStatusRow.textContent = 'Performer status: config not validated';
       return;
     }
-    const name = getEntityTitle();
-    if (!name) {
-      performerStatusRow.textContent = 'Performer status: name unavailable';
-      return;
-    }
     applyDisabledStyles(performerAddButton, true);
     performerStatusRow.textContent = 'Performer status: adding...';
     try {
       const response = await extContent.runtime.sendMessage({
         type: 'PERFORMER_ADD',
         stashdbPerformerId: performerId,
-        name,
       });
       if (!response.ok) {
         performerStatusRow.textContent = `Performer status: add failed (${response.error ?? 'unknown'})`;
@@ -1277,7 +1277,9 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         return;
       }
       const nextMonitored =
-        typeof response.monitored === 'boolean' ? response.monitored : nextState;
+        typeof response.monitored === 'boolean'
+          ? response.monitored
+          : nextState;
       performerMonitored = nextMonitored;
       performerMonitorToggle.textContent = performerMonitored
         ? 'Unmonitor'
@@ -1294,7 +1296,8 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
 
   const addStudio = async () => {
     const current = getParsedPage();
-    const studioId = current.type === 'studio' ? current.stashIds[0] : undefined;
+    const studioId =
+      current.type === 'studio' ? current.stashIds[0] : undefined;
     if (!studioId) {
       studioStatusRow.textContent = 'Studio status: unavailable';
       return;
@@ -1327,7 +1330,9 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       studioStatusRow.textContent = studioMonitored
         ? 'Studio status: monitored'
         : 'Studio status: unmonitored';
-      studioMonitorToggle.textContent = studioMonitored ? 'Unmonitor' : 'Monitor';
+      studioMonitorToggle.textContent = studioMonitored
+        ? 'Unmonitor'
+        : 'Monitor';
       applyDisabledStyles(studioAddButton, true);
       applyDisabledStyles(studioMonitorToggle, false);
     } catch (error) {
@@ -1363,9 +1368,13 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         return;
       }
       const nextMonitored =
-        typeof response.monitored === 'boolean' ? response.monitored : nextState;
+        typeof response.monitored === 'boolean'
+          ? response.monitored
+          : nextState;
       studioMonitored = nextMonitored;
-      studioMonitorToggle.textContent = studioMonitored ? 'Unmonitor' : 'Monitor';
+      studioMonitorToggle.textContent = studioMonitored
+        ? 'Unmonitor'
+        : 'Monitor';
       studioStatusRow.textContent = studioMonitored
         ? 'Studio status: monitored'
         : 'Studio status: unmonitored';
@@ -2822,7 +2831,6 @@ class SceneCardObserver {
     }
     return null;
   }
-
 }
 
 if (!isEditPage) {
