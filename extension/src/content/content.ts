@@ -73,6 +73,34 @@ type SceneCardSetExcludedRequest = {
   movieTitle?: string;
   movieYear?: number;
 };
+type PerformerCheckStatusRequest = {
+  type: 'PERFORMER_CHECK_STATUS';
+  stashdbPerformerId: string;
+};
+type PerformerAddRequest = {
+  type: 'PERFORMER_ADD';
+  stashdbPerformerId: string;
+  name?: string;
+};
+type PerformerSetMonitorRequest = {
+  type: 'PERFORMER_SET_MONITOR';
+  whisparrId: number;
+  monitored: boolean;
+};
+type StudioCheckStatusRequest = {
+  type: 'STUDIO_CHECK_STATUS';
+  stashdbStudioId: string;
+};
+type StudioAddRequest = {
+  type: 'STUDIO_ADD';
+  stashdbStudioId: string;
+  name?: string;
+};
+type StudioSetMonitorRequest = {
+  type: 'STUDIO_SET_MONITOR';
+  whisparrId: number;
+  monitored: boolean;
+};
 type StashFindSceneByStashdbIdRequest = {
   type: 'STASH_FIND_SCENE_BY_STASHDB_ID';
   stashdbSceneId: string;
@@ -95,6 +123,12 @@ type ContentRuntime = {
         | SceneCardAddRequest
         | SceneCardTriggerSearchRequest
         | SceneCardSetExcludedRequest
+        | PerformerCheckStatusRequest
+        | PerformerAddRequest
+        | PerformerSetMonitorRequest
+        | StudioCheckStatusRequest
+        | StudioAddRequest
+        | StudioSetMonitorRequest
         | StashFindSceneByStashdbIdRequest,
     ) => Promise<{
       ok: boolean;
@@ -118,6 +152,7 @@ type ContentRuntime = {
       title?: string;
       hasFile?: boolean;
       monitored?: boolean;
+      name?: string;
       error?: string;
       results?: Array<{
         sceneId: string;
@@ -220,7 +255,9 @@ function getParsedPage() {
   return parseStashDbPage(document, window.location);
 }
 
-if (!document.getElementById(PANEL_ID)) {
+const isEditPage = window.location.pathname.startsWith('/edit/');
+
+if (!isEditPage && !document.getElementById(PANEL_ID)) {
   const statusCache = new Map<
     string,
     {
@@ -497,6 +534,92 @@ if (!document.getElementById(PANEL_ID)) {
   applyDisabledStyles(updateTagsButton, true);
   tagsRow.appendChild(updateTagsButton);
 
+  const performerControls = document.createElement('div');
+  performerControls.style.display = 'none';
+  panel.appendChild(performerControls);
+
+  const performerStatusRow = document.createElement('div');
+  performerStatusRow.style.marginTop = '6px';
+  performerStatusRow.style.fontSize = '11px';
+  performerStatusRow.style.opacity = '0.9';
+  performerStatusRow.textContent = 'Performer status: unknown';
+  performerControls.appendChild(performerStatusRow);
+
+  const performerActionRow = document.createElement('div');
+  performerActionRow.style.display = 'flex';
+  performerActionRow.style.gap = '6px';
+  performerActionRow.style.marginTop = '6px';
+  performerControls.appendChild(performerActionRow);
+
+  const performerAddButton = document.createElement('button');
+  performerAddButton.type = 'button';
+  performerAddButton.textContent = 'Add Performer';
+  performerAddButton.style.padding = '6px 10px';
+  performerAddButton.style.borderRadius = '6px';
+  performerAddButton.style.border = 'none';
+  performerAddButton.style.cursor = 'pointer';
+  performerAddButton.style.background = '#c084fc';
+  performerAddButton.style.color = '#ffffff';
+  performerAddButton.style.flex = '1';
+  applyDisabledStyles(performerAddButton, true);
+  performerActionRow.appendChild(performerAddButton);
+
+  const performerMonitorToggle = document.createElement('button');
+  performerMonitorToggle.type = 'button';
+  performerMonitorToggle.textContent = 'Monitor';
+  performerMonitorToggle.style.padding = '6px 10px';
+  performerMonitorToggle.style.borderRadius = '6px';
+  performerMonitorToggle.style.border = 'none';
+  performerMonitorToggle.style.cursor = 'pointer';
+  performerMonitorToggle.style.background = '#c4337c';
+  performerMonitorToggle.style.color = '#ffffff';
+  performerMonitorToggle.style.flex = '1';
+  applyDisabledStyles(performerMonitorToggle, true);
+  performerActionRow.appendChild(performerMonitorToggle);
+
+  const studioControls = document.createElement('div');
+  studioControls.style.display = 'none';
+  panel.appendChild(studioControls);
+
+  const studioStatusRow = document.createElement('div');
+  studioStatusRow.style.marginTop = '6px';
+  studioStatusRow.style.fontSize = '11px';
+  studioStatusRow.style.opacity = '0.9';
+  studioStatusRow.textContent = 'Studio status: unknown';
+  studioControls.appendChild(studioStatusRow);
+
+  const studioActionRow = document.createElement('div');
+  studioActionRow.style.display = 'flex';
+  studioActionRow.style.gap = '6px';
+  studioActionRow.style.marginTop = '6px';
+  studioControls.appendChild(studioActionRow);
+
+  const studioAddButton = document.createElement('button');
+  studioAddButton.type = 'button';
+  studioAddButton.textContent = 'Add Studio';
+  studioAddButton.style.padding = '6px 10px';
+  studioAddButton.style.borderRadius = '6px';
+  studioAddButton.style.border = 'none';
+  studioAddButton.style.cursor = 'pointer';
+  studioAddButton.style.background = '#c084fc';
+  studioAddButton.style.color = '#ffffff';
+  studioAddButton.style.flex = '1';
+  applyDisabledStyles(studioAddButton, true);
+  studioActionRow.appendChild(studioAddButton);
+
+  const studioMonitorToggle = document.createElement('button');
+  studioMonitorToggle.type = 'button';
+  studioMonitorToggle.textContent = 'Monitor';
+  studioMonitorToggle.style.padding = '6px 10px';
+  studioMonitorToggle.style.borderRadius = '6px';
+  studioMonitorToggle.style.border = 'none';
+  studioMonitorToggle.style.cursor = 'pointer';
+  studioMonitorToggle.style.background = '#c4337c';
+  studioMonitorToggle.style.color = '#ffffff';
+  studioMonitorToggle.style.flex = '1';
+  applyDisabledStyles(studioMonitorToggle, true);
+  studioActionRow.appendChild(studioMonitorToggle);
+
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
   inputRow.style.flexDirection = 'column';
@@ -546,9 +669,33 @@ if (!document.getElementById(PANEL_ID)) {
   let readiness: 'unconfigured' | 'configured' | 'validated' = 'unconfigured';
 
   let currentMonitorState: boolean | null = null;
+  let performerWhisparrId: number | null = null;
+  let performerMonitored: boolean | null = null;
+  let studioWhisparrId: number | null = null;
+  let studioMonitored: boolean | null = null;
 
   const setSceneControlsVisible = (visible: boolean) => {
     sceneControls.style.display = visible ? 'block' : 'none';
+  };
+
+  const setPerformerControlsVisible = (visible: boolean) => {
+    performerControls.style.display = visible ? 'block' : 'none';
+  };
+
+  const setStudioControlsVisible = (visible: boolean) => {
+    studioControls.style.display = visible ? 'block' : 'none';
+  };
+
+  const getEntityTitle = () => {
+    const headerTitle =
+      document
+        .querySelector<HTMLHeadingElement>('.card-header h3 span')
+        ?.textContent?.trim() ||
+      document
+        .querySelector<HTMLHeadingElement>('.card-header h3')
+        ?.textContent?.trim() ||
+      document.querySelector<HTMLHeadingElement>('h1')?.textContent?.trim();
+    return headerTitle || undefined;
   };
 
   const renderQualityOptions = (selectedId?: number) => {
@@ -631,6 +778,108 @@ if (!document.getElementById(PANEL_ID)) {
     }
     excludeToggle.textContent = cached?.excluded ? 'Unexclude' : 'Exclude';
     applyDisabledStyles(excludeToggle, false);
+  };
+
+  const updatePerformerStatus = async () => {
+    const current = getParsedPage();
+    const performerId = current.type === 'performer' ? current.stashIds[0] : undefined;
+    if (!performerId) {
+      performerStatusRow.textContent = 'Performer status: unavailable';
+      applyDisabledStyles(performerAddButton, true);
+      applyDisabledStyles(performerMonitorToggle, true);
+      performerWhisparrId = null;
+      performerMonitored = null;
+      return;
+    }
+    if (readiness !== 'validated') {
+      performerStatusRow.textContent = 'Performer status: config not validated';
+      applyDisabledStyles(performerAddButton, true);
+      applyDisabledStyles(performerMonitorToggle, true);
+      return;
+    }
+    performerStatusRow.textContent = 'Performer status: checking...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'PERFORMER_CHECK_STATUS',
+        stashdbPerformerId: performerId,
+      });
+      if (!response.ok) {
+        performerStatusRow.textContent = `Performer status: error (${response.error ?? 'unknown'})`;
+        applyDisabledStyles(performerAddButton, true);
+        applyDisabledStyles(performerMonitorToggle, true);
+        return;
+      }
+      performerWhisparrId = response.whisparrId ?? null;
+      performerMonitored =
+        typeof response.monitored === 'boolean' ? response.monitored : null;
+      if (response.exists) {
+        performerStatusRow.textContent = performerMonitored
+          ? 'Performer status: monitored'
+          : 'Performer status: unmonitored';
+        applyDisabledStyles(performerAddButton, true);
+        applyDisabledStyles(performerMonitorToggle, false);
+        performerMonitorToggle.textContent = performerMonitored ? 'Unmonitor' : 'Monitor';
+      } else {
+        performerStatusRow.textContent = 'Performer status: not in Whisparr';
+        applyDisabledStyles(performerAddButton, false);
+        applyDisabledStyles(performerMonitorToggle, true);
+      }
+    } catch (error) {
+      performerStatusRow.textContent = `Performer status: error (${(error as Error).message})`;
+      applyDisabledStyles(performerAddButton, true);
+      applyDisabledStyles(performerMonitorToggle, true);
+    }
+  };
+
+  const updateStudioStatus = async () => {
+    const current = getParsedPage();
+    const studioId = current.type === 'studio' ? current.stashIds[0] : undefined;
+    if (!studioId) {
+      studioStatusRow.textContent = 'Studio status: unavailable';
+      applyDisabledStyles(studioAddButton, true);
+      applyDisabledStyles(studioMonitorToggle, true);
+      studioWhisparrId = null;
+      studioMonitored = null;
+      return;
+    }
+    if (readiness !== 'validated') {
+      studioStatusRow.textContent = 'Studio status: config not validated';
+      applyDisabledStyles(studioAddButton, true);
+      applyDisabledStyles(studioMonitorToggle, true);
+      return;
+    }
+    studioStatusRow.textContent = 'Studio status: checking...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'STUDIO_CHECK_STATUS',
+        stashdbStudioId: studioId,
+      });
+      if (!response.ok) {
+        studioStatusRow.textContent = `Studio status: error (${response.error ?? 'unknown'})`;
+        applyDisabledStyles(studioAddButton, true);
+        applyDisabledStyles(studioMonitorToggle, true);
+        return;
+      }
+      studioWhisparrId = response.whisparrId ?? null;
+      studioMonitored =
+        typeof response.monitored === 'boolean' ? response.monitored : null;
+      if (response.exists) {
+        studioStatusRow.textContent = studioMonitored
+          ? 'Studio status: monitored'
+          : 'Studio status: unmonitored';
+        applyDisabledStyles(studioAddButton, true);
+        applyDisabledStyles(studioMonitorToggle, false);
+        studioMonitorToggle.textContent = studioMonitored ? 'Unmonitor' : 'Monitor';
+      } else {
+        studioStatusRow.textContent = 'Studio status: not in Whisparr';
+        applyDisabledStyles(studioAddButton, false);
+        applyDisabledStyles(studioMonitorToggle, true);
+      }
+    } catch (error) {
+      studioStatusRow.textContent = `Studio status: error (${(error as Error).message})`;
+      applyDisabledStyles(studioAddButton, true);
+      applyDisabledStyles(studioMonitorToggle, true);
+    }
   };
 
   const loadCatalogs = async () => {
@@ -954,6 +1203,179 @@ if (!document.getElementById(PANEL_ID)) {
     }
   };
 
+  const addPerformer = async () => {
+    const current = getParsedPage();
+    const performerId =
+      current.type === 'performer' ? current.stashIds[0] : undefined;
+    if (!performerId) {
+      performerStatusRow.textContent = 'Performer status: unavailable';
+      return;
+    }
+    if (readiness !== 'validated') {
+      performerStatusRow.textContent = 'Performer status: config not validated';
+      return;
+    }
+    const name = getEntityTitle();
+    if (!name) {
+      performerStatusRow.textContent = 'Performer status: name unavailable';
+      return;
+    }
+    applyDisabledStyles(performerAddButton, true);
+    performerStatusRow.textContent = 'Performer status: adding...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'PERFORMER_ADD',
+        stashdbPerformerId: performerId,
+        name,
+      });
+      if (!response.ok) {
+        performerStatusRow.textContent = `Performer status: add failed (${response.error ?? 'unknown'})`;
+        applyDisabledStyles(performerAddButton, false);
+        return;
+      }
+      performerWhisparrId = response.whisparrId ?? null;
+      performerMonitored =
+        typeof response.monitored === 'boolean' ? response.monitored : true;
+      performerStatusRow.textContent = performerMonitored
+        ? 'Performer status: monitored'
+        : 'Performer status: unmonitored';
+      performerMonitorToggle.textContent = performerMonitored
+        ? 'Unmonitor'
+        : 'Monitor';
+      applyDisabledStyles(performerAddButton, true);
+      applyDisabledStyles(performerMonitorToggle, false);
+    } catch (error) {
+      performerStatusRow.textContent = `Performer status: add failed (${(error as Error).message})`;
+      applyDisabledStyles(performerAddButton, false);
+    }
+  };
+
+  const updatePerformerMonitorState = async () => {
+    if (!performerWhisparrId) {
+      performerStatusRow.textContent = 'Performer status: not in Whisparr';
+      applyDisabledStyles(performerMonitorToggle, true);
+      return;
+    }
+    if (performerMonitored === null) {
+      performerStatusRow.textContent = 'Performer status: monitor unknown';
+      return;
+    }
+    const nextState = !performerMonitored;
+    applyDisabledStyles(performerMonitorToggle, true);
+    performerStatusRow.textContent = nextState
+      ? 'Performer status: enabling monitor...'
+      : 'Performer status: disabling monitor...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'PERFORMER_SET_MONITOR',
+        whisparrId: performerWhisparrId,
+        monitored: nextState,
+      });
+      if (!response.ok) {
+        performerStatusRow.textContent = `Performer status: monitor update failed (${response.error ?? 'unknown'})`;
+        applyDisabledStyles(performerMonitorToggle, false);
+        return;
+      }
+      const nextMonitored =
+        typeof response.monitored === 'boolean' ? response.monitored : nextState;
+      performerMonitored = nextMonitored;
+      performerMonitorToggle.textContent = performerMonitored
+        ? 'Unmonitor'
+        : 'Monitor';
+      performerStatusRow.textContent = performerMonitored
+        ? 'Performer status: monitored'
+        : 'Performer status: unmonitored';
+      applyDisabledStyles(performerMonitorToggle, false);
+    } catch (error) {
+      performerStatusRow.textContent = `Performer status: monitor update failed (${(error as Error).message})`;
+      applyDisabledStyles(performerMonitorToggle, false);
+    }
+  };
+
+  const addStudio = async () => {
+    const current = getParsedPage();
+    const studioId = current.type === 'studio' ? current.stashIds[0] : undefined;
+    if (!studioId) {
+      studioStatusRow.textContent = 'Studio status: unavailable';
+      return;
+    }
+    if (readiness !== 'validated') {
+      studioStatusRow.textContent = 'Studio status: config not validated';
+      return;
+    }
+    const name = getEntityTitle();
+    if (!name) {
+      studioStatusRow.textContent = 'Studio status: name unavailable';
+      return;
+    }
+    applyDisabledStyles(studioAddButton, true);
+    studioStatusRow.textContent = 'Studio status: adding...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'STUDIO_ADD',
+        stashdbStudioId: studioId,
+        name,
+      });
+      if (!response.ok) {
+        studioStatusRow.textContent = `Studio status: add failed (${response.error ?? 'unknown'})`;
+        applyDisabledStyles(studioAddButton, false);
+        return;
+      }
+      studioWhisparrId = response.whisparrId ?? null;
+      studioMonitored =
+        typeof response.monitored === 'boolean' ? response.monitored : true;
+      studioStatusRow.textContent = studioMonitored
+        ? 'Studio status: monitored'
+        : 'Studio status: unmonitored';
+      studioMonitorToggle.textContent = studioMonitored ? 'Unmonitor' : 'Monitor';
+      applyDisabledStyles(studioAddButton, true);
+      applyDisabledStyles(studioMonitorToggle, false);
+    } catch (error) {
+      studioStatusRow.textContent = `Studio status: add failed (${(error as Error).message})`;
+      applyDisabledStyles(studioAddButton, false);
+    }
+  };
+
+  const updateStudioMonitorState = async () => {
+    if (!studioWhisparrId) {
+      studioStatusRow.textContent = 'Studio status: not in Whisparr';
+      applyDisabledStyles(studioMonitorToggle, true);
+      return;
+    }
+    if (studioMonitored === null) {
+      studioStatusRow.textContent = 'Studio status: monitor unknown';
+      return;
+    }
+    const nextState = !studioMonitored;
+    applyDisabledStyles(studioMonitorToggle, true);
+    studioStatusRow.textContent = nextState
+      ? 'Studio status: enabling monitor...'
+      : 'Studio status: disabling monitor...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'STUDIO_SET_MONITOR',
+        whisparrId: studioWhisparrId,
+        monitored: nextState,
+      });
+      if (!response.ok) {
+        studioStatusRow.textContent = `Studio status: monitor update failed (${response.error ?? 'unknown'})`;
+        applyDisabledStyles(studioMonitorToggle, false);
+        return;
+      }
+      const nextMonitored =
+        typeof response.monitored === 'boolean' ? response.monitored : nextState;
+      studioMonitored = nextMonitored;
+      studioMonitorToggle.textContent = studioMonitored ? 'Unmonitor' : 'Monitor';
+      studioStatusRow.textContent = studioMonitored
+        ? 'Studio status: monitored'
+        : 'Studio status: unmonitored';
+      applyDisabledStyles(studioMonitorToggle, false);
+    } catch (error) {
+      studioStatusRow.textContent = `Studio status: monitor update failed (${(error as Error).message})`;
+      applyDisabledStyles(studioMonitorToggle, false);
+    }
+  };
+
   const updateMonitorState = async () => {
     const current = getParsedPage();
     const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
@@ -1145,6 +1567,22 @@ if (!document.getElementById(PANEL_ID)) {
     void addScene();
   });
 
+  performerAddButton.addEventListener('click', () => {
+    void addPerformer();
+  });
+
+  performerMonitorToggle.addEventListener('click', () => {
+    void updatePerformerMonitorState();
+  });
+
+  studioAddButton.addEventListener('click', () => {
+    void addStudio();
+  });
+
+  studioMonitorToggle.addEventListener('click', () => {
+    void updateStudioMonitorState();
+  });
+
   viewInStashButton.addEventListener('click', () => {
     const current = getParsedPage();
     const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
@@ -1188,6 +1626,18 @@ if (!document.getElementById(PANEL_ID)) {
     void updateTags();
   });
 
+  const updateEntityControls = () => {
+    const current = getParsedPage();
+    setSceneControlsVisible(current.type === 'scene');
+    setPerformerControlsVisible(current.type === 'performer');
+    setStudioControlsVisible(current.type === 'studio');
+    if (current.type === 'performer') {
+      void updatePerformerStatus();
+    } else if (current.type === 'studio') {
+      void updateStudioStatus();
+    }
+  };
+
   const updateConfigStatus = async () => {
     try {
       const response = await extContent.runtime.sendMessage({
@@ -1214,6 +1664,7 @@ if (!document.getElementById(PANEL_ID)) {
         applyDisabledStyles(addSceneButton, true);
         void updateViewInStashButton(getParsedPage().stashIds[0], true);
         updateViewInWhisparrButton(getParsedPage().stashIds[0]);
+        updateEntityControls();
         return;
       }
       if (!response.settings.lastValidatedAt) {
@@ -1222,6 +1673,7 @@ if (!document.getElementById(PANEL_ID)) {
         applyDisabledStyles(addSceneButton, true);
         void updateViewInStashButton(getParsedPage().stashIds[0], true);
         updateViewInWhisparrButton(getParsedPage().stashIds[0]);
+        updateEntityControls();
         return;
       }
       const validatedAt = new Date(response.settings.lastValidatedAt);
@@ -1230,6 +1682,7 @@ if (!document.getElementById(PANEL_ID)) {
       applyActionState(getParsedPage().stashIds[0]);
       void updateViewInStashButton(getParsedPage().stashIds[0], true);
       updateViewInWhisparrButton(getParsedPage().stashIds[0]);
+      updateEntityControls();
     } catch {
       statusRow.textContent = 'Config: unavailable';
       readiness = 'unconfigured';
@@ -1238,11 +1691,13 @@ if (!document.getElementById(PANEL_ID)) {
       whisparrBaseUrl = null;
       void updateViewInStashButton(getParsedPage().stashIds[0], true);
       updateViewInWhisparrButton(getParsedPage().stashIds[0]);
+      updateEntityControls();
     }
   };
 
   void updateConfigStatus();
   void updateSceneStatus(false);
+  updateEntityControls();
   void loadCatalogs();
 
   document.documentElement.appendChild(panel);
@@ -1256,6 +1711,7 @@ if (!document.getElementById(PANEL_ID)) {
       stashMatchCache.clear();
       stashLookupInFlight.clear();
       updateDiagnostics();
+      void updateConfigStatus();
       void updateSceneStatus(true);
     }
   };
@@ -2369,5 +2825,7 @@ class SceneCardObserver {
 
 }
 
-const sceneCardObserver = new SceneCardObserver();
-sceneCardObserver.start();
+if (!isEditPage) {
+  const sceneCardObserver = new SceneCardObserver();
+  sceneCardObserver.start();
+}
