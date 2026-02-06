@@ -1349,6 +1349,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       if (whisparrBaseUrl) {
         applyDisabledStyles(performerViewButton, false);
       }
+      void updatePerformerStatus();
     } catch (error) {
       performerStatusRow.textContent = `Performer status: add failed (${(error as Error).message})`;
       applyDisabledStyles(performerAddButton, false);
@@ -1396,6 +1397,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         ? 'Performer status: monitored'
         : 'Performer status: unmonitored';
       applyDisabledStyles(performerMonitorToggle, false);
+      void updatePerformerStatus();
     } catch (error) {
       performerStatusRow.textContent = `Performer status: monitor update failed (${(error as Error).message})`;
       applyDisabledStyles(performerMonitorToggle, false);
@@ -1446,6 +1448,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       if (whisparrBaseUrl) {
         applyDisabledStyles(studioViewButton, false);
       }
+      void updateStudioStatus();
     } catch (error) {
       studioStatusRow.textContent = `Studio status: add failed (${(error as Error).message})`;
       applyDisabledStyles(studioAddButton, false);
@@ -1492,6 +1495,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         ? 'Studio status: monitored'
         : 'Studio status: unmonitored';
       applyDisabledStyles(studioMonitorToggle, false);
+      void updateStudioStatus();
     } catch (error) {
       studioStatusRow.textContent = `Studio status: monitor update failed (${(error as Error).message})`;
       applyDisabledStyles(studioMonitorToggle, false);
