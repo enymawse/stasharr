@@ -7,6 +7,7 @@ No networking is performed in parsing.
 - Identify page type (scene now; studio/performer placeholders).
 - Extract stable scene identifiers from URL/DOM.
 - Produce a canonical StashDB URL for the entity.
+- Prevent UI injection on `/edit/*` routes.
 
 ## Data Shape
 The parser returns:
@@ -21,6 +22,7 @@ The parser returns:
    - `/studios/` -> studio
    - `/performers/` -> performer
    - otherwise -> other
+2. Treat `/edit/*` pages as no-UI zones in the content script.
 2. Collect UUIDs from:
    - `/scenes/<uuid>` in the current URL
    - any UUID segment in the current pathname
