@@ -151,10 +151,10 @@
 
 **Task 12**
 
-- Scope: extend performer panel to support editing tags + quality profile and confirm monitor toggle presence; verify the scene panel already exposes tag/quality editing + monitor toggle and align any missing UI states or disabled logic for parity.
+- Scope: extend performer/studio panel to support editing tags + quality profile and confirm monitor toggle presence; verify the scene panel already exposes tag/quality editing + monitor toggle and align any missing UI states or disabled logic for parity.
 - Invariants: no new networking in content/options; re-use discovery catalogs + selections; preserve existing scene panel behavior unless explicitly missing; avoid new toasts.
-- Commits: 1) feat(content): add performer tag/quality controls + save actions. 2) refactor(content): align panel disabled/ready states for tag/quality/monitor controls.
-- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: performer panel can edit tags/quality and monitor toggle behaves; scene panel still edits tags/quality and monitor toggle remains functional.
+- Commits: 1) feat(content): add performer/studio tag/quality controls + save actions. 2) refactor(content): align panel disabled/ready states for tag/quality/monitor controls.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: performer/studio panel can edit tags/quality and monitor toggle behaves; scene panel still edits tags/quality and monitor toggle remains functional.
 
 **Task 13**
 
