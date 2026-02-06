@@ -121,6 +121,34 @@
 - Commits: 1) feat(shared): add TTL cache + batcher. 2) refactor(background): use TTL cache for scene status. 3) refactor(content): use batcher for status queue.
 - Verification: `npm run build`; `npm run tripwire`; manual: scene list status updates remain batched and accurate.
 
+**Task 8**
+
+- Scope: add a Search-on-add setting in `src/content/options.ts` + `src/content/options.html`; persist via `src/shared/storage.ts`; thread the value through add-scene flows in `src/content/content.ts` and `src/background/services/whisparr.ts` (`addOptions.searchForMovie`).
+- Invariants: default behavior remains `searchForMovie: true`; no new network calls in content/options; message shapes remain stable; error strings unchanged.
+- Commits: 1) feat(options): add search-on-add toggle + persistence. 2) refactor(content): send add requests with search flag. 3) refactor(background): honor setting in add payloads.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: toggle off prevents auto-search on add, toggle on restores current behavior.
+
+**Task 9**
+
+- Scope: implement performer + studio support in `src/background/services/whisparr.ts` (lookup/add/monitor endpoints) and expose actions in `src/content/content.ts` on performer/studio pages.
+- Invariants: background-only networking; no API endpoints in content/options; permission checks align with existing Whisparr flows; no UI on `/edit/*` pages.
+- Commits: 1) feat(background): add performer/studio handlers. 2) feat(content): add performer/studio panel actions + status display. 3) docs: update parsing/scene-card notes if needed.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: add performer/studio, toggle monitor, status updates render correctly.
+
+**Task 10**
+
+- Scope: add bulk actions UI for scene list pages in `src/content/content.ts` with confirmation prompts and a progress modal; add background batch handlers in `src/background/services/whisparr.ts`.
+- Invariants: bulk flows use modal for feedback (no toasts); empty-state shows info message; skipped counts use consistent wording; no dummy success items.
+- Commits: 1) feat(content): bulk actions dropdown + confirmations. 2) feat(content): progress modal + state management. 3) feat(background): bulk add/search/missing handlers with suppressed toasts.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: Add All / Search All / Add Missing work and show correct progress/summary.
+
+**Task 11**
+
+- Scope: add copy-to-clipboard for StashDB scene IDs on scene cards and the scene details panel in `src/content/content.ts`.
+- Invariants: no networking; no layout regressions; provide visible success/failure feedback without toasts.
+- Commits: 1) feat(content): add copy buttons + clipboard helper. 2) refactor(content): wire copy buttons into scene card and panel UI.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: copy works on cards and scene page, including fallback for restricted clipboard.
+
 **Future Work: Firefox Background Refactor Plan**
 
 - Goal: refactor `src/background/background-firefox.ts` to reuse shared background core/services while keeping Firefox MV3 script output and identical behavior.
