@@ -1046,6 +1046,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     tagsStatus.textContent = 'Tags: ready';
   };
 
+  const canEditPerformer = () =>
+    readiness === 'validated' && performerExists === true;
+
+  const canEditStudio = () => readiness === 'validated' && studioExists === true;
+
   const updatePerformerQualityControls = () => {
     if (qualityProfileCatalog.length === 0) {
       performerQualityStatus.textContent = 'Quality: unavailable';
@@ -1057,6 +1062,12 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       performerQualitySelect,
       performerQualityProfileId ?? undefined,
     );
+    if (readiness !== 'validated') {
+      performerQualityStatus.textContent = 'Quality: config not validated';
+      applyDisabledStyles(performerUpdateQualityButton, true);
+      performerQualitySelect.disabled = true;
+      return;
+    }
     if (!performerExists) {
       performerQualityStatus.textContent = 'Quality: performer not in Whisparr';
       applyDisabledStyles(performerUpdateQualityButton, true);
@@ -1076,6 +1087,12 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       return;
     }
     renderTagOptions(performerTagsSelect, performerTagIds);
+    if (readiness !== 'validated') {
+      performerTagsStatus.textContent = 'Tags: config not validated';
+      applyDisabledStyles(performerUpdateTagsButton, true);
+      performerTagsSelect.disabled = true;
+      return;
+    }
     if (!performerExists) {
       performerTagsStatus.textContent = 'Tags: performer not in Whisparr';
       applyDisabledStyles(performerUpdateTagsButton, true);
@@ -1098,6 +1115,12 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       studioQualitySelect,
       studioQualityProfileId ?? undefined,
     );
+    if (readiness !== 'validated') {
+      studioQualityStatus.textContent = 'Quality: config not validated';
+      applyDisabledStyles(studioUpdateQualityButton, true);
+      studioQualitySelect.disabled = true;
+      return;
+    }
     if (!studioExists) {
       studioQualityStatus.textContent = 'Quality: studio not in Whisparr';
       applyDisabledStyles(studioUpdateQualityButton, true);
@@ -1117,6 +1140,12 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       return;
     }
     renderTagOptions(studioTagsSelect, studioTagIds);
+    if (readiness !== 'validated') {
+      studioTagsStatus.textContent = 'Tags: config not validated';
+      applyDisabledStyles(studioUpdateTagsButton, true);
+      studioTagsSelect.disabled = true;
+      return;
+    }
     if (!studioExists) {
       studioTagsStatus.textContent = 'Tags: studio not in Whisparr';
       applyDisabledStyles(studioUpdateTagsButton, true);
@@ -1771,6 +1800,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       return;
     }
     performerQualityUpdateInFlight.add(performerId);
+    applyDisabledStyles(performerUpdateQualityButton, true);
     performerQualityStatus.textContent = 'Quality: updating...';
     try {
       const response = await extContent.runtime.sendMessage({
@@ -1788,6 +1818,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       performerQualityStatus.textContent = `Quality: update failed (${(error as Error).message})`;
     } finally {
       performerQualityUpdateInFlight.delete(performerId);
+      applyDisabledStyles(performerUpdateQualityButton, !canEditPerformer());
     }
   };
 
@@ -1807,6 +1838,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       return;
     }
     performerTagUpdateInFlight.add(performerId);
+    applyDisabledStyles(performerUpdateTagsButton, true);
     performerTagsStatus.textContent = 'Tags: updating...';
     try {
       const selectedIds = Array.from(performerTagsSelect.selectedOptions)
@@ -1827,6 +1859,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       performerTagsStatus.textContent = `Tags: update failed (${(error as Error).message})`;
     } finally {
       performerTagUpdateInFlight.delete(performerId);
+      applyDisabledStyles(performerUpdateTagsButton, !canEditPerformer());
     }
   };
 
@@ -1948,6 +1981,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       return;
     }
     studioQualityUpdateInFlight.add(studioId);
+    applyDisabledStyles(studioUpdateQualityButton, true);
     studioQualityStatus.textContent = 'Quality: updating...';
     try {
       const response = await extContent.runtime.sendMessage({
@@ -1965,6 +1999,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       studioQualityStatus.textContent = `Quality: update failed (${(error as Error).message})`;
     } finally {
       studioQualityUpdateInFlight.delete(studioId);
+      applyDisabledStyles(studioUpdateQualityButton, !canEditStudio());
     }
   };
 
@@ -1983,6 +2018,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       return;
     }
     studioTagUpdateInFlight.add(studioId);
+    applyDisabledStyles(studioUpdateTagsButton, true);
     studioTagsStatus.textContent = 'Tags: updating...';
     try {
       const selectedIds = Array.from(studioTagsSelect.selectedOptions)
@@ -2003,6 +2039,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       studioTagsStatus.textContent = `Tags: update failed (${(error as Error).message})`;
     } finally {
       studioTagUpdateInFlight.delete(studioId);
+      applyDisabledStyles(studioUpdateTagsButton, !canEditStudio());
     }
   };
 
@@ -2219,7 +2256,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   });
 
   performerQualitySelect.addEventListener('change', () => {
-    applyDisabledStyles(performerUpdateQualityButton, false);
+    applyDisabledStyles(performerUpdateQualityButton, !canEditPerformer());
   });
 
   performerUpdateQualityButton.addEventListener('click', () => {
@@ -2227,7 +2264,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   });
 
   performerTagsSelect.addEventListener('change', () => {
-    applyDisabledStyles(performerUpdateTagsButton, false);
+    applyDisabledStyles(performerUpdateTagsButton, !canEditPerformer());
   });
 
   performerUpdateTagsButton.addEventListener('click', () => {
@@ -2255,7 +2292,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   });
 
   studioQualitySelect.addEventListener('change', () => {
-    applyDisabledStyles(studioUpdateQualityButton, false);
+    applyDisabledStyles(studioUpdateQualityButton, !canEditStudio());
   });
 
   studioUpdateQualityButton.addEventListener('click', () => {
@@ -2263,7 +2300,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   });
 
   studioTagsSelect.addEventListener('change', () => {
-    applyDisabledStyles(studioUpdateTagsButton, false);
+    applyDisabledStyles(studioUpdateTagsButton, !canEditStudio());
   });
 
   studioUpdateTagsButton.addEventListener('click', () => {
