@@ -1785,6 +1785,26 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     }
   };
 
+  const resetPerformerPanelState = () => {
+    performerStatusRow.textContent = 'Performer status: unknown';
+    applyDisabledStyles(performerAddButton, true);
+    applyDisabledStyles(performerMonitorToggle, true);
+    applyDisabledStyles(performerCheckButton, true);
+    applyDisabledStyles(performerViewButton, true);
+    performerWhisparrId = null;
+    performerMonitored = null;
+  };
+
+  const resetStudioPanelState = () => {
+    studioStatusRow.textContent = 'Studio status: unknown';
+    applyDisabledStyles(studioAddButton, true);
+    applyDisabledStyles(studioMonitorToggle, true);
+    applyDisabledStyles(studioCheckButton, true);
+    applyDisabledStyles(studioViewButton, true);
+    studioWhisparrId = null;
+    studioMonitored = null;
+  };
+
   const updateConfigStatus = async () => {
     try {
       const response = await extContent.runtime.sendMessage({
@@ -1857,6 +1877,8 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       inFlight.clear();
       stashMatchCache.clear();
       stashLookupInFlight.clear();
+      resetPerformerPanelState();
+      resetStudioPanelState();
       updateDiagnostics();
       void updateConfigStatus();
       void updateSceneStatus(true);
