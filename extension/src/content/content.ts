@@ -84,7 +84,7 @@ type PerformerAddRequest = {
 };
 type PerformerSetMonitorRequest = {
   type: 'PERFORMER_SET_MONITOR';
-  whisparrId: number;
+  stashdbPerformerId: string;
   monitored: boolean;
 };
 type StudioCheckStatusRequest = {
@@ -98,7 +98,7 @@ type StudioAddRequest = {
 };
 type StudioSetMonitorRequest = {
   type: 'STUDIO_SET_MONITOR';
-  whisparrId: number;
+  stashdbStudioId: string;
   monitored: boolean;
 };
 type StashFindSceneByStashdbIdRequest = {
@@ -1353,8 +1353,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   };
 
   const updatePerformerMonitorState = async () => {
-    if (!performerWhisparrId) {
-      performerStatusRow.textContent = 'Performer status: not in Whisparr';
+    const current = getParsedPage();
+    const performerId =
+      current.type === 'performer' ? current.stashIds[0] : undefined;
+    if (!performerId) {
+      performerStatusRow.textContent = 'Performer status: unavailable';
       applyDisabledStyles(performerMonitorToggle, true);
       return;
     }
@@ -1370,7 +1373,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     try {
       const response = await extContent.runtime.sendMessage({
         type: 'PERFORMER_SET_MONITOR',
-        whisparrId: performerWhisparrId,
+        stashdbPerformerId: performerId,
         monitored: nextState,
       });
       if (!response.ok) {
@@ -1444,8 +1447,10 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   };
 
   const updateStudioMonitorState = async () => {
-    if (!studioWhisparrId) {
-      studioStatusRow.textContent = 'Studio status: not in Whisparr';
+    const current = getParsedPage();
+    const studioId = current.type === 'studio' ? current.stashIds[0] : undefined;
+    if (!studioId) {
+      studioStatusRow.textContent = 'Studio status: unavailable';
       applyDisabledStyles(studioMonitorToggle, true);
       return;
     }
@@ -1461,7 +1466,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     try {
       const response = await extContent.runtime.sendMessage({
         type: 'STUDIO_SET_MONITOR',
-        whisparrId: studioWhisparrId,
+        stashdbStudioId: studioId,
         monitored: nextState,
       });
       if (!response.ok) {

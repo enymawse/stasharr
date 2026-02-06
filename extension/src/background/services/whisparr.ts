@@ -403,15 +403,40 @@ function extractEntityRecord(
   return { id, monitored, name };
 }
 
-async function fetchEntityByStashId(
+async function fetchPerformerByStashId(
   baseUrl: string,
   apiKey: string,
-  kind: 'performer' | 'studio',
   stashId: string,
-): Promise<{ entity?: { id: number; monitored?: boolean; name?: string }; error?: string }> {
+): Promise<{ entity?: Record<string, unknown>; error?: string }> {
   const response = await handleFetchJson({
     type: MESSAGE_TYPES.fetchJson,
-    url: `${baseUrl}/api/v3/${kind}/${encodeURIComponent(stashId)}`,
+    url: `${baseUrl}/api/v3/performer/${encodeURIComponent(stashId)}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!response.ok && response.status === 404) {
+    return { entity: undefined };
+  }
+
+  if (!response.ok) {
+    return { error: response.error ?? 'Lookup failed.' };
+  }
+
+  if (!isRecord(response.json)) {
+    return { entity: undefined };
+  }
+
+  return { entity: response.json };
+}
+
+async function fetchStudioByStashId(
+  baseUrl: string,
+  apiKey: string,
+  stashId: string,
+): Promise<{ entity?: Record<string, unknown>; error?: string }> {
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${baseUrl}/api/v3/studio?stashId=${encodeURIComponent(stashId)}`,
     headers: { 'X-Api-Key': apiKey },
   });
 
@@ -428,7 +453,12 @@ async function fetchEntityByStashId(
     return { entity: undefined };
   }
 
-  return { entity };
+  const record = Array.isArray(response.json)
+    ? response.json.find(isRecord)
+    : isRecord(response.json)
+      ? response.json
+      : null;
+  return record ? { entity: record } : { entity: undefined };
 }
 
 export async function handleValidateWhisparrConnection(
@@ -1784,10 +1814,9 @@ export async function handlePerformerCheckStatus(
     };
   }
 
-  const lookup = await fetchEntityByStashId(
+  const lookup = await fetchPerformerByStashId(
     normalized.value,
     apiKey,
-    'performer',
     stashId,
   );
   if (lookup.error) {
@@ -1807,13 +1836,22 @@ export async function handlePerformerCheckStatus(
     };
   }
 
+  const entitySummary = extractEntityRecord(lookup.entity);
+  if (!entitySummary) {
+    return {
+      ok: true,
+      type: MESSAGE_TYPES.performerCheckStatus,
+      exists: false,
+    };
+  }
+
   return {
     ok: true,
     type: MESSAGE_TYPES.performerCheckStatus,
     exists: true,
-    whisparrId: lookup.entity.id,
-    monitored: lookup.entity.monitored,
-    name: lookup.entity.name,
+    whisparrId: entitySummary.id,
+    monitored: entitySummary.monitored,
+    name: entitySummary.name,
   };
 }
 
@@ -1957,8 +1995,8 @@ export async function handlePerformerSetMonitor(
     };
   }
 
-  const whisparrId = Number(request.whisparrId);
-  if (!Number.isFinite(whisparrId)) {
+  const stashId = request.stashdbPerformerId?.trim();
+  if (!stashId) {
     return {
       ok: false,
       type: MESSAGE_TYPES.performerSetMonitor,
@@ -2007,12 +2045,45 @@ export async function handlePerformerSetMonitor(
     };
   }
 
+  const current = await fetchPerformerByStashId(
+    normalized.value,
+    apiKey,
+    stashId,
+  );
+  if (current.error) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: request.monitored,
+      error: current.error,
+    };
+  }
+  if (!current.entity) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: request.monitored,
+      error: 'Performer not in Whisparr.',
+    };
+  }
+
+  const performerId = Number(current.entity.id);
+  if (!Number.isFinite(performerId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerSetMonitor,
+      monitored: request.monitored,
+      error: 'Performer ID is required.',
+    };
+  }
+
+  const payload = { ...current.entity, monitored: request.monitored };
   const response = await handleFetchJson({
     type: MESSAGE_TYPES.fetchJson,
-    url: `${normalized.value}/api/v3/performer/${encodeURIComponent(String(whisparrId))}`,
+    url: `${normalized.value}/api/v3/performer/${encodeURIComponent(String(performerId))}`,
     method: 'PUT',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: whisparrId, monitored: request.monitored }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -2098,10 +2169,9 @@ export async function handleStudioCheckStatus(
     };
   }
 
-  const lookup = await fetchEntityByStashId(
+  const lookup = await fetchStudioByStashId(
     normalized.value,
     apiKey,
-    'studio',
     stashId,
   );
   if (lookup.error) {
@@ -2121,13 +2191,22 @@ export async function handleStudioCheckStatus(
     };
   }
 
+  const entitySummary = extractEntityRecord(lookup.entity);
+  if (!entitySummary) {
+    return {
+      ok: true,
+      type: MESSAGE_TYPES.studioCheckStatus,
+      exists: false,
+    };
+  }
+
   return {
     ok: true,
     type: MESSAGE_TYPES.studioCheckStatus,
     exists: true,
-    whisparrId: lookup.entity.id,
-    monitored: lookup.entity.monitored,
-    name: lookup.entity.name,
+    whisparrId: entitySummary.id,
+    monitored: entitySummary.monitored,
+    name: entitySummary.name,
   };
 }
 
@@ -2280,8 +2359,8 @@ export async function handleStudioSetMonitor(
     };
   }
 
-  const whisparrId = Number(request.whisparrId);
-  if (!Number.isFinite(whisparrId)) {
+  const stashId = request.stashdbStudioId?.trim();
+  if (!stashId) {
     return {
       ok: false,
       type: MESSAGE_TYPES.studioSetMonitor,
@@ -2330,12 +2409,41 @@ export async function handleStudioSetMonitor(
     };
   }
 
+  const current = await fetchStudioByStashId(normalized.value, apiKey, stashId);
+  if (current.error) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: request.monitored,
+      error: current.error,
+    };
+  }
+  if (!current.entity) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: request.monitored,
+      error: 'Studio not in Whisparr.',
+    };
+  }
+
+  const studioId = Number(current.entity.id);
+  if (!Number.isFinite(studioId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioSetMonitor,
+      monitored: request.monitored,
+      error: 'Studio ID is required.',
+    };
+  }
+
+  const payload = { ...current.entity, monitored: request.monitored };
   const response = await handleFetchJson({
     type: MESSAGE_TYPES.fetchJson,
-    url: `${normalized.value}/api/v3/studio/${encodeURIComponent(String(whisparrId))}`,
+    url: `${normalized.value}/api/v3/studio/${encodeURIComponent(String(studioId))}`,
     method: 'PUT',
     headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: whisparrId, monitored: request.monitored }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

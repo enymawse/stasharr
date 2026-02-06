@@ -335,7 +335,7 @@ export type PerformerAddResponse = {
 
 export type PerformerSetMonitorRequest = {
   type: typeof MESSAGE_TYPES.performerSetMonitor;
-  whisparrId: number;
+  stashdbPerformerId: string;
   monitored: boolean;
 };
 
@@ -377,7 +377,7 @@ export type StudioAddResponse = {
 
 export type StudioSetMonitorRequest = {
   type: typeof MESSAGE_TYPES.studioSetMonitor;
-  whisparrId: number;
+  stashdbStudioId: string;
   monitored: boolean;
 };
 
