@@ -25,9 +25,13 @@ export const MESSAGE_TYPES = {
   performerCheckStatus: 'PERFORMER_CHECK_STATUS',
   performerAdd: 'PERFORMER_ADD',
   performerSetMonitor: 'PERFORMER_SET_MONITOR',
+  performerUpdateTags: 'PERFORMER_UPDATE_TAGS',
+  performerUpdateQualityProfile: 'PERFORMER_UPDATE_QUALITY_PROFILE',
   studioCheckStatus: 'STUDIO_CHECK_STATUS',
   studioAdd: 'STUDIO_ADD',
   studioSetMonitor: 'STUDIO_SET_MONITOR',
+  studioUpdateTags: 'STUDIO_UPDATE_TAGS',
+  studioUpdateQualityProfile: 'STUDIO_UPDATE_QUALITY_PROFILE',
 } as const;
 
 export type MessageType = (typeof MESSAGE_TYPES)[keyof typeof MESSAGE_TYPES];
@@ -316,6 +320,8 @@ export type PerformerCheckStatusResponse = {
   whisparrId?: number;
   monitored?: boolean;
   name?: string;
+  tagIds?: number[];
+  qualityProfileId?: number;
   error?: string;
 };
 
@@ -346,6 +352,32 @@ export type PerformerSetMonitorResponse = {
   error?: string;
 };
 
+export type PerformerUpdateTagsRequest = {
+  type: typeof MESSAGE_TYPES.performerUpdateTags;
+  stashdbPerformerId: string;
+  tagIds: number[];
+};
+
+export type PerformerUpdateTagsResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.performerUpdateTags;
+  tagIds?: number[];
+  error?: string;
+};
+
+export type PerformerUpdateQualityProfileRequest = {
+  type: typeof MESSAGE_TYPES.performerUpdateQualityProfile;
+  stashdbPerformerId: string;
+  qualityProfileId: number;
+};
+
+export type PerformerUpdateQualityProfileResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.performerUpdateQualityProfile;
+  qualityProfileId?: number;
+  error?: string;
+};
+
 export type StudioCheckStatusRequest = {
   type: typeof MESSAGE_TYPES.studioCheckStatus;
   stashdbStudioId: string;
@@ -358,6 +390,8 @@ export type StudioCheckStatusResponse = {
   whisparrId?: number;
   monitored?: boolean;
   name?: string;
+  tagIds?: number[];
+  qualityProfileId?: number;
   error?: string;
 };
 
@@ -385,6 +419,32 @@ export type StudioSetMonitorResponse = {
   ok: boolean;
   type: typeof MESSAGE_TYPES.studioSetMonitor;
   monitored: boolean;
+  error?: string;
+};
+
+export type StudioUpdateTagsRequest = {
+  type: typeof MESSAGE_TYPES.studioUpdateTags;
+  stashdbStudioId: string;
+  tagIds: number[];
+};
+
+export type StudioUpdateTagsResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.studioUpdateTags;
+  tagIds?: number[];
+  error?: string;
+};
+
+export type StudioUpdateQualityProfileRequest = {
+  type: typeof MESSAGE_TYPES.studioUpdateQualityProfile;
+  stashdbStudioId: string;
+  qualityProfileId: number;
+};
+
+export type StudioUpdateQualityProfileResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.studioUpdateQualityProfile;
+  qualityProfileId?: number;
   error?: string;
 };
 
@@ -457,9 +517,13 @@ export type ExtensionRequest =
   | PerformerCheckStatusRequest
   | PerformerAddRequest
   | PerformerSetMonitorRequest
+  | PerformerUpdateTagsRequest
+  | PerformerUpdateQualityProfileRequest
   | StudioCheckStatusRequest
   | StudioAddRequest
   | StudioSetMonitorRequest
+  | StudioUpdateTagsRequest
+  | StudioUpdateQualityProfileRequest
   | StashFindSceneByStashdbIdRequest;
 
 export type ExtensionResponse =
@@ -488,9 +552,13 @@ export type ExtensionResponse =
   | PerformerCheckStatusResponse
   | PerformerAddResponse
   | PerformerSetMonitorResponse
+  | PerformerUpdateTagsResponse
+  | PerformerUpdateQualityProfileResponse
   | StudioCheckStatusResponse
   | StudioAddResponse
   | StudioSetMonitorResponse
+  | StudioUpdateTagsResponse
+  | StudioUpdateQualityProfileResponse
   | StashFindSceneByStashdbIdResponse
   | { ok: false; type: MessageType; error: string };
 

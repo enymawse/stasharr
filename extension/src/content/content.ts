@@ -87,6 +87,16 @@ type PerformerSetMonitorRequest = {
   stashdbPerformerId: string;
   monitored: boolean;
 };
+type PerformerUpdateTagsRequest = {
+  type: 'PERFORMER_UPDATE_TAGS';
+  stashdbPerformerId: string;
+  tagIds: number[];
+};
+type PerformerUpdateQualityProfileRequest = {
+  type: 'PERFORMER_UPDATE_QUALITY_PROFILE';
+  stashdbPerformerId: string;
+  qualityProfileId: number;
+};
 type StudioCheckStatusRequest = {
   type: 'STUDIO_CHECK_STATUS';
   stashdbStudioId: string;
@@ -100,6 +110,16 @@ type StudioSetMonitorRequest = {
   type: 'STUDIO_SET_MONITOR';
   stashdbStudioId: string;
   monitored: boolean;
+};
+type StudioUpdateTagsRequest = {
+  type: 'STUDIO_UPDATE_TAGS';
+  stashdbStudioId: string;
+  tagIds: number[];
+};
+type StudioUpdateQualityProfileRequest = {
+  type: 'STUDIO_UPDATE_QUALITY_PROFILE';
+  stashdbStudioId: string;
+  qualityProfileId: number;
 };
 type StashFindSceneByStashdbIdRequest = {
   type: 'STASH_FIND_SCENE_BY_STASHDB_ID';
@@ -126,9 +146,13 @@ type ContentRuntime = {
         | PerformerCheckStatusRequest
         | PerformerAddRequest
         | PerformerSetMonitorRequest
+        | PerformerUpdateTagsRequest
+        | PerformerUpdateQualityProfileRequest
         | StudioCheckStatusRequest
         | StudioAddRequest
         | StudioSetMonitorRequest
+        | StudioUpdateTagsRequest
+        | StudioUpdateQualityProfileRequest
         | StashFindSceneByStashdbIdRequest,
     ) => Promise<{
       ok: boolean;
@@ -286,6 +310,10 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   const stashLookupInFlight = new Set<string>();
   const tagUpdateInFlight = new Set<string>();
   const qualityProfileUpdateInFlight = new Set<string>();
+  const performerTagUpdateInFlight = new Set<string>();
+  const performerQualityUpdateInFlight = new Set<string>();
+  const studioTagUpdateInFlight = new Set<string>();
+  const studioQualityUpdateInFlight = new Set<string>();
   let tagCatalog: Array<{ id: number; label: string }> = [];
   let qualityProfileCatalog: Array<{ id: number; name: string }> = [];
   let whisparrBaseUrl: string | null = null;
@@ -621,6 +649,88 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   applyDisabledStyles(performerViewButton, true);
   performerViewRow.appendChild(performerViewButton);
 
+  const performerQualityRow = document.createElement('div');
+  performerQualityRow.style.marginTop = '8px';
+  performerQualityRow.style.display = 'flex';
+  performerQualityRow.style.flexDirection = 'column';
+  performerQualityRow.style.gap = '6px';
+  performerControls.appendChild(performerQualityRow);
+
+  const performerQualityLabel = document.createElement('div');
+  performerQualityLabel.textContent = 'Quality profile';
+  performerQualityLabel.style.fontSize = '11px';
+  performerQualityLabel.style.opacity = '0.8';
+  performerQualityRow.appendChild(performerQualityLabel);
+
+  const performerQualitySelect = document.createElement('select');
+  performerQualitySelect.style.padding = '6px';
+  performerQualitySelect.style.borderRadius = '6px';
+  performerQualitySelect.style.border = '1px solid #1f2937';
+  performerQualitySelect.style.background = '#0b1220';
+  performerQualitySelect.style.color = '#e2e8f0';
+  performerQualitySelect.disabled = true;
+  performerQualityRow.appendChild(performerQualitySelect);
+
+  const performerQualityStatus = document.createElement('div');
+  performerQualityStatus.style.fontSize = '11px';
+  performerQualityStatus.style.opacity = '0.8';
+  performerQualityStatus.textContent = 'Quality: unavailable';
+  performerQualityRow.appendChild(performerQualityStatus);
+
+  const performerUpdateQualityButton = document.createElement('button');
+  performerUpdateQualityButton.type = 'button';
+  performerUpdateQualityButton.textContent = 'Update quality';
+  performerUpdateQualityButton.style.padding = '6px 10px';
+  performerUpdateQualityButton.style.borderRadius = '6px';
+  performerUpdateQualityButton.style.border = 'none';
+  performerUpdateQualityButton.style.cursor = 'pointer';
+  performerUpdateQualityButton.style.background = '#f59e0b';
+  performerUpdateQualityButton.style.color = '#111827';
+  applyDisabledStyles(performerUpdateQualityButton, true);
+  performerQualityRow.appendChild(performerUpdateQualityButton);
+
+  const performerTagsRow = document.createElement('div');
+  performerTagsRow.style.marginTop = '8px';
+  performerTagsRow.style.display = 'flex';
+  performerTagsRow.style.flexDirection = 'column';
+  performerTagsRow.style.gap = '6px';
+  performerControls.appendChild(performerTagsRow);
+
+  const performerTagsLabel = document.createElement('div');
+  performerTagsLabel.textContent = 'Tags';
+  performerTagsLabel.style.fontSize = '11px';
+  performerTagsLabel.style.opacity = '0.8';
+  performerTagsRow.appendChild(performerTagsLabel);
+
+  const performerTagsSelect = document.createElement('select');
+  performerTagsSelect.multiple = true;
+  performerTagsSelect.style.padding = '6px';
+  performerTagsSelect.style.borderRadius = '6px';
+  performerTagsSelect.style.border = '1px solid #1f2937';
+  performerTagsSelect.style.background = '#0b1220';
+  performerTagsSelect.style.color = '#e2e8f0';
+  performerTagsSelect.style.minHeight = '90px';
+  performerTagsSelect.disabled = true;
+  performerTagsRow.appendChild(performerTagsSelect);
+
+  const performerTagsStatus = document.createElement('div');
+  performerTagsStatus.style.fontSize = '11px';
+  performerTagsStatus.style.opacity = '0.8';
+  performerTagsStatus.textContent = 'Tags: unavailable';
+  performerTagsRow.appendChild(performerTagsStatus);
+
+  const performerUpdateTagsButton = document.createElement('button');
+  performerUpdateTagsButton.type = 'button';
+  performerUpdateTagsButton.textContent = 'Update tags';
+  performerUpdateTagsButton.style.padding = '6px 10px';
+  performerUpdateTagsButton.style.borderRadius = '6px';
+  performerUpdateTagsButton.style.border = 'none';
+  performerUpdateTagsButton.style.cursor = 'pointer';
+  performerUpdateTagsButton.style.background = '#22c55e';
+  performerUpdateTagsButton.style.color = '#0b1220';
+  applyDisabledStyles(performerUpdateTagsButton, true);
+  performerTagsRow.appendChild(performerUpdateTagsButton);
+
   const studioControls = document.createElement('div');
   studioControls.style.display = 'none';
   panel.appendChild(studioControls);
@@ -698,6 +808,88 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   applyDisabledStyles(studioViewButton, true);
   studioViewRow.appendChild(studioViewButton);
 
+  const studioQualityRow = document.createElement('div');
+  studioQualityRow.style.marginTop = '8px';
+  studioQualityRow.style.display = 'flex';
+  studioQualityRow.style.flexDirection = 'column';
+  studioQualityRow.style.gap = '6px';
+  studioControls.appendChild(studioQualityRow);
+
+  const studioQualityLabel = document.createElement('div');
+  studioQualityLabel.textContent = 'Quality profile';
+  studioQualityLabel.style.fontSize = '11px';
+  studioQualityLabel.style.opacity = '0.8';
+  studioQualityRow.appendChild(studioQualityLabel);
+
+  const studioQualitySelect = document.createElement('select');
+  studioQualitySelect.style.padding = '6px';
+  studioQualitySelect.style.borderRadius = '6px';
+  studioQualitySelect.style.border = '1px solid #1f2937';
+  studioQualitySelect.style.background = '#0b1220';
+  studioQualitySelect.style.color = '#e2e8f0';
+  studioQualitySelect.disabled = true;
+  studioQualityRow.appendChild(studioQualitySelect);
+
+  const studioQualityStatus = document.createElement('div');
+  studioQualityStatus.style.fontSize = '11px';
+  studioQualityStatus.style.opacity = '0.8';
+  studioQualityStatus.textContent = 'Quality: unavailable';
+  studioQualityRow.appendChild(studioQualityStatus);
+
+  const studioUpdateQualityButton = document.createElement('button');
+  studioUpdateQualityButton.type = 'button';
+  studioUpdateQualityButton.textContent = 'Update quality';
+  studioUpdateQualityButton.style.padding = '6px 10px';
+  studioUpdateQualityButton.style.borderRadius = '6px';
+  studioUpdateQualityButton.style.border = 'none';
+  studioUpdateQualityButton.style.cursor = 'pointer';
+  studioUpdateQualityButton.style.background = '#f59e0b';
+  studioUpdateQualityButton.style.color = '#111827';
+  applyDisabledStyles(studioUpdateQualityButton, true);
+  studioQualityRow.appendChild(studioUpdateQualityButton);
+
+  const studioTagsRow = document.createElement('div');
+  studioTagsRow.style.marginTop = '8px';
+  studioTagsRow.style.display = 'flex';
+  studioTagsRow.style.flexDirection = 'column';
+  studioTagsRow.style.gap = '6px';
+  studioControls.appendChild(studioTagsRow);
+
+  const studioTagsLabel = document.createElement('div');
+  studioTagsLabel.textContent = 'Tags';
+  studioTagsLabel.style.fontSize = '11px';
+  studioTagsLabel.style.opacity = '0.8';
+  studioTagsRow.appendChild(studioTagsLabel);
+
+  const studioTagsSelect = document.createElement('select');
+  studioTagsSelect.multiple = true;
+  studioTagsSelect.style.padding = '6px';
+  studioTagsSelect.style.borderRadius = '6px';
+  studioTagsSelect.style.border = '1px solid #1f2937';
+  studioTagsSelect.style.background = '#0b1220';
+  studioTagsSelect.style.color = '#e2e8f0';
+  studioTagsSelect.style.minHeight = '90px';
+  studioTagsSelect.disabled = true;
+  studioTagsRow.appendChild(studioTagsSelect);
+
+  const studioTagsStatus = document.createElement('div');
+  studioTagsStatus.style.fontSize = '11px';
+  studioTagsStatus.style.opacity = '0.8';
+  studioTagsStatus.textContent = 'Tags: unavailable';
+  studioTagsRow.appendChild(studioTagsStatus);
+
+  const studioUpdateTagsButton = document.createElement('button');
+  studioUpdateTagsButton.type = 'button';
+  studioUpdateTagsButton.textContent = 'Update tags';
+  studioUpdateTagsButton.style.padding = '6px 10px';
+  studioUpdateTagsButton.style.borderRadius = '6px';
+  studioUpdateTagsButton.style.border = 'none';
+  studioUpdateTagsButton.style.cursor = 'pointer';
+  studioUpdateTagsButton.style.background = '#22c55e';
+  studioUpdateTagsButton.style.color = '#0b1220';
+  applyDisabledStyles(studioUpdateTagsButton, true);
+  studioTagsRow.appendChild(studioUpdateTagsButton);
+
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
   inputRow.style.flexDirection = 'column';
@@ -749,8 +941,14 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   let currentMonitorState: boolean | null = null;
   let performerWhisparrId: number | null = null;
   let performerMonitored: boolean | null = null;
+  let performerExists: boolean | null = null;
+  let performerTagIds: number[] = [];
+  let performerQualityProfileId: number | null = null;
   let studioWhisparrId: number | null = null;
   let studioMonitored: boolean | null = null;
+  let studioExists: boolean | null = null;
+  let studioTagIds: number[] = [];
+  let studioQualityProfileId: number | null = null;
 
   const setSceneControlsVisible = (visible: boolean) => {
     sceneControls.style.display = visible ? 'block' : 'none';
@@ -776,14 +974,17 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     return headerTitle || undefined;
   };
 
-  const renderQualityOptions = (selectedId?: number) => {
-    qualitySelect.innerHTML = '';
+  const renderQualityOptions = (
+    select: HTMLSelectElement,
+    selectedId?: number,
+  ) => {
+    select.innerHTML = '';
     for (const profile of qualityProfileCatalog) {
       const option = document.createElement('option');
       option.value = String(profile.id);
       option.textContent = profile.name;
       option.selected = selectedId === profile.id;
-      qualitySelect.appendChild(option);
+      select.appendChild(option);
     }
   };
 
@@ -797,7 +998,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       qualitySelect.disabled = true;
       return;
     }
-    renderQualityOptions(selectedId);
+    renderQualityOptions(qualitySelect, selectedId);
     if (!exists) {
       qualityStatus.textContent = 'Quality: scene not in Whisparr';
       applyDisabledStyles(updateQualityButton, true);
@@ -809,14 +1010,17 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     qualityStatus.textContent = 'Quality: ready';
   };
 
-  const renderTagOptions = (selectedIds: number[]) => {
-    tagsSelect.innerHTML = '';
+  const renderTagOptions = (
+    select: HTMLSelectElement,
+    selectedIds: number[],
+  ) => {
+    select.innerHTML = '';
     for (const tag of tagCatalog) {
       const option = document.createElement('option');
       option.value = String(tag.id);
       option.textContent = tag.label;
       option.selected = selectedIds.includes(tag.id);
-      tagsSelect.appendChild(option);
+      select.appendChild(option);
     }
   };
 
@@ -830,7 +1034,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       tagsSelect.disabled = true;
       return;
     }
-    renderTagOptions(selectedIds);
+    renderTagOptions(tagsSelect, selectedIds);
     if (!exists) {
       tagsStatus.textContent = 'Tags: scene not in Whisparr';
       applyDisabledStyles(updateTagsButton, true);
@@ -840,6 +1044,88 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     tagsSelect.disabled = false;
     applyDisabledStyles(updateTagsButton, false);
     tagsStatus.textContent = 'Tags: ready';
+  };
+
+  const updatePerformerQualityControls = () => {
+    if (qualityProfileCatalog.length === 0) {
+      performerQualityStatus.textContent = 'Quality: unavailable';
+      applyDisabledStyles(performerUpdateQualityButton, true);
+      performerQualitySelect.disabled = true;
+      return;
+    }
+    renderQualityOptions(
+      performerQualitySelect,
+      performerQualityProfileId ?? undefined,
+    );
+    if (!performerExists) {
+      performerQualityStatus.textContent = 'Quality: performer not in Whisparr';
+      applyDisabledStyles(performerUpdateQualityButton, true);
+      performerQualitySelect.disabled = true;
+      return;
+    }
+    performerQualitySelect.disabled = false;
+    applyDisabledStyles(performerUpdateQualityButton, false);
+    performerQualityStatus.textContent = 'Quality: ready';
+  };
+
+  const updatePerformerTagControls = () => {
+    if (tagCatalog.length === 0) {
+      performerTagsStatus.textContent = 'Tags: unavailable';
+      applyDisabledStyles(performerUpdateTagsButton, true);
+      performerTagsSelect.disabled = true;
+      return;
+    }
+    renderTagOptions(performerTagsSelect, performerTagIds);
+    if (!performerExists) {
+      performerTagsStatus.textContent = 'Tags: performer not in Whisparr';
+      applyDisabledStyles(performerUpdateTagsButton, true);
+      performerTagsSelect.disabled = true;
+      return;
+    }
+    performerTagsSelect.disabled = false;
+    applyDisabledStyles(performerUpdateTagsButton, false);
+    performerTagsStatus.textContent = 'Tags: ready';
+  };
+
+  const updateStudioQualityControls = () => {
+    if (qualityProfileCatalog.length === 0) {
+      studioQualityStatus.textContent = 'Quality: unavailable';
+      applyDisabledStyles(studioUpdateQualityButton, true);
+      studioQualitySelect.disabled = true;
+      return;
+    }
+    renderQualityOptions(
+      studioQualitySelect,
+      studioQualityProfileId ?? undefined,
+    );
+    if (!studioExists) {
+      studioQualityStatus.textContent = 'Quality: studio not in Whisparr';
+      applyDisabledStyles(studioUpdateQualityButton, true);
+      studioQualitySelect.disabled = true;
+      return;
+    }
+    studioQualitySelect.disabled = false;
+    applyDisabledStyles(studioUpdateQualityButton, false);
+    studioQualityStatus.textContent = 'Quality: ready';
+  };
+
+  const updateStudioTagControls = () => {
+    if (tagCatalog.length === 0) {
+      studioTagsStatus.textContent = 'Tags: unavailable';
+      applyDisabledStyles(studioUpdateTagsButton, true);
+      studioTagsSelect.disabled = true;
+      return;
+    }
+    renderTagOptions(studioTagsSelect, studioTagIds);
+    if (!studioExists) {
+      studioTagsStatus.textContent = 'Tags: studio not in Whisparr';
+      applyDisabledStyles(studioUpdateTagsButton, true);
+      studioTagsSelect.disabled = true;
+      return;
+    }
+    studioTagsSelect.disabled = false;
+    applyDisabledStyles(studioUpdateTagsButton, false);
+    studioTagsStatus.textContent = 'Tags: ready';
   };
 
   const updateExcludeControls = (sceneId?: string) => {
@@ -870,6 +1156,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       applyDisabledStyles(performerViewButton, true);
       performerWhisparrId = null;
       performerMonitored = null;
+      performerExists = null;
+      performerTagIds = [];
+      performerQualityProfileId = null;
+      updatePerformerQualityControls();
+      updatePerformerTagControls();
       return;
     }
     if (readiness !== 'validated') {
@@ -878,6 +1169,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       applyDisabledStyles(performerMonitorToggle, true);
       applyDisabledStyles(performerCheckButton, true);
       applyDisabledStyles(performerViewButton, true);
+      performerExists = null;
+      performerTagIds = [];
+      performerQualityProfileId = null;
+      updatePerformerQualityControls();
+      updatePerformerTagControls();
       return;
     }
     applyDisabledStyles(performerCheckButton, false);
@@ -892,11 +1188,22 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         applyDisabledStyles(performerAddButton, true);
         applyDisabledStyles(performerMonitorToggle, true);
         applyDisabledStyles(performerViewButton, true);
+        performerExists = null;
+        performerTagIds = [];
+        performerQualityProfileId = null;
+        updatePerformerQualityControls();
+        updatePerformerTagControls();
         return;
       }
       performerWhisparrId = response.whisparrId ?? null;
       performerMonitored =
         typeof response.monitored === 'boolean' ? response.monitored : null;
+      performerExists = response.exists ?? null;
+      performerTagIds = response.tagIds ?? [];
+      performerQualityProfileId =
+        typeof response.qualityProfileId === 'number'
+          ? response.qualityProfileId
+          : null;
       if (response.exists) {
         performerStatusRow.textContent = performerMonitored
           ? 'Performer status: monitored'
@@ -916,11 +1223,18 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         applyDisabledStyles(performerMonitorToggle, true);
         applyDisabledStyles(performerViewButton, true);
       }
+      updatePerformerQualityControls();
+      updatePerformerTagControls();
     } catch (error) {
       performerStatusRow.textContent = `Performer status: error (${(error as Error).message})`;
       applyDisabledStyles(performerAddButton, true);
       applyDisabledStyles(performerMonitorToggle, true);
       applyDisabledStyles(performerViewButton, true);
+      performerExists = null;
+      performerTagIds = [];
+      performerQualityProfileId = null;
+      updatePerformerQualityControls();
+      updatePerformerTagControls();
     }
   };
 
@@ -936,6 +1250,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       applyDisabledStyles(studioViewButton, true);
       studioWhisparrId = null;
       studioMonitored = null;
+      studioExists = null;
+      studioTagIds = [];
+      studioQualityProfileId = null;
+      updateStudioQualityControls();
+      updateStudioTagControls();
       return;
     }
     if (readiness !== 'validated') {
@@ -944,6 +1263,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       applyDisabledStyles(studioMonitorToggle, true);
       applyDisabledStyles(studioCheckButton, true);
       applyDisabledStyles(studioViewButton, true);
+      studioExists = null;
+      studioTagIds = [];
+      studioQualityProfileId = null;
+      updateStudioQualityControls();
+      updateStudioTagControls();
       return;
     }
     applyDisabledStyles(studioCheckButton, false);
@@ -958,11 +1282,22 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         applyDisabledStyles(studioAddButton, true);
         applyDisabledStyles(studioMonitorToggle, true);
         applyDisabledStyles(studioViewButton, true);
+        studioExists = null;
+        studioTagIds = [];
+        studioQualityProfileId = null;
+        updateStudioQualityControls();
+        updateStudioTagControls();
         return;
       }
       studioWhisparrId = response.whisparrId ?? null;
       studioMonitored =
         typeof response.monitored === 'boolean' ? response.monitored : null;
+      studioExists = response.exists ?? null;
+      studioTagIds = response.tagIds ?? [];
+      studioQualityProfileId =
+        typeof response.qualityProfileId === 'number'
+          ? response.qualityProfileId
+          : null;
       if (response.exists) {
         studioStatusRow.textContent = studioMonitored
           ? 'Studio status: monitored'
@@ -982,11 +1317,18 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         applyDisabledStyles(studioMonitorToggle, true);
         applyDisabledStyles(studioViewButton, true);
       }
+      updateStudioQualityControls();
+      updateStudioTagControls();
     } catch (error) {
       studioStatusRow.textContent = `Studio status: error (${(error as Error).message})`;
       applyDisabledStyles(studioAddButton, true);
       applyDisabledStyles(studioMonitorToggle, true);
       applyDisabledStyles(studioViewButton, true);
+      studioExists = null;
+      studioTagIds = [];
+      studioQualityProfileId = null;
+      updateStudioQualityControls();
+      updateStudioTagControls();
     }
   };
 
@@ -1006,6 +1348,10 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         const sceneId = getParsedPage().stashIds[0];
         updateQualityControls(sceneId);
         updateTagControls(sceneId);
+        updatePerformerQualityControls();
+        updatePerformerTagControls();
+        updateStudioQualityControls();
+        updateStudioTagControls();
       }
     } catch {
       tagsStatus.textContent = 'Tags: unavailable';
@@ -1404,6 +1750,86 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     }
   };
 
+  const updatePerformerQualityProfile = async () => {
+    const current = getParsedPage();
+    const performerId =
+      current.type === 'performer' ? current.stashIds[0] : undefined;
+    if (!performerId) {
+      performerQualityStatus.textContent = 'Quality: performer unavailable';
+      return;
+    }
+    if (!performerExists) {
+      performerQualityStatus.textContent = 'Quality: performer not in Whisparr';
+      return;
+    }
+    if (performerQualityUpdateInFlight.has(performerId)) {
+      return;
+    }
+    const selectedId = Number(performerQualitySelect.value);
+    if (!Number.isFinite(selectedId)) {
+      performerQualityStatus.textContent = 'Quality: select a profile';
+      return;
+    }
+    performerQualityUpdateInFlight.add(performerId);
+    performerQualityStatus.textContent = 'Quality: updating...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'PERFORMER_UPDATE_QUALITY_PROFILE',
+        stashdbPerformerId: performerId,
+        qualityProfileId: selectedId,
+      });
+      if (!response.ok) {
+        performerQualityStatus.textContent = `Quality: update failed (${response.error ?? 'unknown'})`;
+        return;
+      }
+      performerQualityProfileId = response.qualityProfileId ?? selectedId;
+      performerQualityStatus.textContent = 'Quality: updated';
+    } catch (error) {
+      performerQualityStatus.textContent = `Quality: update failed (${(error as Error).message})`;
+    } finally {
+      performerQualityUpdateInFlight.delete(performerId);
+    }
+  };
+
+  const updatePerformerTags = async () => {
+    const current = getParsedPage();
+    const performerId =
+      current.type === 'performer' ? current.stashIds[0] : undefined;
+    if (!performerId) {
+      performerTagsStatus.textContent = 'Tags: performer unavailable';
+      return;
+    }
+    if (!performerExists) {
+      performerTagsStatus.textContent = 'Tags: performer not in Whisparr';
+      return;
+    }
+    if (performerTagUpdateInFlight.has(performerId)) {
+      return;
+    }
+    performerTagUpdateInFlight.add(performerId);
+    performerTagsStatus.textContent = 'Tags: updating...';
+    try {
+      const selectedIds = Array.from(performerTagsSelect.selectedOptions)
+        .map((option) => Number(option.value))
+        .filter((value) => Number.isFinite(value));
+      const response = await extContent.runtime.sendMessage({
+        type: 'PERFORMER_UPDATE_TAGS',
+        stashdbPerformerId: performerId,
+        tagIds: selectedIds,
+      });
+      if (!response.ok) {
+        performerTagsStatus.textContent = `Tags: update failed (${response.error ?? 'unknown'})`;
+        return;
+      }
+      performerTagIds = response.tagIds ?? selectedIds;
+      performerTagsStatus.textContent = 'Tags: updated';
+    } catch (error) {
+      performerTagsStatus.textContent = `Tags: update failed (${(error as Error).message})`;
+    } finally {
+      performerTagUpdateInFlight.delete(performerId);
+    }
+  };
+
   const addStudio = async () => {
     const current = getParsedPage();
     const studioId =
@@ -1499,6 +1925,84 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     } catch (error) {
       studioStatusRow.textContent = `Studio status: monitor update failed (${(error as Error).message})`;
       applyDisabledStyles(studioMonitorToggle, false);
+    }
+  };
+
+  const updateStudioQualityProfile = async () => {
+    const current = getParsedPage();
+    const studioId = current.type === 'studio' ? current.stashIds[0] : undefined;
+    if (!studioId) {
+      studioQualityStatus.textContent = 'Quality: studio unavailable';
+      return;
+    }
+    if (!studioExists) {
+      studioQualityStatus.textContent = 'Quality: studio not in Whisparr';
+      return;
+    }
+    if (studioQualityUpdateInFlight.has(studioId)) {
+      return;
+    }
+    const selectedId = Number(studioQualitySelect.value);
+    if (!Number.isFinite(selectedId)) {
+      studioQualityStatus.textContent = 'Quality: select a profile';
+      return;
+    }
+    studioQualityUpdateInFlight.add(studioId);
+    studioQualityStatus.textContent = 'Quality: updating...';
+    try {
+      const response = await extContent.runtime.sendMessage({
+        type: 'STUDIO_UPDATE_QUALITY_PROFILE',
+        stashdbStudioId: studioId,
+        qualityProfileId: selectedId,
+      });
+      if (!response.ok) {
+        studioQualityStatus.textContent = `Quality: update failed (${response.error ?? 'unknown'})`;
+        return;
+      }
+      studioQualityProfileId = response.qualityProfileId ?? selectedId;
+      studioQualityStatus.textContent = 'Quality: updated';
+    } catch (error) {
+      studioQualityStatus.textContent = `Quality: update failed (${(error as Error).message})`;
+    } finally {
+      studioQualityUpdateInFlight.delete(studioId);
+    }
+  };
+
+  const updateStudioTags = async () => {
+    const current = getParsedPage();
+    const studioId = current.type === 'studio' ? current.stashIds[0] : undefined;
+    if (!studioId) {
+      studioTagsStatus.textContent = 'Tags: studio unavailable';
+      return;
+    }
+    if (!studioExists) {
+      studioTagsStatus.textContent = 'Tags: studio not in Whisparr';
+      return;
+    }
+    if (studioTagUpdateInFlight.has(studioId)) {
+      return;
+    }
+    studioTagUpdateInFlight.add(studioId);
+    studioTagsStatus.textContent = 'Tags: updating...';
+    try {
+      const selectedIds = Array.from(studioTagsSelect.selectedOptions)
+        .map((option) => Number(option.value))
+        .filter((value) => Number.isFinite(value));
+      const response = await extContent.runtime.sendMessage({
+        type: 'STUDIO_UPDATE_TAGS',
+        stashdbStudioId: studioId,
+        tagIds: selectedIds,
+      });
+      if (!response.ok) {
+        studioTagsStatus.textContent = `Tags: update failed (${response.error ?? 'unknown'})`;
+        return;
+      }
+      studioTagIds = response.tagIds ?? selectedIds;
+      studioTagsStatus.textContent = 'Tags: updated';
+    } catch (error) {
+      studioTagsStatus.textContent = `Tags: update failed (${(error as Error).message})`;
+    } finally {
+      studioTagUpdateInFlight.delete(studioId);
     }
   };
 
@@ -1714,6 +2218,22 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     void openExternalLink(url);
   });
 
+  performerQualitySelect.addEventListener('change', () => {
+    applyDisabledStyles(performerUpdateQualityButton, false);
+  });
+
+  performerUpdateQualityButton.addEventListener('click', () => {
+    void updatePerformerQualityProfile();
+  });
+
+  performerTagsSelect.addEventListener('change', () => {
+    applyDisabledStyles(performerUpdateTagsButton, false);
+  });
+
+  performerUpdateTagsButton.addEventListener('click', () => {
+    void updatePerformerTags();
+  });
+
   studioAddButton.addEventListener('click', () => {
     void addStudio();
   });
@@ -1732,6 +2252,22 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     if (!whisparrBaseUrl || !studioId) return;
     const url = buildWhisparrStudioUrl(whisparrBaseUrl, studioId);
     void openExternalLink(url);
+  });
+
+  studioQualitySelect.addEventListener('change', () => {
+    applyDisabledStyles(studioUpdateQualityButton, false);
+  });
+
+  studioUpdateQualityButton.addEventListener('click', () => {
+    void updateStudioQualityProfile();
+  });
+
+  studioTagsSelect.addEventListener('change', () => {
+    applyDisabledStyles(studioUpdateTagsButton, false);
+  });
+
+  studioUpdateTagsButton.addEventListener('click', () => {
+    void updateStudioTags();
   });
 
   viewInStashButton.addEventListener('click', () => {
@@ -1797,6 +2333,15 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     applyDisabledStyles(performerViewButton, true);
     performerWhisparrId = null;
     performerMonitored = null;
+    performerExists = null;
+    performerTagIds = [];
+    performerQualityProfileId = null;
+    performerQualitySelect.disabled = true;
+    performerTagsSelect.disabled = true;
+    performerQualityStatus.textContent = 'Quality: unavailable';
+    performerTagsStatus.textContent = 'Tags: unavailable';
+    applyDisabledStyles(performerUpdateQualityButton, true);
+    applyDisabledStyles(performerUpdateTagsButton, true);
   };
 
   const resetStudioPanelState = () => {
@@ -1807,6 +2352,15 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     applyDisabledStyles(studioViewButton, true);
     studioWhisparrId = null;
     studioMonitored = null;
+    studioExists = null;
+    studioTagIds = [];
+    studioQualityProfileId = null;
+    studioQualitySelect.disabled = true;
+    studioTagsSelect.disabled = true;
+    studioQualityStatus.textContent = 'Quality: unavailable';
+    studioTagsStatus.textContent = 'Tags: unavailable';
+    applyDisabledStyles(studioUpdateQualityButton, true);
+    applyDisabledStyles(studioUpdateTagsButton, true);
   };
 
   const updateConfigStatus = async () => {

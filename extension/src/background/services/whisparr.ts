@@ -20,9 +20,13 @@ import {
   type PerformerCheckStatusResponse,
   type PerformerAddResponse,
   type PerformerSetMonitorResponse,
+  type PerformerUpdateTagsResponse,
+  type PerformerUpdateQualityProfileResponse,
   type StudioCheckStatusResponse,
   type StudioAddResponse,
   type StudioSetMonitorResponse,
+  type StudioUpdateTagsResponse,
+  type StudioUpdateQualityProfileResponse,
 } from '../../shared/messages.js';
 import {
   getCatalogs,
@@ -1845,6 +1849,9 @@ export async function handlePerformerCheckStatus(
     };
   }
 
+  const tagIds = normalizeTags(lookup.entity.tags);
+  const qualityProfileId = Number(lookup.entity.qualityProfileId);
+
   return {
     ok: true,
     type: MESSAGE_TYPES.performerCheckStatus,
@@ -1852,6 +1859,10 @@ export async function handlePerformerCheckStatus(
     whisparrId: entitySummary.id,
     monitored: entitySummary.monitored,
     name: entitySummary.name,
+    tagIds,
+    qualityProfileId: Number.isFinite(qualityProfileId)
+      ? qualityProfileId
+      : undefined,
   };
 }
 
@@ -2107,6 +2118,235 @@ export async function handlePerformerSetMonitor(
   };
 }
 
+export async function handlePerformerUpdateTags(
+  request: ExtensionRequest,
+): Promise<PerformerUpdateTagsResponse> {
+  if (request.type !== MESSAGE_TYPES.performerUpdateTags) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashId = request.stashdbPerformerId?.trim();
+  if (!stashId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: 'Performer ID is required.',
+    };
+  }
+
+  const tagIds = normalizeTags(request.tagIds);
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const current = await fetchPerformerByStashId(
+    normalized.value,
+    apiKey,
+    stashId,
+  );
+  if (current.error) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: current.error,
+    };
+  }
+  if (!current.entity) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: 'Performer not in Whisparr.',
+    };
+  }
+
+  const performerId = Number(current.entity.id);
+  if (!Number.isFinite(performerId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: 'Performer ID is required.',
+    };
+  }
+
+  const payload = { ...current.entity, tags: tagIds };
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${normalized.value}/api/v3/performer/${encodeURIComponent(String(performerId))}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateTags,
+      error: response.error ?? `HTTP ${response.status ?? 0}`,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.performerUpdateTags,
+    tagIds,
+  };
+}
+
+export async function handlePerformerUpdateQualityProfile(
+  request: ExtensionRequest,
+): Promise<PerformerUpdateQualityProfileResponse> {
+  if (request.type !== MESSAGE_TYPES.performerUpdateQualityProfile) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashId = request.stashdbPerformerId?.trim();
+  if (!stashId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: 'Performer ID is required.',
+    };
+  }
+
+  const qualityProfileId = Number(request.qualityProfileId);
+  if (!Number.isFinite(qualityProfileId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: 'Quality profile ID is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const current = await fetchPerformerByStashId(
+    normalized.value,
+    apiKey,
+    stashId,
+  );
+  if (current.error) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: current.error,
+    };
+  }
+  if (!current.entity) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: 'Performer not in Whisparr.',
+    };
+  }
+
+  const performerId = Number(current.entity.id);
+  if (!Number.isFinite(performerId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: 'Performer ID is required.',
+    };
+  }
+
+  const payload = { ...current.entity, qualityProfileId };
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${normalized.value}/api/v3/performer/${encodeURIComponent(String(performerId))}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.performerUpdateQualityProfile,
+      error: response.error ?? `HTTP ${response.status ?? 0}`,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.performerUpdateQualityProfile,
+    qualityProfileId,
+  };
+}
+
 export async function handleStudioCheckStatus(
   request: ExtensionRequest,
 ): Promise<StudioCheckStatusResponse> {
@@ -2200,6 +2440,9 @@ export async function handleStudioCheckStatus(
     };
   }
 
+  const tagIds = normalizeTags(lookup.entity.tags);
+  const qualityProfileId = Number(lookup.entity.qualityProfileId);
+
   return {
     ok: true,
     type: MESSAGE_TYPES.studioCheckStatus,
@@ -2207,6 +2450,10 @@ export async function handleStudioCheckStatus(
     whisparrId: entitySummary.id,
     monitored: entitySummary.monitored,
     name: entitySummary.name,
+    tagIds,
+    qualityProfileId: Number.isFinite(qualityProfileId)
+      ? qualityProfileId
+      : undefined,
   };
 }
 
@@ -2464,6 +2711,227 @@ export async function handleStudioSetMonitor(
     ok: true,
     type: MESSAGE_TYPES.studioSetMonitor,
     monitored,
+  };
+}
+
+export async function handleStudioUpdateTags(
+  request: ExtensionRequest,
+): Promise<StudioUpdateTagsResponse> {
+  if (request.type !== MESSAGE_TYPES.studioUpdateTags) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashId = request.stashdbStudioId?.trim();
+  if (!stashId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: 'Studio ID is required.',
+    };
+  }
+
+  const tagIds = normalizeTags(request.tagIds);
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const current = await fetchStudioByStashId(normalized.value, apiKey, stashId);
+  if (current.error) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: current.error,
+    };
+  }
+  if (!current.entity) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: 'Studio not in Whisparr.',
+    };
+  }
+
+  const studioId = Number(current.entity.id);
+  if (!Number.isFinite(studioId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: 'Studio ID is required.',
+    };
+  }
+
+  const payload = { ...current.entity, tags: tagIds };
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${normalized.value}/api/v3/studio/${encodeURIComponent(String(studioId))}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateTags,
+      error: response.error ?? `HTTP ${response.status ?? 0}`,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.studioUpdateTags,
+    tagIds,
+  };
+}
+
+export async function handleStudioUpdateQualityProfile(
+  request: ExtensionRequest,
+): Promise<StudioUpdateQualityProfileResponse> {
+  if (request.type !== MESSAGE_TYPES.studioUpdateQualityProfile) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const stashId = request.stashdbStudioId?.trim();
+  if (!stashId) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: 'Studio ID is required.',
+    };
+  }
+
+  const qualityProfileId = Number(request.qualityProfileId);
+  if (!Number.isFinite(qualityProfileId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: 'Quality profile ID is required.',
+    };
+  }
+
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: normalized.error ?? 'Invalid base URL.',
+    };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: 'API key is required.',
+    };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: 'Permissions API not available.',
+    };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: `Permission missing for ${origin}`,
+    };
+  }
+
+  const current = await fetchStudioByStashId(normalized.value, apiKey, stashId);
+  if (current.error) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: current.error,
+    };
+  }
+  if (!current.entity) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: 'Studio not in Whisparr.',
+    };
+  }
+
+  const studioId = Number(current.entity.id);
+  if (!Number.isFinite(studioId)) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: 'Studio ID is required.',
+    };
+  }
+
+  const payload = { ...current.entity, qualityProfileId };
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${normalized.value}/api/v3/studio/${encodeURIComponent(String(studioId))}`,
+    method: 'PUT',
+    headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.studioUpdateQualityProfile,
+      error: response.error ?? `HTTP ${response.status ?? 0}`,
+    };
+  }
+
+  return {
+    ok: true,
+    type: MESSAGE_TYPES.studioUpdateQualityProfile,
+    qualityProfileId,
   };
 }
 
