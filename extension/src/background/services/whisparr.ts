@@ -63,11 +63,12 @@ type AddScenePayload = {
   qualityProfileId: number;
   rootFolderPath: string;
   tags: number[];
-  searchForMovie: boolean;
   foreignId: string;
   title?: string;
+  addOptions: {
+    searchForMovie: boolean;
+  };
 };
-
 
 type UpdateScenePayload = {
   id: number;
@@ -644,7 +645,9 @@ export async function handleAddScene(
     qualityProfileId,
     rootFolderPath,
     tags: selections.whisparr.tagIds ?? [],
-    searchForMovie: true,
+    addOptions: {
+      searchForMovie: true,
+    },
   };
 
   const response = await handleFetchJson({
@@ -1241,7 +1244,10 @@ export async function handleSceneCardTriggerSearch(
     return {
       ok: false,
       type: MESSAGE_TYPES.sceneCardTriggerSearch,
-      error: { code: 'no_permissions', message: 'Permissions API not available.' },
+      error: {
+        code: 'no_permissions',
+        message: 'Permissions API not available.',
+      },
     };
   }
   const granted = await ext.permissions.contains({ origins: [origin] });
@@ -1349,7 +1355,10 @@ export async function handleSceneCardSetExcluded(
     return {
       ok: false,
       type: MESSAGE_TYPES.sceneCardSetExcluded,
-      error: { code: 'no_permissions', message: 'Permissions API not available.' },
+      error: {
+        code: 'no_permissions',
+        message: 'Permissions API not available.',
+      },
     };
   }
   const granted = await ext.permissions.contains({ origins: [origin] });
@@ -1588,7 +1597,9 @@ export async function handleSceneCardAdd(
     qualityProfileId,
     rootFolderPath,
     tags: selections.whisparr.tagIds ?? [],
-    searchForMovie: true,
+    addOptions: {
+      searchForMovie: true,
+    },
   };
 
   const response = await handleFetchJson({
