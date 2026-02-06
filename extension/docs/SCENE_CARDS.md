@@ -17,8 +17,6 @@ This document describes how Stasharr should find and augment **Scene Cards** on 
 
 Scene cards commonly appear on pages that list many scenes (e.g., browse, search, studio/performer related listings).
 
-The legacy Stasharr behavior explicitly supports actions on “pages with scene cards” and “bulk operations.” :contentReference[oaicite:1]{index=1}
-
 ---
 
 ## Architectural constraints (important)
@@ -169,12 +167,7 @@ Use incremental mutation processing:
 
 ---
 
-## Known related behaviors (legacy reference)
-
-- “Bulk operations” over pages with scene cards :contentReference[oaicite:2]{index=2}
-- Scene-card and scene-page enhancements are explicitly discussed in issues (e.g., adding links from cards) :contentReference[oaicite:3]{index=3}
-
-This document is about the **mechanics** of card augmentation only; feature parity is tracked separately.
+This document is about the **mechanics** of card augmentation only; feature scope is tracked separately.
 
 ---
 

@@ -6,7 +6,6 @@ This document defines the **authoritative architecture** for the Stasharr browse
 
 It exists to:
 
-- Prevent accidental reuse of the legacy userscript
 - Enforce correct browser-extension layering
 - Avoid known Firefox CSP and HTTPS-upgrade failures
 - Serve as required context for Codex and human contributors
@@ -33,18 +32,14 @@ Key principles:
 
 ```
 
-/legacy/
-/userscript/          # Reference ONLY (never bundled or executed)
-
 /extension/
 /src/
 /background/        # ALL networking, API clients, permissions
-/content/           # UI injection + DOM parsing (NO networking)
-/options/           # Options UI (NO networking)
+/content/           # UI injection + DOM parsing + options UI (NO networking)
 /shared/            # Types & helpers (no side effects)
 /docs/
 ARCHITECTURE.md     # This file
-/dist/                # Build output (never includes /legacy)
+/dist/              # Build output
 
 ```
 
@@ -52,19 +47,7 @@ ARCHITECTURE.md     # This file
 
 ## Non-Negotiable Constraints
 
-### 1. Legacy userscript is **reference-only**
-
-- Lives under `/legacy`
-- Must **never** be imported, bundled, executed, or injected
-- No GM\_\* APIs
-- No userscript headers
-- CI/build guards enforce this
-
-> The userscript exists only as a behavioral reference/spec.
-
----
-
-### 2. Background-only networking (MANDATORY)
+### 1. Background-only networking (MANDATORY)
 
 **ALL** HTTP/LAN/API requests **must** be executed from:
 
@@ -98,7 +81,7 @@ This is enforced by:
 
 ---
 
-### 3. Firefox CSP constraint (critical)
+### 2. Firefox CSP constraint (critical)
 
 `https://stashdb.org` sends a Content Security Policy including:
 
@@ -124,7 +107,7 @@ Correct fix is **background-only networking**.
 
 ---
 
-### 4. Content scripts are UI-only
+### 3. Content scripts are UI-only
 
 Content scripts may:
 
@@ -146,7 +129,7 @@ A DEV-only fetch trap is used to enforce this.
 
 ---
 
-### 5. Options UI has no direct network access
+### 4. Options UI has no direct network access
 
 The Options page:
 
@@ -161,7 +144,7 @@ But:
 
 ---
 
-### 6. Explicit protocol handling
+### 5. Explicit protocol handling
 
 - Users must specify `http://` or `https://` explicitly
 - The extension must **never infer or auto-upgrade**
@@ -207,11 +190,6 @@ If HTTPS is attempted when HTTP was configured, the extension must:
 
 Builds must fail if:
 
-- `dist/**` contains:
-  - `==UserScript==`
-  - `GM_`
-  - `Violentmonkey`
-  - `Tampermonkey`
 - Content or Options bundles contain:
   - `/api/v3`
   - known LAN hostnames
@@ -240,7 +218,6 @@ assume the architecture is wrong until proven otherwise.
 When working on this repo:
 
 - Treat this file as authoritative
-- Do not infer or reuse legacy patterns
 - Do not “optimize” around constraints
 - Do not introduce cross-layer imports
 - Prefer small, vertical, verifiable changes
@@ -251,7 +228,6 @@ Violating these rules will break Firefox and will be rejected.
 
 ## Summary (TL;DR)
 
-- Legacy userscript: **reference only**
 - Networking: **background only**
 - Content/Options: **UI only**
 - Firefox CSP: **non-negotiable**
@@ -260,7 +236,3 @@ Violating these rules will break Firefox and will be rejected.
 
 This architecture is deliberate.  
 Do not fight it—work with it.
-
-```
-
-```

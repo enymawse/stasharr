@@ -5,7 +5,7 @@
 - Options location: no `src/options/`; options page is bundled from `src/content/options.ts` and referenced by manifests.
 - Shared helpers: `src/shared/messages.ts` (message constants + request/response types), `src/shared/storage.ts` (settings/catalogs/selections), `src/shared/navigation.ts` (openExternalLink bridge injected as content script).
 - Manifests: `manifest/chrome/manifest.json` uses `background/background.js` (module SW) and content scripts; `manifest/firefox/manifest.json` uses `background/background-firefox.js` (script) and the same content scripts/options page.
-- Guards/build: `scripts/build.mjs` per target; `scripts/tripwire.mjs` enforces bundle hygiene and legacy bans.
+- Guards/build: `scripts/build.mjs` per target; `scripts/tripwire.mjs` enforces bundle hygiene.
 
 **Duplication Hotspots**
 **Hotspots (Core)**
@@ -146,7 +146,7 @@
 **Guardrails**
 
 - Extend `scripts/tripwire.mjs` to scan content/options bundles for `/graphql` and `ApiKey:` (Stash header) in addition to existing `/api/v3` and `X-Api-Key`.
-- Add a lightweight source boundary script (e.g., `scripts/boundary.mjs`) that fails if `src/content/**` or `src/content/options.ts` import from `src/background/**` or reference `/legacy/`, and wire it into `npm run lint`.
+- Add a lightweight source boundary script (e.g., `scripts/boundary.mjs`) that fails if `src/content/**` or `src/content/options.ts` import from `src/background/**`, and wire it into `npm run lint`.
 - Add a source scan that flags direct `fetch`/`XMLHttpRequest` usage in `src/content/**` and `src/content/options.ts` except the explicit DEV fetch trap in `src/content/content.ts`.
 - Keep `scripts/tripwire.mjs` mandatory in CI for every build target (`npm run tripwire` after `npm run build`).
 - Add a manifest check ensuring Firefox continues to use `background/background-firefox.js` as a script (not a module) to preserve MV3 behavior baseline.

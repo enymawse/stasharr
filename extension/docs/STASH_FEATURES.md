@@ -1,4 +1,4 @@
-# Stash Integration – Feature Parity Checklist
+# Stash Integration – Scope Checklist
 
 This document defines the **current** Stash integration scope for the extension.
 It is intentionally narrow and only tracks what Stasharr **claims today**.
