@@ -1346,6 +1346,9 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         : 'Monitor';
       applyDisabledStyles(performerAddButton, true);
       applyDisabledStyles(performerMonitorToggle, false);
+      if (whisparrBaseUrl) {
+        applyDisabledStyles(performerViewButton, false);
+      }
     } catch (error) {
       performerStatusRow.textContent = `Performer status: add failed (${(error as Error).message})`;
       applyDisabledStyles(performerAddButton, false);
@@ -1440,6 +1443,9 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         : 'Monitor';
       applyDisabledStyles(studioAddButton, true);
       applyDisabledStyles(studioMonitorToggle, false);
+      if (whisparrBaseUrl) {
+        applyDisabledStyles(studioViewButton, false);
+      }
     } catch (error) {
       studioStatusRow.textContent = `Studio status: add failed (${(error as Error).message})`;
       applyDisabledStyles(studioAddButton, false);
