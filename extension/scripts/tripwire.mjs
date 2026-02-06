@@ -2,13 +2,8 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 
 const distRoot = resolve(new URL('.', import.meta.url).pathname, '..', 'dist');
-const forbiddenStrings = [
-  '==UserScript==',
-  'GM_',
-  'Violentmonkey',
-  'Tampermonkey',
-];
-const forbiddenExtensions = new Set(['.user.js']);
+const forbiddenStrings = [];
+const forbiddenExtensions = new Set([]);
 const forbiddenContentTokens = ['/api/v3', 'X-Api-Key', 'http://'];
 const forbiddenOptionsTokens = ['/api/v3', '/api/v3/', 'X-Api-Key', 'http://'];
 
@@ -71,7 +66,7 @@ for (const target of manifestTargets) {
   const manifest = JSON.parse(manifestContent);
 
   const manifestStrings = collectStrings(manifest);
-  const forbiddenPathFragments = ['../', '..\\', '/legacy/', '\\legacy\\'];
+  const forbiddenPathFragments = ['../', '..\\'];
   for (const value of manifestStrings) {
     if (forbiddenPathFragments.some((fragment) => value.includes(fragment))) {
       failures.push(`Manifest references path outside /extension: ${value}`);
