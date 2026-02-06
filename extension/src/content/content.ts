@@ -240,6 +240,16 @@ function buildWhisparrSceneUrl(baseUrl: string, stashId: string): string {
   return `${normalized}/movie/${encodeURIComponent(stashId)}`;
 }
 
+function buildWhisparrPerformerUrl(baseUrl: string, whisparrId: number): string {
+  const normalized = baseUrl.replace(/\/+$/, '');
+  return `${normalized}/performer/${encodeURIComponent(String(whisparrId))}`;
+}
+
+function buildWhisparrStudioUrl(baseUrl: string, whisparrId: number): string {
+  const normalized = baseUrl.replace(/\/+$/, '');
+  return `${normalized}/studio/${encodeURIComponent(String(whisparrId))}`;
+}
+
 function applyDisabledStyles(button: HTMLButtonElement, disabled: boolean) {
   button.disabled = disabled;
   if (disabled) {
@@ -551,6 +561,19 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   performerActionRow.style.marginTop = '6px';
   performerControls.appendChild(performerActionRow);
 
+  const performerCheckButton = document.createElement('button');
+  performerCheckButton.type = 'button';
+  performerCheckButton.textContent = 'Check status';
+  performerCheckButton.style.padding = '6px 10px';
+  performerCheckButton.style.borderRadius = '6px';
+  performerCheckButton.style.border = 'none';
+  performerCheckButton.style.cursor = 'pointer';
+  performerCheckButton.style.background = '#00853d';
+  performerCheckButton.style.color = '#ffffff';
+  performerCheckButton.style.flex = '1';
+  applyDisabledStyles(performerCheckButton, true);
+  performerActionRow.appendChild(performerCheckButton);
+
   const performerAddButton = document.createElement('button');
   performerAddButton.type = 'button';
   performerAddButton.textContent = 'Add Performer';
@@ -577,6 +600,27 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   applyDisabledStyles(performerMonitorToggle, true);
   performerActionRow.appendChild(performerMonitorToggle);
 
+  const performerViewRow = document.createElement('div');
+  performerViewRow.style.display = 'flex';
+  performerViewRow.style.gap = '6px';
+  performerViewRow.style.marginTop = '6px';
+  performerControls.appendChild(performerViewRow);
+
+  const performerViewButton = document.createElement('button');
+  performerViewButton.type = 'button';
+  performerViewButton.textContent = 'Whisparr';
+  performerViewButton.setAttribute('aria-label', 'View performer in Whisparr');
+  performerViewButton.title = 'View performer in Whisparr';
+  performerViewButton.style.padding = '6px 10px';
+  performerViewButton.style.borderRadius = '6px';
+  performerViewButton.style.border = 'none';
+  performerViewButton.style.cursor = 'pointer';
+  performerViewButton.style.background = '#7138C8';
+  performerViewButton.style.color = '#ffffff';
+  performerViewButton.style.flex = '1';
+  applyDisabledStyles(performerViewButton, true);
+  performerViewRow.appendChild(performerViewButton);
+
   const studioControls = document.createElement('div');
   studioControls.style.display = 'none';
   panel.appendChild(studioControls);
@@ -593,6 +637,19 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   studioActionRow.style.gap = '6px';
   studioActionRow.style.marginTop = '6px';
   studioControls.appendChild(studioActionRow);
+
+  const studioCheckButton = document.createElement('button');
+  studioCheckButton.type = 'button';
+  studioCheckButton.textContent = 'Check status';
+  studioCheckButton.style.padding = '6px 10px';
+  studioCheckButton.style.borderRadius = '6px';
+  studioCheckButton.style.border = 'none';
+  studioCheckButton.style.cursor = 'pointer';
+  studioCheckButton.style.background = '#00853d';
+  studioCheckButton.style.color = '#ffffff';
+  studioCheckButton.style.flex = '1';
+  applyDisabledStyles(studioCheckButton, true);
+  studioActionRow.appendChild(studioCheckButton);
 
   const studioAddButton = document.createElement('button');
   studioAddButton.type = 'button';
@@ -619,6 +676,27 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   studioMonitorToggle.style.flex = '1';
   applyDisabledStyles(studioMonitorToggle, true);
   studioActionRow.appendChild(studioMonitorToggle);
+
+  const studioViewRow = document.createElement('div');
+  studioViewRow.style.display = 'flex';
+  studioViewRow.style.gap = '6px';
+  studioViewRow.style.marginTop = '6px';
+  studioControls.appendChild(studioViewRow);
+
+  const studioViewButton = document.createElement('button');
+  studioViewButton.type = 'button';
+  studioViewButton.textContent = 'Whisparr';
+  studioViewButton.setAttribute('aria-label', 'View studio in Whisparr');
+  studioViewButton.title = 'View studio in Whisparr';
+  studioViewButton.style.padding = '6px 10px';
+  studioViewButton.style.borderRadius = '6px';
+  studioViewButton.style.border = 'none';
+  studioViewButton.style.cursor = 'pointer';
+  studioViewButton.style.background = '#7138C8';
+  studioViewButton.style.color = '#ffffff';
+  studioViewButton.style.flex = '1';
+  applyDisabledStyles(studioViewButton, true);
+  studioViewRow.appendChild(studioViewButton);
 
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
@@ -1580,16 +1658,36 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     void addPerformer();
   });
 
+  performerCheckButton.addEventListener('click', () => {
+    void updatePerformerStatus();
+  });
+
   performerMonitorToggle.addEventListener('click', () => {
     void updatePerformerMonitorState();
+  });
+
+  performerViewButton.addEventListener('click', () => {
+    if (!whisparrBaseUrl || !performerWhisparrId) return;
+    const url = buildWhisparrPerformerUrl(whisparrBaseUrl, performerWhisparrId);
+    void openExternalLink(url);
   });
 
   studioAddButton.addEventListener('click', () => {
     void addStudio();
   });
 
+  studioCheckButton.addEventListener('click', () => {
+    void updateStudioStatus();
+  });
+
   studioMonitorToggle.addEventListener('click', () => {
     void updateStudioMonitorState();
+  });
+
+  studioViewButton.addEventListener('click', () => {
+    if (!whisparrBaseUrl || !studioWhisparrId) return;
+    const url = buildWhisparrStudioUrl(whisparrBaseUrl, studioWhisparrId);
+    void openExternalLink(url);
   });
 
   viewInStashButton.addEventListener('click', () => {
