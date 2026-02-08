@@ -18,7 +18,7 @@ export default class PerformerService extends ServiceBase {
     config: Config,
     stashId: string,
   ): Promise<Whisparr.WhisparrPerformer | null> {
-    const endpoint = `performer?stashId=${encodeURIComponent(stashId)}`;
+    const endpoint = `performer/${encodeURIComponent(stashId)}`;
     let response;
     try {
       response = await ServiceBase.request(config, endpoint);
