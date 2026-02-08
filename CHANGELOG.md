@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.3](https://github.com/enymawse/stasharr/compare/v2.11.2...v2.11.3) (2026-02-08)
+
+
+### Bug Fixes
+
+* Correct Performer Endpoint ([#156](https://github.com/enymawse/stasharr/issues/156)) ([0d116d8](https://github.com/enymawse/stasharr/commit/0d116d80d0c04f65c15a5aadd2bf3875f1014788))
+
 ## [2.11.2](https://github.com/enymawse/stasharr/compare/v2.11.1...v2.11.2) (2026-01-29)
 
 
