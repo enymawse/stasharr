@@ -1,6 +1,6 @@
 import { cp, mkdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { dirname, resolve, extname } from 'node:path';
 import { build } from 'esbuild';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
@@ -62,7 +62,10 @@ try {
     resolve(distDir, 'icons'),
     {
       recursive: true,
-      filter: (src) => src.endsWith('.png'),
+      filter: (src) => {
+        const ext = extname(src);
+        return ext === '' || ext === '.png';
+      },
     },
   );
 } catch (error) {
