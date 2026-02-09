@@ -346,7 +346,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   let searchOnAdd = true;
   let sceneCopyResetTimer: number | null = null;
   let bulkInProgress = false;
-  let bulkSceneItems: Array<{ sceneId: string; title?: string }> = [];
+  let bulkSceneItems: Array<{
+    sceneId: string;
+    title?: string;
+    studio?: string;
+  }> = [];
   const bulkRowsById = new Map<
     string,
     { status: HTMLDivElement; message: HTMLDivElement }
@@ -1391,7 +1395,10 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   };
 
   const collectSceneListItems = () => {
-    const items = new Map<string, { sceneId: string; title?: string }>();
+    const items = new Map<
+      string,
+      { sceneId: string; title?: string; studio?: string }
+    >();
     const anchors = Array.from(
       document.querySelectorAll<HTMLAnchorElement>('a[href^="/scenes/"]'),
     );
@@ -1411,12 +1418,19 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       const title =
         card
           ?.querySelector<HTMLElement>(
-            '.SceneCard-title, h3, [data-testid*="title"]',
+            '.card-footer a.text-truncate.w-100 h6, .SceneCard-title, h3, [data-testid*="title"]',
           )
           ?.textContent?.trim() || anchor.textContent?.trim() || undefined;
+      const studio =
+        card
+          ?.querySelector<HTMLElement>(
+            'a.SceneCard-studio-name, a[href^="/studios/"], [data-testid*="studio"] a, .SceneCard-studio a, .SceneCard-studio',
+          )
+          ?.textContent?.trim() || undefined;
       items.set(sceneId, {
         sceneId,
         title: title ? truncate(title, 80) : undefined,
+        studio: studio ? truncate(studio, 60) : undefined,
       });
     }
     return Array.from(items.values());
@@ -1489,7 +1503,9 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     row.status.style.color = color;
   };
 
-  const renderBulkItems = (items: Array<{ sceneId: string; title?: string }>) => {
+  const renderBulkItems = (
+    items: Array<{ sceneId: string; title?: string; studio?: string }>,
+  ) => {
     bulkRowsById.clear();
     bulkList.innerHTML = '';
     for (const item of items) {
@@ -1510,10 +1526,22 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       const label = document.createElement('div');
       label.style.fontSize = '12px';
       label.style.fontWeight = '600';
-      label.textContent = item.title
-        ? `${item.title} (${item.sceneId})`
-        : item.sceneId;
+      label.textContent = item.title ?? item.sceneId;
       top.appendChild(label);
+
+      const sceneIdLine = document.createElement('div');
+      sceneIdLine.style.fontSize = '11px';
+      sceneIdLine.style.opacity = '0.75';
+      sceneIdLine.textContent = `Scene ID: ${item.sceneId}`;
+      row.appendChild(sceneIdLine);
+
+      if (item.studio) {
+        const studio = document.createElement('div');
+        studio.style.fontSize = '11px';
+        studio.style.opacity = '0.75';
+        studio.textContent = `Studio: ${item.studio}`;
+        row.appendChild(studio);
+      }
 
       const status = document.createElement('div');
       status.style.fontSize = '12px';
@@ -1533,7 +1561,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
 
   const runBulkAction = async (
     action: 'add' | 'search' | 'missing',
-    items: Array<{ sceneId: string; title?: string }>,
+    items: Array<{ sceneId: string; title?: string; studio?: string }>,
   ) => {
     const total = items.length;
     resetBulkModal();
