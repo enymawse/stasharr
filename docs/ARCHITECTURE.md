@@ -36,6 +36,8 @@ Key principles:
 /background/        # ALL networking, API clients, permissions
 /content/           # UI injection + DOM parsing + options UI (NO networking)
 /shared/            # Types & helpers (no side effects)
+/manifest/          # Chrome/Firefox manifests
+/scripts/           # Build/pack/tripwire scripts
 /docs/
 ARCHITECTURE.md     # This file
 /dist/              # Build output
