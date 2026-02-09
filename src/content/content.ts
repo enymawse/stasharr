@@ -1649,7 +1649,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
 
   const updateBulkControls = () => {
     const current = getParsedPage();
-    if (current.type !== 'other') {
+    if (
+      current.type !== 'other' &&
+      current.type !== 'performer' &&
+      current.type !== 'studio'
+    ) {
       setBulkControlsVisible(false);
       return;
     }

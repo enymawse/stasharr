@@ -62,7 +62,7 @@ if (!extCandidate) {
 const ext = extCandidate;
 
 const REQUEST_TIMEOUT_MS = 10_000;
-const SCENE_CARD_STATUS_BATCH_LIMIT = 25;
+const SCENE_CARD_STATUS_BATCH_LIMIT = 40;
 
 type DiscoveryErrors = {
   qualityProfiles?: string;
@@ -1307,55 +1307,58 @@ export async function handleSceneCardsCheckStatus(
 
   const items = request.items ?? [];
   const results: SceneCardsCheckStatusResponse['results'] = [];
-  for (const item of items.slice(0, SCENE_CARD_STATUS_BATCH_LIMIT)) {
-    const sceneId = item.sceneId;
-    if (!sceneId) continue;
+  for (let i = 0; i < items.length; i += SCENE_CARD_STATUS_BATCH_LIMIT) {
+    const batch = items.slice(i, i + SCENE_CARD_STATUS_BATCH_LIMIT);
+    for (const item of batch) {
+      const sceneId = item.sceneId;
+      if (!sceneId) continue;
 
-    const response = await handleFetchJson({
-      type: MESSAGE_TYPES.fetchJson,
-      url: `${normalized.value}/api/v3/movie?stashId=${encodeURIComponent(sceneId)}`,
-      headers: { 'X-Api-Key': apiKey },
-    });
+      const response = await handleFetchJson({
+        type: MESSAGE_TYPES.fetchJson,
+        url: `${normalized.value}/api/v3/movie?stashId=${encodeURIComponent(sceneId)}`,
+        headers: { 'X-Api-Key': apiKey },
+      });
 
-    if (!response.ok) {
-      results.push({ sceneId, exists: false });
-      continue;
-    }
+      if (!response.ok) {
+        results.push({ sceneId, exists: false });
+        continue;
+      }
 
-    if (!Array.isArray(response.json) || response.json.length === 0) {
-      const excluded = await fetchExclusionState(
-        normalized.value,
-        apiKey,
+      if (!Array.isArray(response.json) || response.json.length === 0) {
+        const excluded = await fetchExclusionState(
+          normalized.value,
+          apiKey,
+          sceneId,
+        );
+        results.push({ sceneId, exists: false, excluded: excluded.excluded });
+        continue;
+      }
+
+      const movie = response.json.find(isRecord);
+      if (!movie) {
+        const excluded = await fetchExclusionState(
+          normalized.value,
+          apiKey,
+          sceneId,
+        );
+        results.push({ sceneId, exists: false, excluded: excluded.excluded });
+        continue;
+      }
+
+      const whisparrId = Number(movie.id);
+      const monitored = Boolean(movie.monitored);
+      const tagIds = normalizeTags(movie.tags);
+      const hasFile = Boolean(movie.hasFile);
+      results.push({
         sceneId,
-      );
-      results.push({ sceneId, exists: false, excluded: excluded.excluded });
-      continue;
+        exists: true,
+        whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
+        monitored,
+        tagIds,
+        hasFile,
+        excluded: undefined,
+      });
     }
-
-    const movie = response.json.find(isRecord);
-    if (!movie) {
-      const excluded = await fetchExclusionState(
-        normalized.value,
-        apiKey,
-        sceneId,
-      );
-      results.push({ sceneId, exists: false, excluded: excluded.excluded });
-      continue;
-    }
-
-    const whisparrId = Number(movie.id);
-    const monitored = Boolean(movie.monitored);
-    const tagIds = normalizeTags(movie.tags);
-    const hasFile = Boolean(movie.hasFile);
-    results.push({
-      sceneId,
-      exists: true,
-      whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
-      monitored,
-      tagIds,
-      hasFile,
-      excluded: undefined,
-    });
   }
 
   return { ok: true, type: MESSAGE_TYPES.sceneCardsCheckStatus, results };
