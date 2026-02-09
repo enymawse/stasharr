@@ -1,5 +1,4 @@
 node_modules
 dist/
 .env
-extension/dist/
 legacy/userscript/dist/

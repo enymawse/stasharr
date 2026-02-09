@@ -77,7 +77,7 @@
 - Scope: `src/shared/messages.ts`; `src/shared/result.ts`; `src/shared/messaging.ts`; `src/background/background.ts`; `src/background/background-firefox.ts`; `src/content/content.ts`; `src/content/options.ts` (migrate 3–5 messages: PING/GET_SETTINGS/GET_CONFIG_STATUS/OPEN_OPTIONS_PAGE).
 - Invariants: no behavior change; response payloads unchanged; no API endpoint strings in shared; background-only networking; Firefox baseline.
 - Commits: 1) feat(shared): add Result/AppError + MessageMap + typed sendMessage. 2) refactor(background): router + migrate selected messages in both entrypoints. 3) refactor(content/options): typed sendMessage for migrated messages.
-- Verification: `npm run lint`; `npm run build`; `npm run tripwire` (from `/extension`); manual: options page loads settings, content script initializes on StashDB.
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire` (from repo root); manual: options page loads settings, content script initializes on StashDB.
 
 **Task 2**
 

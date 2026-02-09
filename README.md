@@ -9,8 +9,10 @@
 
 ## Repository Layout
 
-- `extension/` — Extension source, build scripts, and dist output
-- `extension/docs/` — Architecture and development notes
+- `src/` — Extension source (content scripts + background services)
+- `scripts/` — Build/pack scripts
+- `manifest/` — Chrome/Firefox manifests
+- `docs/` — Architecture and development notes
 
 ## Features
 
@@ -26,28 +28,27 @@
 From repo root:
 
 ```bash
-cd extension
 npm ci
 npm run build
 ```
 
 Build outputs:
 
-- `extension/dist/chrome`
-- `extension/dist/firefox`
+- `dist/chrome`
+- `dist/firefox`
 
 ### Load unpacked in Chrome
 
 1. Open `chrome://extensions/`.
 2. Enable **Developer mode**.
 3. Click **Load unpacked**.
-4. Select `extension/dist/chrome`.
+4. Select `dist/chrome`.
 
 ### Load temporary add-on in Firefox
 
 1. Open `about:debugging#/runtime/this-firefox`.
 2. Click **Load Temporary Add-on**.
-3. Select `extension/dist/firefox/manifest.json`.
+3. Select `dist/firefox/manifest.json`.
 
 ## Configuration
 
@@ -80,7 +81,7 @@ for Whisparr/Stash to enable API calls.
 
 ## Development
 
-From `extension/`:
+From repo root:
 
 ```bash
 npm run lint

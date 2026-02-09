@@ -25,7 +25,7 @@ Scene cards commonly appear on pages that list many scenes (e.g., browse, search
 - Content scripts may **NOT** fetch LAN endpoints (Whisparr/Stash). Background only.
 - Scene card augmentation must be done without injecting page scripts (`<script>` tags).
 
-(See `/extension/docs/ARCHITECTURE.md` for authoritative rules.)
+(See `/docs/ARCHITECTURE.md` for authoritative rules.)
 
 ---
 

@@ -32,7 +32,6 @@ Key principles:
 
 ```
 
-/extension/
 /src/
 /background/        # ALL networking, API clients, permissions
 /content/           # UI injection + DOM parsing + options UI (NO networking)
@@ -53,7 +52,7 @@ ARCHITECTURE.md     # This file
 
 ```
 
-/extension/src/background/**
+/src/background/**
 
 ```
 

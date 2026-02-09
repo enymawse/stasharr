@@ -6,7 +6,7 @@ This document is a quick, practical guide for agentic coding assistants working 
 
 - Type: Browser extension (Chrome + Firefox) that augments StashDB and integrates with Whisparr v3+ and Stash
 - Framework: TypeScript (content scripts + background services)
-- Build: esbuild via `extension/scripts/*.mjs`
+- Build: esbuild via `scripts/*.mjs`
 - Styles: Inline CSS in content/option UIs
 - Quality: ESLint + Prettier + Husky + commitlint (Conventional Commits)
 - Package manager: npm
@@ -19,7 +19,7 @@ Key value props:
 
 ## Common Commands
 
-Run from `extension/`:
+Run from repo root:
 
 - Install deps: `npm ci`
 - Build: `npm run build`
@@ -31,20 +31,20 @@ Husky + commitlint enforce Conventional Commits and body line length in commit m
 
 ## Codebase Map (where to change what)
 
-- Content UI + observers: `extension/src/content/content.ts`
+- Content UI + observers: `src/content/content.ts`
   - Scene card augmentation and scene page extension panel
   - Runtime messaging to background (no networking)
-- UI helpers: `extension/src/content/ui/*`
+- UI helpers: `src/content/ui/*`
   - Buttons, icons, status indicator overlays
-- Options UI: `extension/src/content/options.ts` + `extension/src/content/options.html`
+- Options UI: `src/content/options.ts` + `src/content/options.html`
   - Settings form + validation via background messages
 - Background entrypoints:
-  - Chrome: `extension/src/background/background.ts`
-  - Firefox: `extension/src/background/background-firefox.ts`
+  - Chrome: `src/background/background.ts`
+  - Firefox: `src/background/background-firefox.ts`
 - Background services:
-  - Whisparr: `extension/src/background/services/whisparr.ts`
-  - Stash: `extension/src/background/services/stash.ts`
-- Shared contracts: `extension/src/shared/messages.ts`, `extension/src/shared/storage.ts`, `extension/src/shared/navigation.ts`
+  - Whisparr: `src/background/services/whisparr.ts`
+  - Stash: `src/background/services/stash.ts`
+- Shared contracts: `src/shared/messages.ts`, `src/shared/storage.ts`, `src/shared/navigation.ts`
 
 ## Patterns and Conventions
 
@@ -69,15 +69,15 @@ Commits & PRs
 
 Add or change a scene card action
 
-1. Update `extension/src/content/content.ts` to render UI and send a new message
-2. Add request/response types in `extension/src/shared/messages.ts`
-3. Handle the message in `extension/src/background/services/whisparr.ts`
+1. Update `src/content/content.ts` to render UI and send a new message
+2. Add request/response types in `src/shared/messages.ts`
+3. Handle the message in `src/background/services/whisparr.ts`
 4. Update status/state handling in content once response returns
 
 Add or change settings behavior
 
-1. Update `extension/src/content/options.ts` + `extension/src/content/options.html`
-2. Extend `extension/src/shared/storage.ts` for new settings
+1. Update `src/content/options.ts` + `src/content/options.html`
+2. Extend `src/shared/storage.ts` for new settings
 3. Validate/enforce in background service handlers
 
 ## Validation Checklist
@@ -88,8 +88,8 @@ Add or change settings behavior
 
 ## Dev Setup (for local manual testing)
 
-1. `npm run build` from `extension/`
-2. Load unpacked extension from `extension/dist/chrome` (Chrome) or temporary add-on from `extension/dist/firefox` (Firefox)
+1. `npm run build` from repo root
+2. Load unpacked extension from `dist/chrome` (Chrome) or temporary add-on from `dist/firefox` (Firefox)
 3. Reload StashDB; iterate on scene card and scene page behaviors
 
 ## Notes for Sandboxed Agents

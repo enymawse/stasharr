@@ -2,7 +2,7 @@
 
 ## Build
 
-From `extension/`:
+From repo root:
 
 ```bash
 npm ci
@@ -11,8 +11,8 @@ npm run build
 
 Outputs:
 
-- `extension/dist/chrome`
-- `extension/dist/firefox`
+- `dist/chrome`
+- `dist/firefox`
 
 ## Permissions note
 
@@ -24,13 +24,13 @@ Outputs:
 1. Open `chrome://extensions/`.
 2. Enable **Developer mode**.
 3. Click **Load unpacked**.
-4. Select `extension/dist/chrome`.
+4. Select `dist/chrome`.
 
 ## Load temporary add-on in Firefox
 
 1. Open `about:debugging#/runtime/this-firefox`.
 2. Click **Load Temporary Add-on**.
-3. Select `extension/dist/firefox/manifest.json`.
+3. Select `dist/firefox/manifest.json`.
 
 ## Packaging
 
@@ -41,5 +41,5 @@ npm run pack:firefox
 
 Outputs:
 
-- `extension/dist/stasharr-chrome.zip`
-- `extension/dist/stasharr-firefox.zip`
+- `dist/stasharr-chrome.zip`
+- `dist/stasharr-firefox.zip`

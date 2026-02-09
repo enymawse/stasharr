@@ -69,7 +69,7 @@ for (const target of manifestTargets) {
   const forbiddenPathFragments = ['../', '..\\'];
   for (const value of manifestStrings) {
     if (forbiddenPathFragments.some((fragment) => value.includes(fragment))) {
-      failures.push(`Manifest references path outside /extension: ${value}`);
+      failures.push(`Manifest references path outside repo root: ${value}`);
     }
   }
 }

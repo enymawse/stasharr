@@ -1,6 +1,6 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-npm --prefix extension run lint
-npm --prefix extension run build
-npm --prefix extension run tripwire
+npm run lint
+npm run build
+npm run tripwire
