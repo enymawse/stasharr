@@ -1,6 +1,7 @@
 type IconName =
   | 'spinner'
   | 'circle-check'
+  | 'copy'
   | 'download'
   | 'ban'
   | 'warning'
@@ -15,6 +16,7 @@ const ICON_PATHS: Record<IconName, string> = {
   spinner: 'M12 2a10 10 0 1 0 10 10h-3a7 7 0 1 1-7-7V2z',
   'circle-check':
     'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm5 7-6 6-3-3 1.4-1.4L11 12.2l4.6-4.6L17 9z',
+  copy: 'M9 9h10v10H9z M5 5h10v10H5z',
   download: 'M12 3v9m0 0 4-4m-4 4-4-4M5 19h14',
   ban: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-6.2 5.8L18.2 18.2M18.2 5.8 5.8 18.2',
   warning:
@@ -55,6 +57,7 @@ export function renderIcon(
     ? 'animation: stasharr-spin 1s linear infinite;'
     : '';
   const strokeIcons =
+    name === 'copy' ||
     name === 'download' ||
     name === 'ban' ||
     name === 'refresh' ||

@@ -7,7 +7,8 @@ type ButtonVariant =
   | 'view-stash'
   | 'search'
   | 'exclude'
-  | 'monitor';
+  | 'monitor'
+  | 'copy';
 
 const VARIANT_STYLES: Record<
   ButtonVariant,
@@ -49,6 +50,11 @@ const VARIANT_STYLES: Record<
     background: '#c4337c',
     padding: '2px 8px',
   },
+  copy: {
+    borderColor: '#334155',
+    background: '#e2e8f0',
+    padding: '2px 8px',
+  },
 };
 
 type ButtonState = 'enabled' | 'disabled';
@@ -69,11 +75,12 @@ export function createIconButton(options: {
     button.title = title;
   }
   const styles = VARIANT_STYLES[variant];
+  const textColor = variant === 'copy' ? '#0f172a' : '#ffffff';
   button.style.border = `1px solid ${styles.borderColor}`;
   button.style.borderRadius = '999px';
   button.style.padding = styles.padding;
   button.style.background = styles.background;
-  button.style.color = '#ffffff';
+  button.style.color = textColor;
   button.style.fontSize = '12px';
   button.style.lineHeight = '1';
   button.style.display = 'inline-flex';
