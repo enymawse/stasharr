@@ -56,13 +56,3 @@ jobs:
           addon-path: ./dist/stasharr-addon-firefox.zip
           auth-api-issuer: ${{ secrets.AMO_API_KEY }}
           auth-api-secret: ${{ secrets.AMO_API_SECRET }}
-
-      - name: Publish Chrome extension
-        if: ${{ steps.release.outputs.release_created }}
-        uses: browser-actions/release-chrome-extension@latest
-        with:
-          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
-          extension-path: ./dist/stasharr-extension-chrome.zip
-          oauth-client-id: ${{ secrets.CHROME_OAUTH_CLIENT_ID }}
-          oauth-client-secret: ${{ secrets.CHROME_OAUTH_CLIENT_SECRET }}
-          oauth-refresh-token: ${{ secrets.CHROME_OAUTH_REFRESH_TOKEN }}
