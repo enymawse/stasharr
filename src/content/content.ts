@@ -7,6 +7,7 @@ import {
 } from './dom/observer.js';
 import { extractSceneIdFromPathname, parseStashDbPage } from './parsing.js';
 import { createIconButton, setButtonState } from './ui/buttons.js';
+import { copyTextToClipboard } from './ui/clipboard.js';
 import { renderIcon } from './ui/icons.js';
 import { createStatusIndicator } from './ui/statusIndicator.js';
 import type {
@@ -319,6 +320,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   let whisparrBaseUrl: string | null = null;
   let stashConfigured = false;
   let searchOnAdd = true;
+  let sceneCopyResetTimer: number | null = null;
   const stashMatchCache = new Map<
     string,
     {
@@ -383,6 +385,31 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   sceneStatusRow.style.opacity = '0.9';
   sceneStatusRow.textContent = 'Scene status: unknown';
   sceneControls.appendChild(sceneStatusRow);
+
+  const sceneIdRow = document.createElement('div');
+  sceneIdRow.style.display = 'flex';
+  sceneIdRow.style.alignItems = 'center';
+  sceneIdRow.style.gap = '6px';
+  sceneIdRow.style.marginTop = '6px';
+  sceneControls.appendChild(sceneIdRow);
+
+  const sceneCopyButton = document.createElement('button');
+  sceneCopyButton.type = 'button';
+  sceneCopyButton.textContent = 'Copy ID';
+  sceneCopyButton.style.padding = '4px 8px';
+  sceneCopyButton.style.borderRadius = '6px';
+  sceneCopyButton.style.border = '1px solid #1f2937';
+  sceneCopyButton.style.cursor = 'pointer';
+  sceneCopyButton.style.background = '#e2e8f0';
+  sceneCopyButton.style.color = '#0f172a';
+  applyDisabledStyles(sceneCopyButton, true);
+  sceneIdRow.appendChild(sceneCopyButton);
+
+  const sceneCopyStatus = document.createElement('div');
+  sceneCopyStatus.style.fontSize = '11px';
+  sceneCopyStatus.style.opacity = '0.8';
+  sceneCopyStatus.textContent = 'Scene ID: unavailable';
+  sceneIdRow.appendChild(sceneCopyStatus);
 
   const actionRow = document.createElement('div');
   actionRow.style.display = 'flex';
@@ -1173,6 +1200,16 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     applyDisabledStyles(excludeToggle, false);
   };
 
+  const updateSceneCopyControls = (sceneId?: string) => {
+    if (!sceneId) {
+      sceneCopyStatus.textContent = 'Scene ID: unavailable';
+      applyDisabledStyles(sceneCopyButton, true);
+      return;
+    }
+    sceneCopyStatus.textContent = `Scene ID: ${sceneId}`;
+    applyDisabledStyles(sceneCopyButton, false);
+  };
+
   const updatePerformerStatus = async () => {
     const current = getParsedPage();
     const performerId =
@@ -1535,12 +1572,14 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       applyDisabledStyles(updateQualityButton, true);
       qualityStatus.textContent = 'Quality: unavailable';
       currentMonitorState = null;
+      updateSceneCopyControls(undefined);
       await updateViewInStashButton(undefined, true);
       updateViewInWhisparrButton(undefined);
       return;
     }
 
     viewRow.style.display = 'flex';
+    updateSceneCopyControls(sceneId);
     checkStatusButton.disabled = false;
     applyActionState(sceneId);
     void updateViewInStashButton(sceneId, force);
@@ -2226,8 +2265,39 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     }
   };
 
+  const copySceneId = async () => {
+    const current = getParsedPage();
+    const sceneId = current.type === 'scene' ? current.stashIds[0] : undefined;
+    if (!sceneId) {
+      updateSceneCopyControls(undefined);
+      return;
+    }
+    if (sceneCopyResetTimer !== null) {
+      window.clearTimeout(sceneCopyResetTimer);
+      sceneCopyResetTimer = null;
+    }
+    applyDisabledStyles(sceneCopyButton, true);
+    sceneCopyButton.textContent = 'Copying...';
+    const result = await copyTextToClipboard(sceneId);
+    if (result.ok) {
+      sceneCopyStatus.textContent = 'Scene ID copied';
+      sceneCopyButton.textContent = 'Copied';
+    } else {
+      sceneCopyStatus.textContent = 'Copy failed';
+      sceneCopyButton.textContent = 'Copy failed';
+    }
+    sceneCopyResetTimer = window.setTimeout(() => {
+      sceneCopyButton.textContent = 'Copy ID';
+      updateSceneCopyControls(sceneId);
+    }, 1600);
+  };
+
   checkStatusButton.addEventListener('click', () => {
     void updateSceneStatus(true);
+  });
+
+  sceneCopyButton.addEventListener('click', () => {
+    void copySceneId();
   });
 
   addSceneButton.addEventListener('click', () => {
@@ -2472,6 +2542,10 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       inFlight.clear();
       stashMatchCache.clear();
       stashLookupInFlight.clear();
+      if (sceneCopyResetTimer !== null) {
+        window.clearTimeout(sceneCopyResetTimer);
+        sceneCopyResetTimer = null;
+      }
       resetPerformerPanelState();
       resetStudioPanelState();
       updateDiagnostics();
@@ -2849,6 +2923,14 @@ class SceneCardObserver {
     viewWrap.style.marginLeft = 'auto';
     viewWrap.appendChild(viewWhisparrButton);
     viewWrap.appendChild(viewStashButton);
+
+    const copyButton = createIconButton({
+      label: 'Copy StashDB scene ID',
+      icon: 'copy',
+      variant: 'copy',
+      title: 'Copy StashDB scene ID',
+    });
+    viewWrap.appendChild(copyButton);
     container.appendChild(viewWrap);
 
     const missingWrap = document.createElement('div');
@@ -3088,7 +3170,50 @@ class SceneCardObserver {
         : 'Unmonitored in Whisparr';
     };
 
+    let copyResetTimer: number | null = null;
+    const setCopyState = (state: 'idle' | 'loading' | 'success' | 'error') => {
+      switch (state) {
+        case 'loading':
+          setButtonState(copyButton, 'disabled');
+          copyButton.innerHTML = renderIcon('spinner', { spin: true });
+          copyButton.style.background = '#94a3b8';
+          copyButton.style.borderColor = '#94a3b8';
+          copyButton.style.color = '#ffffff';
+          copyButton.setAttribute('aria-label', 'Copying scene ID');
+          copyButton.title = 'Copying scene ID';
+          return;
+        case 'success':
+          setButtonState(copyButton, 'disabled');
+          copyButton.innerHTML = renderIcon('circle-check');
+          copyButton.style.background = '#22c55e';
+          copyButton.style.borderColor = '#22c55e';
+          copyButton.style.color = '#ffffff';
+          copyButton.setAttribute('aria-label', 'Scene ID copied');
+          copyButton.title = 'Scene ID copied';
+          return;
+        case 'error':
+          setButtonState(copyButton, 'disabled');
+          copyButton.innerHTML = renderIcon('x');
+          copyButton.style.background = '#ef4444';
+          copyButton.style.borderColor = '#ef4444';
+          copyButton.style.color = '#ffffff';
+          copyButton.setAttribute('aria-label', 'Copy failed');
+          copyButton.title = 'Copy failed';
+          return;
+        case 'idle':
+        default:
+          setButtonState(copyButton, 'enabled');
+          copyButton.innerHTML = renderIcon('copy');
+          copyButton.style.background = '#e2e8f0';
+          copyButton.style.borderColor = '#334155';
+          copyButton.style.color = '#0f172a';
+          copyButton.setAttribute('aria-label', 'Copy StashDB scene ID');
+          copyButton.title = 'Copy StashDB scene ID';
+      }
+    };
+
     setStatus('out');
+    setCopyState('idle');
     const cachedStatus = this.statusBySceneId.get(scene.sceneId);
     if (cachedStatus) {
       setStatus(cachedStatus.exists ? 'in' : 'out');
@@ -3153,6 +3278,21 @@ class SceneCardObserver {
       void this.requestStashMatch(scene.sceneId);
       setMonitorState('idle', null, false);
     }
+
+    copyButton.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (copyResetTimer !== null) {
+        window.clearTimeout(copyResetTimer);
+        copyResetTimer = null;
+      }
+      setCopyState('loading');
+      const result = await copyTextToClipboard(scene.sceneId);
+      setCopyState(result.ok ? 'success' : 'error');
+      copyResetTimer = window.setTimeout(() => {
+        setCopyState('idle');
+      }, 1600);
+    });
 
     actionButton.addEventListener('click', async (event) => {
       event.preventDefault();
