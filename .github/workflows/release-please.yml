@@ -54,5 +54,6 @@ jobs:
         with:
           addon-id: ${{ secrets.FIREFOX_ADDON_ID }}
           addon-path: ./dist/stasharr-addon-firefox.zip
+          release-note: ${{ steps.release.outputs.body || 'See GitHub release for details.' }}
           auth-api-issuer: ${{ secrets.AMO_API_KEY }}
           auth-api-secret: ${{ secrets.AMO_API_SECRET }}
