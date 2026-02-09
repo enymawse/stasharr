@@ -52,7 +52,31 @@ const buildGroup = async (entryPoints, format) => {
 await buildGroup(iifeEntries, 'iife');
 await buildGroup(esmEntries, 'esm');
 
-await cp(resolve(rootDir, 'manifest', target, 'manifest.json'), resolve(distDir, 'manifest.json'));
+await cp(
+  resolve(rootDir, 'manifest', target, 'manifest.json'),
+  resolve(distDir, 'manifest.json'),
+);
+try {
+  await cp(
+    resolve(rootDir, 'docs', 'assets', 'brand'),
+    resolve(distDir, 'icons'),
+    {
+      recursive: true,
+      filter: (src) => src.endsWith('.png'),
+    },
+  );
+} catch (error) {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = error.code;
+    if (code === 'ENOENT') {
+      // Icons are optional.
+    } else {
+      throw error;
+    }
+  } else {
+    throw error;
+  }
+}
 await cp(
   resolve(rootDir, 'src', 'content', 'options.html'),
   resolve(distDir, 'content', 'options.html'),
