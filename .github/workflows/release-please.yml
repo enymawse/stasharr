@@ -33,6 +33,7 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_STASHARR }}
           release-type: node
           path: .
+          target-branch: extension
 
       - name: Package extension artifacts
         if: ${{ steps.release.outputs.release_created }}
