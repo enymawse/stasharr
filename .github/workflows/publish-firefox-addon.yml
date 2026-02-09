@@ -1,0 +1,58 @@
+name: publish-firefox-addon
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (e.g., stasharr-extension-v0.2.0)
+        required: true
+        type: string
+
+jobs:
+  publish-firefox-addon:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Resolve release tag
+        id: release
+        run: |
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body="$(gh release view "${{ steps.release.outputs.tag }}" --json body -q .body)"
+          if [ -z "$body" ]; then
+            body="See GitHub release for details."
+          fi
+          {
+            echo "note<<EOF"
+            echo "$body"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download Firefox add-on zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh release download "${{ steps.release.outputs.tag }}" -p "stasharr-addon-firefox.zip" -D dist
+
+      - name: Publish Firefox add-on
+        uses: browser-actions/release-firefox-addon@latest
+        with:
+          addon-id: ${{ secrets.FIREFOX_ADDON_ID }}
+          addon-path: ./dist/stasharr-addon-firefox.zip
+          release-note: ${{ steps.notes.outputs.note }}
+          auth-api-issuer: ${{ secrets.AMO_API_KEY }}
+          auth-api-secret: ${{ secrets.AMO_API_SECRET }}
