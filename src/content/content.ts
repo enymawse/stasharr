@@ -74,6 +74,20 @@ type SceneCardSetExcludedRequest = {
   movieTitle?: string;
   movieYear?: number;
 };
+type BulkSceneAddRequest = {
+  type: 'BULK_SCENE_ADD';
+  sceneIds: string[];
+  searchOnAdd?: boolean;
+};
+type BulkSceneSearchRequest = {
+  type: 'BULK_SCENE_SEARCH';
+  sceneIds: string[];
+};
+type BulkSceneAddMissingRequest = {
+  type: 'BULK_SCENE_ADD_MISSING';
+  sceneIds: string[];
+  searchOnAdd?: boolean;
+};
 type PerformerCheckStatusRequest = {
   type: 'PERFORMER_CHECK_STATUS';
   stashdbPerformerId: string;
@@ -144,6 +158,9 @@ type ContentRuntime = {
         | SceneCardAddRequest
         | SceneCardTriggerSearchRequest
         | SceneCardSetExcludedRequest
+        | BulkSceneAddRequest
+        | BulkSceneSearchRequest
+        | BulkSceneAddMissingRequest
         | PerformerCheckStatusRequest
         | PerformerAddRequest
         | PerformerSetMonitorRequest
@@ -179,15 +196,22 @@ type ContentRuntime = {
       monitored?: boolean;
       name?: string;
       error?: string;
-      results?: Array<{
-        sceneId: string;
-        exists: boolean;
-        whisparrId?: number;
-        monitored?: boolean;
-        tagIds?: number[];
-        hasFile?: boolean;
-        excluded?: boolean;
-      }>;
+      results?: Array<
+        | {
+            sceneId: string;
+            exists: boolean;
+            whisparrId?: number;
+            monitored?: boolean;
+            tagIds?: number[];
+            hasFile?: boolean;
+            excluded?: boolean;
+          }
+        | {
+            sceneId: string;
+            status: 'added' | 'skipped' | 'error' | 'searched';
+            error?: string;
+          }
+      >;
       excluded?: boolean;
       found?: boolean;
       stashSceneId?: string | number;
@@ -321,6 +345,12 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   let stashConfigured = false;
   let searchOnAdd = true;
   let sceneCopyResetTimer: number | null = null;
+  let bulkInProgress = false;
+  let bulkSceneItems: Array<{ sceneId: string; title?: string }> = [];
+  const bulkRowsById = new Map<
+    string,
+    { status: HTMLDivElement; message: HTMLDivElement }
+  >();
   const stashMatchCache = new Map<
     string,
     {
@@ -374,6 +404,65 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   };
   updateDiagnostics();
   panel.appendChild(parseDetails);
+
+  const bulkControls = document.createElement('div');
+  bulkControls.style.display = 'none';
+  bulkControls.style.marginTop = '10px';
+  bulkControls.style.paddingTop = '8px';
+  bulkControls.style.borderTop = '1px solid rgba(148, 163, 184, 0.2)';
+  panel.appendChild(bulkControls);
+
+  const bulkLabel = document.createElement('div');
+  bulkLabel.textContent = 'Bulk actions';
+  bulkLabel.style.fontWeight = '600';
+  bulkLabel.style.fontSize = '12px';
+  bulkControls.appendChild(bulkLabel);
+
+  const bulkCount = document.createElement('div');
+  bulkCount.style.marginTop = '4px';
+  bulkCount.style.fontSize = '11px';
+  bulkCount.style.opacity = '0.8';
+  bulkCount.textContent = 'Scenes detected: 0';
+  bulkControls.appendChild(bulkCount);
+
+  const bulkRow = document.createElement('div');
+  bulkRow.style.display = 'flex';
+  bulkRow.style.gap = '6px';
+  bulkRow.style.marginTop = '6px';
+  bulkControls.appendChild(bulkRow);
+
+  const bulkSelect = document.createElement('select');
+  bulkSelect.style.flex = '1';
+  bulkSelect.style.padding = '6px';
+  bulkSelect.style.borderRadius = '6px';
+  bulkSelect.style.border = '1px solid #1f2937';
+  bulkSelect.style.background = '#0b1220';
+  bulkSelect.style.color = '#e2e8f0';
+  const bulkAddOption = document.createElement('option');
+  bulkAddOption.value = 'add';
+  bulkAddOption.textContent = 'Add All';
+  const bulkSearchOption = document.createElement('option');
+  bulkSearchOption.value = 'search';
+  bulkSearchOption.textContent = 'Search All';
+  const bulkMissingOption = document.createElement('option');
+  bulkMissingOption.value = 'missing';
+  bulkMissingOption.textContent = 'Add Missing';
+  bulkSelect.appendChild(bulkAddOption);
+  bulkSelect.appendChild(bulkSearchOption);
+  bulkSelect.appendChild(bulkMissingOption);
+  bulkRow.appendChild(bulkSelect);
+
+  const bulkRunButton = document.createElement('button');
+  bulkRunButton.type = 'button';
+  bulkRunButton.textContent = 'Run';
+  bulkRunButton.style.padding = '6px 10px';
+  bulkRunButton.style.borderRadius = '6px';
+  bulkRunButton.style.border = 'none';
+  bulkRunButton.style.cursor = 'pointer';
+  bulkRunButton.style.background = '#38bdf8';
+  bulkRunButton.style.color = '#0b1220';
+  applyDisabledStyles(bulkRunButton, true);
+  bulkRow.appendChild(bulkRunButton);
 
   const sceneControls = document.createElement('div');
   sceneControls.style.display = 'none';
@@ -917,6 +1006,79 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   applyDisabledStyles(studioUpdateTagsButton, true);
   studioTagsRow.appendChild(studioUpdateTagsButton);
 
+  const bulkOverlay = document.createElement('div');
+  bulkOverlay.style.position = 'fixed';
+  bulkOverlay.style.inset = '0';
+  bulkOverlay.style.background = 'rgba(15, 23, 42, 0.65)';
+  bulkOverlay.style.display = 'none';
+  bulkOverlay.style.alignItems = 'center';
+  bulkOverlay.style.justifyContent = 'center';
+  bulkOverlay.style.zIndex = '2147483647';
+
+  const bulkModal = document.createElement('div');
+  bulkModal.style.width = 'min(720px, 92vw)';
+  bulkModal.style.maxHeight = '80vh';
+  bulkModal.style.overflow = 'hidden';
+  bulkModal.style.background = '#0f172a';
+  bulkModal.style.color = '#e2e8f0';
+  bulkModal.style.borderRadius = '12px';
+  bulkModal.style.boxShadow = '0 20px 40px rgba(15, 23, 42, 0.45)';
+  bulkModal.style.display = 'flex';
+  bulkModal.style.flexDirection = 'column';
+  bulkModal.style.padding = '16px';
+  bulkOverlay.appendChild(bulkModal);
+
+  const bulkTitle = document.createElement('div');
+  bulkTitle.style.fontSize = '16px';
+  bulkTitle.style.fontWeight = '600';
+  bulkTitle.textContent = 'Bulk action';
+  bulkModal.appendChild(bulkTitle);
+
+  const bulkSummary = document.createElement('div');
+  bulkSummary.style.marginTop = '6px';
+  bulkSummary.style.fontSize = '12px';
+  bulkSummary.style.opacity = '0.8';
+  bulkSummary.textContent = 'Progress: 0/0';
+  bulkModal.appendChild(bulkSummary);
+
+  const bulkSkipped = document.createElement('div');
+  bulkSkipped.style.marginTop = '6px';
+  bulkSkipped.style.fontSize = '12px';
+  bulkSkipped.style.opacity = '0.8';
+  bulkModal.appendChild(bulkSkipped);
+
+  const bulkInfo = document.createElement('div');
+  bulkInfo.style.marginTop = '8px';
+  bulkInfo.style.fontSize = '12px';
+  bulkInfo.style.opacity = '0.9';
+  bulkModal.appendChild(bulkInfo);
+
+  const bulkList = document.createElement('div');
+  bulkList.style.marginTop = '12px';
+  bulkList.style.display = 'flex';
+  bulkList.style.flexDirection = 'column';
+  bulkList.style.gap = '6px';
+  bulkList.style.overflow = 'auto';
+  bulkList.style.paddingRight = '6px';
+  bulkModal.appendChild(bulkList);
+
+  const bulkFooter = document.createElement('div');
+  bulkFooter.style.display = 'flex';
+  bulkFooter.style.justifyContent = 'flex-end';
+  bulkFooter.style.marginTop = '12px';
+  bulkModal.appendChild(bulkFooter);
+
+  const bulkCloseButton = document.createElement('button');
+  bulkCloseButton.type = 'button';
+  bulkCloseButton.textContent = 'Close';
+  bulkCloseButton.style.padding = '6px 12px';
+  bulkCloseButton.style.borderRadius = '6px';
+  bulkCloseButton.style.border = '1px solid #1f2937';
+  bulkCloseButton.style.background = '#111827';
+  bulkCloseButton.style.color = '#e2e8f0';
+  bulkCloseButton.style.cursor = 'pointer';
+  bulkFooter.appendChild(bulkCloseButton);
+
   const inputRow = document.createElement('div');
   inputRow.style.display = 'flex';
   inputRow.style.flexDirection = 'column';
@@ -1208,6 +1370,296 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     }
     sceneCopyStatus.textContent = `Scene ID: ${sceneId}`;
     applyDisabledStyles(sceneCopyButton, false);
+  };
+
+  const findSceneCardContainer = (anchor: HTMLAnchorElement) => {
+    const selectors = [
+      '[class*="SceneCard"]',
+      '[class*="Card"]',
+      '[data-testid*="scene"]',
+      'article',
+      'li',
+      '.card',
+    ];
+    for (const selector of selectors) {
+      const match = anchor.closest(selector);
+      if (match instanceof HTMLElement && match.tagName !== 'A') {
+        return match;
+      }
+    }
+    return null;
+  };
+
+  const collectSceneListItems = () => {
+    const items = new Map<string, { sceneId: string; title?: string }>();
+    const anchors = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('a[href^="/scenes/"]'),
+    );
+    for (const anchor of anchors) {
+      const href = anchor.getAttribute('href');
+      if (!href) continue;
+      let sceneId: string | null = null;
+      try {
+        const url = new URL(href, window.location.origin);
+        sceneId = extractSceneIdFromPathname(url.pathname);
+      } catch {
+        sceneId = extractSceneIdFromPathname(href);
+      }
+      if (!sceneId) continue;
+      if (items.has(sceneId)) continue;
+      const card = findSceneCardContainer(anchor);
+      const title =
+        card
+          ?.querySelector<HTMLElement>(
+            '.SceneCard-title, h3, [data-testid*="title"]',
+          )
+          ?.textContent?.trim() || anchor.textContent?.trim() || undefined;
+      items.set(sceneId, {
+        sceneId,
+        title: title ? truncate(title, 80) : undefined,
+      });
+    }
+    return Array.from(items.values());
+  };
+
+  const setBulkControlsVisible = (visible: boolean) => {
+    bulkControls.style.display = visible ? 'block' : 'none';
+  };
+
+  const resetBulkModal = () => {
+    bulkRowsById.clear();
+    bulkList.innerHTML = '';
+    bulkSummary.textContent = 'Progress: 0/0';
+    bulkSkipped.textContent = '';
+    bulkInfo.textContent = '';
+  };
+
+  const openBulkModal = (title: string) => {
+    bulkTitle.textContent = title;
+    bulkCloseButton.disabled = false;
+    bulkOverlay.style.display = 'flex';
+  };
+
+  const closeBulkModal = () => {
+    bulkOverlay.style.display = 'none';
+  };
+
+  const setBulkSummary = (completed: number, total: number) => {
+    bulkSummary.textContent = `Progress: ${completed}/${total}`;
+  };
+
+  const setBulkSkippedInfo = (count: number, label: string) => {
+    bulkSkipped.textContent =
+      count > 0 ? `Skipped ${count} (${label})` : '';
+  };
+
+  const setBulkInfo = (message: string) => {
+    bulkInfo.textContent = message;
+  };
+
+  const setBulkItemStatus = (
+    sceneId: string,
+    status: 'pending' | 'running' | 'success' | 'error' | 'skipped',
+    message?: string,
+  ) => {
+    const row = bulkRowsById.get(sceneId);
+    if (!row) return;
+    const label =
+      status === 'success'
+        ? 'Success'
+        : status === 'error'
+          ? 'Error'
+          : status === 'skipped'
+            ? 'Skipped'
+            : status === 'running'
+              ? 'Running'
+              : 'Pending';
+    row.status.textContent = label;
+    row.message.textContent = message ?? '';
+    const color =
+      status === 'success'
+        ? '#22c55e'
+        : status === 'error'
+          ? '#ef4444'
+          : status === 'skipped'
+            ? '#94a3b8'
+            : status === 'running'
+              ? '#38bdf8'
+              : '#64748b';
+    row.status.style.color = color;
+  };
+
+  const renderBulkItems = (items: Array<{ sceneId: string; title?: string }>) => {
+    bulkRowsById.clear();
+    bulkList.innerHTML = '';
+    for (const item of items) {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.flexDirection = 'column';
+      row.style.gap = '2px';
+      row.style.padding = '8px';
+      row.style.borderRadius = '8px';
+      row.style.background = 'rgba(15, 23, 42, 0.5)';
+
+      const top = document.createElement('div');
+      top.style.display = 'flex';
+      top.style.justifyContent = 'space-between';
+      top.style.alignItems = 'center';
+      row.appendChild(top);
+
+      const label = document.createElement('div');
+      label.style.fontSize = '12px';
+      label.style.fontWeight = '600';
+      label.textContent = item.title
+        ? `${item.title} (${item.sceneId})`
+        : item.sceneId;
+      top.appendChild(label);
+
+      const status = document.createElement('div');
+      status.style.fontSize = '12px';
+      status.style.color = '#64748b';
+      status.textContent = 'Pending';
+      top.appendChild(status);
+
+      const message = document.createElement('div');
+      message.style.fontSize = '11px';
+      message.style.opacity = '0.8';
+      row.appendChild(message);
+
+      bulkRowsById.set(item.sceneId, { status, message });
+      bulkList.appendChild(row);
+    }
+  };
+
+  const runBulkAction = async (
+    action: 'add' | 'search' | 'missing',
+    items: Array<{ sceneId: string; title?: string }>,
+  ) => {
+    const total = items.length;
+    resetBulkModal();
+    openBulkModal(
+      action === 'add'
+        ? 'Bulk add scenes'
+        : action === 'search'
+          ? 'Bulk search scenes'
+          : 'Bulk add missing scenes',
+    );
+    if (total === 0) {
+      setBulkInfo('No scenes available on this page.');
+      setBulkSummary(0, 0);
+      return;
+    }
+
+    renderBulkItems(items);
+    setBulkSummary(0, total);
+    bulkCloseButton.disabled = true;
+    bulkInProgress = true;
+    applyDisabledStyles(bulkRunButton, true);
+
+    const runtime = extContent?.runtime;
+    if (!runtime) {
+      setBulkInfo('Bulk actions unavailable.');
+      for (const item of items) {
+        setBulkItemStatus(item.sceneId, 'error', 'Runtime unavailable');
+      }
+      bulkCloseButton.disabled = false;
+      bulkInProgress = false;
+      return;
+    }
+
+    try {
+      const response =
+        action === 'add'
+          ? await runtime.sendMessage({
+              type: 'BULK_SCENE_ADD',
+              sceneIds: items.map((item) => item.sceneId),
+              searchOnAdd,
+            })
+          : action === 'search'
+            ? await runtime.sendMessage({
+                type: 'BULK_SCENE_SEARCH',
+                sceneIds: items.map((item) => item.sceneId),
+              })
+            : await runtime.sendMessage({
+                type: 'BULK_SCENE_ADD_MISSING',
+                sceneIds: items.map((item) => item.sceneId),
+                searchOnAdd,
+              });
+
+      if (!response.ok || !response.results) {
+        setBulkInfo(`Bulk action failed (${response.error ?? 'unknown'})`);
+        for (const item of items) {
+          setBulkItemStatus(item.sceneId, 'error', response.error ?? 'Failed');
+        }
+        bulkCloseButton.disabled = false;
+        bulkInProgress = false;
+        return;
+      }
+
+      const results = response.results as Array<{
+        sceneId: string;
+        status: 'added' | 'skipped' | 'error' | 'searched';
+        error?: string;
+      }>;
+      let completed = 0;
+      let skipped = 0;
+      const returned = new Set<string>();
+      for (const result of results) {
+        returned.add(result.sceneId);
+        if (result.status === 'added' || result.status === 'searched') {
+          setBulkItemStatus(
+            result.sceneId,
+            'success',
+            result.status === 'searched' ? 'Search queued' : 'Added',
+          );
+        } else if (result.status === 'skipped') {
+          skipped += 1;
+          setBulkItemStatus(result.sceneId, 'skipped', 'Skipped');
+        } else {
+          setBulkItemStatus(result.sceneId, 'error', result.error ?? 'Error');
+        }
+        completed += 1;
+        setBulkSummary(completed, total);
+      }
+
+      for (const item of items) {
+        if (returned.has(item.sceneId)) continue;
+        setBulkItemStatus(item.sceneId, 'error', 'No response');
+        completed += 1;
+        setBulkSummary(completed, total);
+      }
+
+      if (action !== 'search') {
+        setBulkSkippedInfo(skipped, 'already in Whisparr');
+      }
+      if (completed === 0) {
+        setBulkInfo('No results returned.');
+      }
+    } catch (error) {
+      setBulkInfo(`Bulk action failed (${(error as Error).message})`);
+      for (const item of items) {
+        setBulkItemStatus(item.sceneId, 'error', 'Failed');
+      }
+    } finally {
+      bulkCloseButton.disabled = false;
+      bulkInProgress = false;
+      updateBulkControls();
+    }
+  };
+
+  const updateBulkControls = () => {
+    const current = getParsedPage();
+    if (current.type !== 'other') {
+      setBulkControlsVisible(false);
+      return;
+    }
+    bulkSceneItems = collectSceneListItems();
+    bulkCount.textContent = `Scenes detected: ${bulkSceneItems.length}`;
+    setBulkControlsVisible(true);
+    applyDisabledStyles(
+      bulkRunButton,
+      bulkSceneItems.length === 0 || bulkInProgress || readiness !== 'validated',
+    );
   };
 
   const updatePerformerStatus = async () => {
@@ -2292,6 +2744,11 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     }, 1600);
   };
 
+  bulkCloseButton.addEventListener('click', () => {
+    if (bulkInProgress) return;
+    closeBulkModal();
+  });
+
   checkStatusButton.addEventListener('click', () => {
     void updateSceneStatus(true);
   });
@@ -2420,11 +2877,32 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     void updateTags();
   });
 
+  bulkRunButton.addEventListener('click', () => {
+    if (bulkInProgress) return;
+    const action = bulkSelect.value as 'add' | 'search' | 'missing';
+    const items = collectSceneListItems();
+    const actionLabel =
+      action === 'add'
+        ? 'Add All'
+        : action === 'search'
+          ? 'Search All'
+          : 'Add Missing';
+    const confirmed =
+      items.length === 0
+        ? true
+        : window.confirm(
+            `${actionLabel} for ${items.length} scene${items.length === 1 ? '' : 's'}?`,
+          );
+    if (!confirmed) return;
+    void runBulkAction(action, items);
+  });
+
   const updateEntityControls = () => {
     const current = getParsedPage();
     setSceneControlsVisible(current.type === 'scene');
     setPerformerControlsVisible(current.type === 'performer');
     setStudioControlsVisible(current.type === 'studio');
+    updateBulkControls();
     if (current.type === 'performer') {
       void updatePerformerStatus();
     } else if (current.type === 'studio') {
@@ -2533,6 +3011,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   void loadCatalogs();
 
   document.documentElement.appendChild(panel);
+  document.documentElement.appendChild(bulkOverlay);
 
   let lastUrl = window.location.href;
   const checkNavigation = () => {
@@ -2551,11 +3030,24 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       updateDiagnostics();
       void updateConfigStatus();
       void updateSceneStatus(true);
+      updateBulkControls();
+      closeBulkModal();
     }
   };
 
   window.addEventListener('popstate', checkNavigation);
   window.setInterval(checkNavigation, 500);
+
+  if (document.body) {
+    createDebouncedMutationObserver({
+      target: document.body,
+      onChange: () => {
+        if (!bulkInProgress) {
+          updateBulkControls();
+        }
+      },
+    });
+  }
 }
 
 type SceneCardData = { sceneId: string; sceneUrl: string };
@@ -3569,7 +4061,16 @@ class SceneCardObserver {
         this.applyStatusError(requestItems.map((item) => item.sceneId));
         return;
       }
-      for (const result of response.results) {
+      const results = response.results as Array<{
+        sceneId: string;
+        exists: boolean;
+        whisparrId?: number;
+        monitored?: boolean;
+        tagIds?: number[];
+        hasFile?: boolean;
+        excluded?: boolean;
+      }>;
+      for (const result of results) {
         const existing = this.statusBySceneId.get(result.sceneId);
         this.statusBySceneId.set(result.sceneId, {
           exists: result.exists,
@@ -3583,7 +4084,7 @@ class SceneCardObserver {
           statusKnown: true,
         });
       }
-      this.applyStatusResults(response.results);
+      this.applyStatusResults(results);
     } catch {
       this.applyStatusError(requestItems.map((item) => item.sceneId));
     }
