@@ -224,6 +224,7 @@ type ContentRuntime = {
 };
 
 const PANEL_ID = 'stasharr-extension-panel';
+let sceneCardObserver: SceneCardObserver | null = null;
 const extContent =
   (
     globalThis as typeof globalThis & {
@@ -1671,6 +1672,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     } finally {
       bulkCloseButton.disabled = false;
       bulkInProgress = false;
+      sceneCardObserver?.refreshAll();
       updateBulkControls();
     }
   };
@@ -3092,6 +3094,27 @@ type SceneCardMeta = {
 
 class SceneCardObserver {
   // Dev checklist: missing indicator renders for hasFile=false, search triggers background, UI shows loading/success/error.
+  refreshAll() {
+    this.scan(document.body);
+    const scenes: SceneCardMeta[] = [];
+    const anchors = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('a[href^="/scenes/"]'),
+    );
+    for (const anchor of anchors) {
+      const scene = this.extractScene(anchor);
+      if (!scene) continue;
+      const cached = this.statusBySceneId.get(scene.sceneId);
+      if (cached) {
+        this.statusBySceneId.set(scene.sceneId, {
+          ...cached,
+          statusKnown: false,
+        });
+      }
+      scenes.push(scene);
+    }
+    this.statusBatcher.enqueueAll(scenes);
+    void this.statusBatcher.flush();
+  }
   private observer: MutationObserver | null = null;
   private injectedByCard = new Map<HTMLElement, HTMLElement>();
   private statusBySceneId = createTtlCache<
@@ -4262,6 +4285,6 @@ class SceneCardObserver {
 }
 
 if (!isEditPage) {
-  const sceneCardObserver = new SceneCardObserver();
+  sceneCardObserver = new SceneCardObserver();
   sceneCardObserver.start();
 }
