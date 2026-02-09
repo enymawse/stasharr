@@ -34,6 +34,7 @@ jobs:
           release-type: node
           path: .
           target-branch: extension
+          bootstrap-sha: f6aaae0051a64c89f3bbf9451959024c51f9990e
 
       - name: Package extension artifacts
         if: ${{ steps.release.outputs.release_created }}
