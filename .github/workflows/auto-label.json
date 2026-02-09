@@ -2,7 +2,21 @@
   "labelsSynonyms": {
     "bug": ["error", "need fix", "not working"],
     "enhancement": ["upgrade", "feature"],
-    "question": ["help", "how can i"]
+    "question": ["help", "how can i"],
+    "extension": [
+      "extension",
+      "add-on",
+      "web extension",
+      "[extension]",
+      "chrome extension",
+      "firefox extension"
+    ],
+    "userscript": [
+      "userscript",
+      "tampermonkey",
+      "violentmonkey",
+      "[userscript]"
+    ]
   },
   "labelsNotAllowed": [
     "documentation",
