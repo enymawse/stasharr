@@ -1,0 +1,13 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "stasharr-extension",
+      "include-component-in-tag": true,
+      "extra-files": [
+        "manifest/chrome/manifest.json",
+        "manifest/firefox/manifest.json"
+      ]
+    }
+  }
+}

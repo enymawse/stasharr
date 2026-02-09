@@ -31,8 +31,7 @@ jobs:
         id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_STASHARR }}
-          release-type: node
-          path: .
+          config-file: .github/release-please-extension.json
           target-branch: extension
 
       - name: Package extension artifacts
