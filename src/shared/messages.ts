@@ -21,6 +21,9 @@ export const MESSAGE_TYPES = {
   sceneCardAdd: 'SCENE_CARD_ADD',
   sceneCardTriggerSearch: 'SCENE_CARD_TRIGGER_SEARCH',
   sceneCardSetExcluded: 'SCENE_CARD_SET_EXCLUDED',
+  bulkSceneAdd: 'BULK_SCENE_ADD',
+  bulkSceneSearch: 'BULK_SCENE_SEARCH',
+  bulkSceneAddMissing: 'BULK_SCENE_ADD_MISSING',
   stashFindSceneByStashdbId: 'STASH_FIND_SCENE_BY_STASHDB_ID',
   performerCheckStatus: 'PERFORMER_CHECK_STATUS',
   performerAdd: 'PERFORMER_ADD',
@@ -308,6 +311,56 @@ export type SceneCardSetExcludedResponse = {
   error?: { code: string; message: string };
 };
 
+export type BulkSceneAddRequest = {
+  type: typeof MESSAGE_TYPES.bulkSceneAdd;
+  sceneIds: string[];
+  searchOnAdd?: boolean;
+};
+
+export type BulkSceneAddResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.bulkSceneAdd;
+  results?: Array<{
+    sceneId: string;
+    status: 'added' | 'skipped' | 'error';
+    error?: string;
+  }>;
+  error?: string;
+};
+
+export type BulkSceneSearchRequest = {
+  type: typeof MESSAGE_TYPES.bulkSceneSearch;
+  sceneIds: string[];
+};
+
+export type BulkSceneSearchResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.bulkSceneSearch;
+  results?: Array<{
+    sceneId: string;
+    status: 'searched' | 'skipped' | 'error';
+    error?: string;
+  }>;
+  error?: string;
+};
+
+export type BulkSceneAddMissingRequest = {
+  type: typeof MESSAGE_TYPES.bulkSceneAddMissing;
+  sceneIds: string[];
+  searchOnAdd?: boolean;
+};
+
+export type BulkSceneAddMissingResponse = {
+  ok: boolean;
+  type: typeof MESSAGE_TYPES.bulkSceneAddMissing;
+  results?: Array<{
+    sceneId: string;
+    status: 'added' | 'skipped' | 'error';
+    error?: string;
+  }>;
+  error?: string;
+};
+
 export type PerformerCheckStatusRequest = {
   type: typeof MESSAGE_TYPES.performerCheckStatus;
   stashdbPerformerId: string;
@@ -514,6 +567,9 @@ export type ExtensionRequest =
   | SceneCardAddRequest
   | SceneCardTriggerSearchRequest
   | SceneCardSetExcludedRequest
+  | BulkSceneAddRequest
+  | BulkSceneSearchRequest
+  | BulkSceneAddMissingRequest
   | PerformerCheckStatusRequest
   | PerformerAddRequest
   | PerformerSetMonitorRequest
@@ -549,6 +605,9 @@ export type ExtensionResponse =
   | SceneCardAddResponse
   | SceneCardTriggerSearchResponse
   | SceneCardSetExcludedResponse
+  | BulkSceneAddResponse
+  | BulkSceneSearchResponse
+  | BulkSceneAddMissingResponse
   | PerformerCheckStatusResponse
   | PerformerAddResponse
   | PerformerSetMonitorResponse
