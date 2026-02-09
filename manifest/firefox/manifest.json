@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Stasharr Extension",
+  "name": "Stasharr Add-On",
   "version": "0.1.0",
-  "description": "Standalone Stasharr browser extension.",
+  "description": "Standalone Stasharr browser add-on.",
   "action": {
     "default_title": "Stasharr"
   },
@@ -12,7 +12,11 @@
   "content_scripts": [
     {
       "matches": ["https://stashdb.org/*"],
-      "js": ["shared/navigation.js", "content/pageParser.js", "content/content.js"],
+      "js": [
+        "shared/navigation.js",
+        "content/pageParser.js",
+        "content/content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
