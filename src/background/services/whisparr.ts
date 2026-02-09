@@ -16,6 +16,9 @@ import {
   type SceneCardAddResponse,
   type SceneCardTriggerSearchResponse,
   type SceneCardSetExcludedResponse,
+  type BulkSceneAddResponse,
+  type BulkSceneSearchResponse,
+  type BulkSceneAddMissingResponse,
   type SaveSelectionsResponse,
   type PerformerCheckStatusResponse,
   type PerformerAddResponse,
@@ -383,6 +386,64 @@ async function fetchSceneLookup(
   }
 
   return { scene: first.movie };
+}
+
+async function fetchMovieByStashId(
+  baseUrl: string,
+  apiKey: string,
+  stashId: string,
+): Promise<{ movie?: Record<string, unknown>; error?: string }> {
+  const response = await handleFetchJson({
+    type: MESSAGE_TYPES.fetchJson,
+    url: `${baseUrl}/api/v3/movie?stashId=${encodeURIComponent(stashId)}`,
+    headers: { 'X-Api-Key': apiKey },
+  });
+
+  if (!response.ok) {
+    return { error: response.error ?? `HTTP ${response.status ?? 0}` };
+  }
+
+  if (!Array.isArray(response.json) || response.json.length === 0) {
+    return { movie: undefined };
+  }
+
+  const movie = response.json.find(isRecord);
+  return movie ? { movie } : { movie: undefined };
+}
+
+async function getWhisparrContext(): Promise<{
+  ok: boolean;
+  baseUrl?: string;
+  apiKey?: string;
+  settings?: Awaited<ReturnType<typeof getSettings>>;
+  error?: string;
+}> {
+  const settings = await getSettings();
+  const normalized = normalizeBaseUrl(settings.whisparrBaseUrl ?? '');
+  if (!normalized.ok || !normalized.value) {
+    return { ok: false, error: normalized.error ?? 'Invalid base URL.' };
+  }
+
+  const apiKey = settings.whisparrApiKey?.trim() ?? '';
+  if (!apiKey) {
+    return { ok: false, error: 'API key is required.' };
+  }
+
+  const origin = hostOriginPattern(normalized.value);
+  if (!ext.permissions?.contains) {
+    return { ok: false, error: 'Permissions API not available.' };
+  }
+  const granted = await ext.permissions.contains({ origins: [origin] });
+  if (!granted) {
+    return { ok: false, error: `Permission missing for ${origin}` };
+  }
+
+  return {
+    ok: true,
+    baseUrl: normalized.value,
+    apiKey,
+    settings,
+  };
 }
 
 function extractEntityRecord(
@@ -1754,6 +1815,260 @@ export async function handleSceneCardAdd(
     type: MESSAGE_TYPES.sceneCardAdd,
     whisparrId: Number.isFinite(whisparrId) ? whisparrId : undefined,
   };
+}
+
+async function runBulkAddScenes(options: {
+  sceneIds: string[];
+  searchOnAdd?: boolean;
+  baseUrl: string;
+  apiKey: string;
+  selections: DiscoverySelections;
+  settings: Awaited<ReturnType<typeof getSettings>>;
+}): Promise<BulkSceneAddResponse['results']> {
+  const { sceneIds, searchOnAdd, baseUrl, apiKey, selections, settings } =
+    options;
+  const results: NonNullable<BulkSceneAddResponse['results']> = [];
+  for (const sceneId of sceneIds) {
+    const status = await fetchMovieByStashId(baseUrl, apiKey, sceneId);
+    if (status.error) {
+      results.push({ sceneId, status: 'error', error: status.error });
+      continue;
+    }
+    if (status.movie) {
+      results.push({ sceneId, status: 'skipped' });
+      continue;
+    }
+
+    const lookup = await fetchSceneLookup(baseUrl, apiKey, sceneId);
+    if (!lookup.scene) {
+      results.push({
+        sceneId,
+        status: 'error',
+        error: lookup.error ?? 'Lookup failed.',
+      });
+      continue;
+    }
+
+    const foreignId =
+      typeof lookup.scene.foreignId === 'string'
+        ? lookup.scene.foreignId
+        : `stash:${sceneId}`;
+    const title =
+      typeof lookup.scene.title === 'string' ? lookup.scene.title : undefined;
+    const resolvedSearchOnAdd =
+      typeof searchOnAdd === 'boolean'
+        ? searchOnAdd
+        : settings.searchOnAdd ?? true;
+
+    const payload: AddScenePayload = {
+      foreignId,
+      title,
+      qualityProfileId: selections.qualityProfileId as number,
+      rootFolderPath: selections.rootFolderPath as string,
+      tags: selections.tagIds ?? [],
+      addOptions: {
+        searchForMovie: resolvedSearchOnAdd,
+      },
+    };
+
+    const response = await handleFetchJson({
+      type: MESSAGE_TYPES.fetchJson,
+      url: `${baseUrl}/api/v3/movie`,
+      method: 'POST',
+      headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      results.push({
+        sceneId,
+        status: 'error',
+        error: response.error ?? `HTTP ${response.status ?? 0}`,
+      });
+      continue;
+    }
+
+    results.push({ sceneId, status: 'added' });
+  }
+  return results;
+}
+
+export async function handleBulkSceneAdd(
+  request: ExtensionRequest,
+): Promise<BulkSceneAddResponse> {
+  if (request.type !== MESSAGE_TYPES.bulkSceneAdd) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.bulkSceneAdd,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const sceneIds = Array.isArray(request.sceneIds)
+    ? request.sceneIds.map((id) => id.trim()).filter(Boolean)
+    : [];
+  if (sceneIds.length === 0) {
+    return { ok: true, type: MESSAGE_TYPES.bulkSceneAdd, results: [] };
+  }
+
+  const context = await getWhisparrContext();
+  if (!context.ok || !context.baseUrl || !context.apiKey || !context.settings) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.bulkSceneAdd,
+      error: context.error ?? 'Whisparr not configured.',
+    };
+  }
+
+  const selections = await getSelections();
+  if (
+    !selections.whisparr.qualityProfileId ||
+    !selections.whisparr.rootFolderPath
+  ) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.bulkSceneAdd,
+      error: 'Missing quality profile or root folder selection.',
+    };
+  }
+
+  const results = await runBulkAddScenes({
+    sceneIds,
+    searchOnAdd: request.searchOnAdd,
+    baseUrl: context.baseUrl,
+    apiKey: context.apiKey,
+    selections: selections.whisparr,
+    settings: context.settings,
+  });
+
+  return { ok: true, type: MESSAGE_TYPES.bulkSceneAdd, results };
+}
+
+export async function handleBulkSceneAddMissing(
+  request: ExtensionRequest,
+): Promise<BulkSceneAddMissingResponse> {
+  if (request.type !== MESSAGE_TYPES.bulkSceneAddMissing) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.bulkSceneAddMissing,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const sceneIds = Array.isArray(request.sceneIds)
+    ? request.sceneIds.map((id) => id.trim()).filter(Boolean)
+    : [];
+  if (sceneIds.length === 0) {
+    return { ok: true, type: MESSAGE_TYPES.bulkSceneAddMissing, results: [] };
+  }
+
+  const context = await getWhisparrContext();
+  if (!context.ok || !context.baseUrl || !context.apiKey || !context.settings) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.bulkSceneAddMissing,
+      error: context.error ?? 'Whisparr not configured.',
+    };
+  }
+
+  const selections = await getSelections();
+  if (
+    !selections.whisparr.qualityProfileId ||
+    !selections.whisparr.rootFolderPath
+  ) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.bulkSceneAddMissing,
+      error: 'Missing quality profile or root folder selection.',
+    };
+  }
+
+  const results = await runBulkAddScenes({
+    sceneIds,
+    searchOnAdd: request.searchOnAdd,
+    baseUrl: context.baseUrl,
+    apiKey: context.apiKey,
+    selections: selections.whisparr,
+    settings: context.settings,
+  });
+
+  return { ok: true, type: MESSAGE_TYPES.bulkSceneAddMissing, results };
+}
+
+export async function handleBulkSceneSearch(
+  request: ExtensionRequest,
+): Promise<BulkSceneSearchResponse> {
+  if (request.type !== MESSAGE_TYPES.bulkSceneSearch) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.bulkSceneSearch,
+      error: 'Invalid request type.',
+    };
+  }
+
+  const sceneIds = Array.isArray(request.sceneIds)
+    ? request.sceneIds.map((id) => id.trim()).filter(Boolean)
+    : [];
+  if (sceneIds.length === 0) {
+    return { ok: true, type: MESSAGE_TYPES.bulkSceneSearch, results: [] };
+  }
+
+  const context = await getWhisparrContext();
+  if (!context.ok || !context.baseUrl || !context.apiKey) {
+    return {
+      ok: false,
+      type: MESSAGE_TYPES.bulkSceneSearch,
+      error: context.error ?? 'Whisparr not configured.',
+    };
+  }
+
+  const results: NonNullable<BulkSceneSearchResponse['results']> = [];
+  for (const sceneId of sceneIds) {
+    const status = await fetchMovieByStashId(
+      context.baseUrl,
+      context.apiKey,
+      sceneId,
+    );
+    if (status.error) {
+      results.push({ sceneId, status: 'error', error: status.error });
+      continue;
+    }
+    if (!status.movie) {
+      results.push({ sceneId, status: 'skipped' });
+      continue;
+    }
+
+    const whisparrId = Number(status.movie.id);
+    if (!Number.isFinite(whisparrId)) {
+      results.push({
+        sceneId,
+        status: 'error',
+        error: 'Whisparr ID is required.',
+      });
+      continue;
+    }
+
+    const response = await handleFetchJson({
+      type: MESSAGE_TYPES.fetchJson,
+      url: `${context.baseUrl}/api/v3/command`,
+      method: 'POST',
+      headers: { 'X-Api-Key': context.apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'MoviesSearch', movieIds: [whisparrId] }),
+    });
+
+    if (!response.ok) {
+      results.push({
+        sceneId,
+        status: 'error',
+        error: response.error ?? `HTTP ${response.status ?? 0}`,
+      });
+      continue;
+    }
+
+    results.push({ sceneId, status: 'searched' });
+  }
+
+  return { ok: true, type: MESSAGE_TYPES.bulkSceneSearch, results };
 }
 
 export async function handlePerformerCheckStatus(
