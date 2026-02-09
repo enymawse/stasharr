@@ -50,11 +50,11 @@ function ensureIconStyles() {
 export function renderIcon(
   name: IconName,
   options?: { size?: number; spin?: boolean },
-) {
+): SVGSVGElement {
   ensureIconStyles();
   const size = options?.size ?? 14;
   const spinStyle = options?.spin
-    ? 'animation: stasharr-spin 1s linear infinite;'
+    ? 'stasharr-spin 1s linear infinite'
     : '';
   const strokeIcons =
     name === 'copy' ||
@@ -66,10 +66,30 @@ export function renderIcon(
     name === 'external-link' ||
     name === 'bookmark';
   const path = ICON_PATHS[name];
-  if (strokeIcons) {
-    return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"></path></svg>`;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.style.display = 'block';
+  svg.style.color = 'currentColor';
+  if (spinStyle) {
+    svg.style.animation = spinStyle;
   }
-  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" focusable="false" style="display:block; color: currentColor; ${spinStyle}" fill="currentColor"><path d="${path}"></path></svg>`;
+  if (strokeIcons) {
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+  } else {
+    svg.setAttribute('fill', 'currentColor');
+  }
+  const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  pathEl.setAttribute('d', path);
+  svg.appendChild(pathEl);
+  return svg;
 }
 
 export type { IconName };

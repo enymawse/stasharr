@@ -6,6 +6,7 @@ const forbiddenStrings = [];
 const forbiddenExtensions = new Set([]);
 const forbiddenContentTokens = ['/api/v3', 'X-Api-Key', 'http://'];
 const forbiddenOptionsTokens = ['/api/v3', '/api/v3/', 'X-Api-Key', 'http://'];
+const allowedHttpTokens = ['http://www.w3.org/2000/svg'];
 
 const failures = [];
 
@@ -85,7 +86,14 @@ for (const target of manifestTargets) {
   }
 
   for (const token of forbiddenContentTokens) {
-    if (content.includes(token)) {
+    const scrubbed =
+      token === 'http://'
+        ? allowedHttpTokens.reduce(
+            (acc, allowed) => acc.replaceAll(allowed, ''),
+            content,
+          )
+        : content;
+    if (scrubbed.includes(token)) {
       failures.push(
         `Content bundle contains forbidden token "${token}" in ${contentPath}`,
       );
@@ -104,7 +112,14 @@ for (const target of manifestTargets) {
   }
 
   for (const token of forbiddenOptionsTokens) {
-    if (content.includes(token)) {
+    const scrubbed =
+      token === 'http://'
+        ? allowedHttpTokens.reduce(
+            (acc, allowed) => acc.replaceAll(allowed, ''),
+            content,
+          )
+        : content;
+    if (scrubbed.includes(token)) {
       failures.push(
         `Options bundle contains forbidden token "${token}" in ${optionsPath}`,
       );

@@ -1172,7 +1172,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     select: HTMLSelectElement,
     selectedId?: number,
   ) => {
-    select.innerHTML = '';
+    select.textContent = '';
     for (const profile of qualityProfileCatalog) {
       const option = document.createElement('option');
       option.value = String(profile.id);
@@ -1208,7 +1208,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     select: HTMLSelectElement,
     selectedIds: number[],
   ) => {
-    select.innerHTML = '';
+    select.textContent = '';
     for (const tag of tagCatalog) {
       const option = document.createElement('option');
       option.value = String(tag.id);
@@ -1443,7 +1443,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
 
   const resetBulkModal = () => {
     bulkRowsById.clear();
-    bulkList.innerHTML = '';
+    bulkList.textContent = '';
     bulkSummary.textContent = 'Progress: 0/0';
     bulkSkipped.textContent = '';
     bulkInfo.textContent = '';
@@ -1508,7 +1508,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     items: Array<{ sceneId: string; title?: string; studio?: string }>,
   ) => {
     bulkRowsById.clear();
-    bulkList.innerHTML = '';
+    bulkList.textContent = '';
     for (const item of items) {
       const row = document.createElement('div');
       row.style.display = 'flex';
@@ -3445,8 +3445,7 @@ class SceneCardObserver {
     whisparrIcon.width = 16;
     whisparrIcon.height = 16;
     whisparrIcon.style.display = 'block';
-    viewWhisparrButton.innerHTML = '';
-    viewWhisparrButton.appendChild(whisparrIcon);
+    viewWhisparrButton.replaceChildren(whisparrIcon);
 
     const viewStashButton = createIconButton({
       label: 'View in Stash',
@@ -3461,8 +3460,7 @@ class SceneCardObserver {
     stashIcon.width = 16;
     stashIcon.height = 16;
     stashIcon.style.display = 'block';
-    viewStashButton.innerHTML = '';
-    viewStashButton.appendChild(stashIcon);
+    viewStashButton.replaceChildren(stashIcon);
     const viewWrap = document.createElement('div');
     viewWrap.style.display = 'inline-flex';
     viewWrap.style.alignItems = 'center';
@@ -3594,7 +3592,7 @@ class SceneCardObserver {
     const setStashLoading = () => {
       setButtonState(viewStashButton, 'disabled');
       viewStashButton.title = 'Checking Stash...';
-      viewStashButton.innerHTML = renderIcon('spinner', { spin: true });
+      viewStashButton.replaceChildren(renderIcon('spinner', { spin: true }));
     };
 
     const setMissingState = (
@@ -3607,7 +3605,7 @@ class SceneCardObserver {
           searchButton.style.background = '#69b66d';
           searchButton.style.borderColor = '#69b66d';
           searchButton.style.color = '#ffffff';
-          searchButton.innerHTML = renderIcon('spinner', { spin: true });
+          searchButton.replaceChildren(renderIcon('spinner', { spin: true }));
           return;
         case 'success':
           searchButton.disabled = true;
@@ -3615,7 +3613,7 @@ class SceneCardObserver {
           searchButton.style.background = '#69b66d';
           searchButton.style.borderColor = '#69b66d';
           searchButton.style.color = '#ffffff';
-          searchButton.innerHTML = renderIcon('circle-check');
+          searchButton.replaceChildren(renderIcon('circle-check'));
           return;
         case 'error':
           searchButton.disabled = false;
@@ -3623,7 +3621,7 @@ class SceneCardObserver {
           searchButton.style.background = '#00853d';
           searchButton.style.borderColor = '#00853d';
           searchButton.style.color = '#ffffff';
-          searchButton.innerHTML = renderIcon('x');
+          searchButton.replaceChildren(renderIcon('x'));
           return;
         case 'idle':
         default:
@@ -3632,7 +3630,7 @@ class SceneCardObserver {
           searchButton.style.background = '#00853d';
           searchButton.style.borderColor = '#00853d';
           searchButton.style.color = '#ffffff';
-          searchButton.innerHTML = renderIcon('search');
+          searchButton.replaceChildren(renderIcon('search'));
       }
     };
 
@@ -3645,22 +3643,22 @@ class SceneCardObserver {
           excludeButton.disabled = true;
           excludeButton.style.opacity = '0.6';
           excludeButton.style.cursor = 'not-allowed';
-          excludeButton.innerHTML = renderIcon('spinner', { spin: true });
+          excludeButton.replaceChildren(renderIcon('spinner', { spin: true }));
           return;
         case 'error':
           excludeButton.disabled = false;
           excludeButton.style.opacity = '1';
           excludeButton.style.cursor = 'pointer';
-          excludeButton.innerHTML = renderIcon('x');
+          excludeButton.replaceChildren(renderIcon('x'));
           return;
         case 'idle':
         default:
           excludeButton.disabled = false;
           excludeButton.style.opacity = '1';
           excludeButton.style.cursor = 'pointer';
-          excludeButton.innerHTML = excluded
-            ? renderIcon('circle-check')
-            : renderIcon('ban');
+          excludeButton.replaceChildren(
+            excluded ? renderIcon('circle-check') : renderIcon('ban'),
+          );
           excludeButton.style.background = excluded ? '#9ca3af' : '#c4273c';
           excludeButton.style.borderColor = excluded ? '#9ca3af' : '#c4273c';
       }
@@ -3675,7 +3673,7 @@ class SceneCardObserver {
         monitorButton.disabled = true;
         monitorButton.style.opacity = '0.6';
         monitorButton.style.cursor = 'not-allowed';
-        monitorButton.innerHTML = renderIcon('bookmark');
+        monitorButton.replaceChildren(renderIcon('bookmark'));
         monitorButton.setAttribute('aria-label', 'Not in Whisparr');
         monitorButton.title = 'Not in Whisparr';
         return;
@@ -3685,7 +3683,7 @@ class SceneCardObserver {
         monitorButton.disabled = true;
         monitorButton.style.opacity = '0.6';
         monitorButton.style.cursor = 'not-allowed';
-        monitorButton.innerHTML = renderIcon('spinner', { spin: true });
+        monitorButton.replaceChildren(renderIcon('spinner', { spin: true }));
         monitorButton.setAttribute('aria-label', 'Updating monitor status');
         monitorButton.title = 'Updating monitor status';
         return;
@@ -3695,7 +3693,7 @@ class SceneCardObserver {
         monitorButton.disabled = false;
         monitorButton.style.opacity = '1';
         monitorButton.style.cursor = 'pointer';
-        monitorButton.innerHTML = renderIcon('x');
+        monitorButton.replaceChildren(renderIcon('x'));
         monitorButton.setAttribute('aria-label', 'Monitor update failed');
         monitorButton.title = 'Monitor update failed';
         return;
@@ -3705,8 +3703,8 @@ class SceneCardObserver {
       monitorButton.disabled = false;
       monitorButton.style.opacity = '1';
       monitorButton.style.cursor = 'pointer';
-      monitorButton.innerHTML = renderIcon(
-        isMonitored ? 'bookmark-filled' : 'bookmark',
+      monitorButton.replaceChildren(
+        renderIcon(isMonitored ? 'bookmark-filled' : 'bookmark'),
       );
       monitorButton.setAttribute(
         'aria-label',
@@ -3722,7 +3720,7 @@ class SceneCardObserver {
       switch (state) {
         case 'loading':
           setButtonState(copyButton, 'disabled');
-          copyButton.innerHTML = renderIcon('spinner', { spin: true });
+          copyButton.replaceChildren(renderIcon('spinner', { spin: true }));
           copyButton.style.background = '#94a3b8';
           copyButton.style.borderColor = '#94a3b8';
           copyButton.style.color = '#ffffff';
@@ -3731,7 +3729,7 @@ class SceneCardObserver {
           return;
         case 'success':
           setButtonState(copyButton, 'disabled');
-          copyButton.innerHTML = renderIcon('circle-check');
+          copyButton.replaceChildren(renderIcon('circle-check'));
           copyButton.style.background = '#22c55e';
           copyButton.style.borderColor = '#22c55e';
           copyButton.style.color = '#ffffff';
@@ -3740,7 +3738,7 @@ class SceneCardObserver {
           return;
         case 'error':
           setButtonState(copyButton, 'disabled');
-          copyButton.innerHTML = renderIcon('x');
+          copyButton.replaceChildren(renderIcon('x'));
           copyButton.style.background = '#ef4444';
           copyButton.style.borderColor = '#ef4444';
           copyButton.style.color = '#ffffff';
@@ -3750,7 +3748,7 @@ class SceneCardObserver {
         case 'idle':
         default:
           setButtonState(copyButton, 'enabled');
-          copyButton.innerHTML = renderIcon('copy');
+          copyButton.replaceChildren(renderIcon('copy'));
           copyButton.style.background = '#e2e8f0';
           copyButton.style.borderColor = '#334155';
           copyButton.style.color = '#0f172a';

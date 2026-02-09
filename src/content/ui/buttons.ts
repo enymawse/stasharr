@@ -89,7 +89,7 @@ export function createIconButton(options: {
   if (styles.gap) {
     button.style.gap = styles.gap;
   }
-  button.innerHTML = renderIcon(icon, { size: iconSize });
+  button.replaceChildren(renderIcon(icon, { size: iconSize }));
   setButtonState(button, disabled ? 'disabled' : 'enabled');
   return button;
 }

@@ -345,7 +345,7 @@ function setDiscoveryEnabled(enabled: boolean) {
 }
 
 function resetSelect(select: HTMLSelectElement, placeholder: string) {
-  select.innerHTML = '';
+  select.textContent = '';
   const option = document.createElement('option');
   option.value = '';
   option.textContent = placeholder;
@@ -407,7 +407,7 @@ function updateLabels(
   message?: string,
   isError = false,
 ) {
-  elements.labelsSelect.innerHTML = '';
+  elements.labelsSelect.textContent = '';
   for (const item of items) {
     const option = document.createElement('option');
     option.value = String(item.id);

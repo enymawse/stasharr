@@ -42,7 +42,7 @@ export function createStatusIndicator(options: { state: StatusState }) {
 
   const setState = (state: StatusState) => {
     const config = STATE_ICON[state];
-    icon.innerHTML = renderIcon(config.icon, { spin: config.spin });
+    icon.replaceChildren(renderIcon(config.icon, { spin: config.spin }));
     icon.style.color = config.color;
   };
 
