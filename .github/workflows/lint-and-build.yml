@@ -1,9 +1,9 @@
-name: Lint and Build
+name: PR Check
 
 on:
   pull_request:
     branches:
-      - main
+      - extension
 
 jobs:
   lint-and-build:
@@ -16,13 +16,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install extension dependencies
-        run: cd extension && npm ci
+        run: npm ci
 
-      - name: Build extension
-        run: cd extension && npm run build
+      - name: Lint
+        run: npm run lint
 
-      - name: Run extension tripwire
-        run: cd extension && npm run tripwire
+      - name: Build
+        run: npm run build
+
+      - name: Tripwire
+        run: npm run tripwire
