@@ -4,7 +4,21 @@
   "version": "0.1.0",
   "description": "Standalone Stasharr browser add-on.",
   "action": {
-    "default_title": "Stasharr"
+    "default_title": "Stasharr",
+    "default_icon": {
+      "16": "icons/stasharr-16.png",
+      "32": "icons/stasharr-32.png",
+      "48": "icons/stasharr-48.png",
+      "96": "icons/stasharr-96.png",
+      "128": "icons/stasharr-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/stasharr-16.png",
+    "32": "icons/stasharr-32.png",
+    "48": "icons/stasharr-48.png",
+    "96": "icons/stasharr-96.png",
+    "128": "icons/stasharr-128.png"
   },
   "background": {
     "scripts": ["background/background-firefox.js"]

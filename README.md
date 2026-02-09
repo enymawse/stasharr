@@ -18,7 +18,10 @@
 
 - Scene card actions: add to Whisparr, trigger search for missing files, monitor/unmonitor, exclude/include
 - Status indicators on scene cards (in library, missing file, excluded, error)
+- Bulk actions on list pages (Add All / Search All / Add Missing) with progress modal feedback
 - Scene details panel with status, quality profile selection, tags editing, and monitor/exclude toggles
+- Performer and studio panels with status, add/check, monitor toggle, tags/quality editing, and Whisparr links
+- Copy StashDB scene IDs from scene cards and the scene details panel
 - Direct links to Whisparr and Stash scenes (when configured)
 - Options UI with validation and discovery for quality profiles, root folders, and tags
 - Background-only networking for LAN services (Firefox-safe)
@@ -67,11 +70,18 @@ for Whisparr/Stash to enable API calls.
 - Each scene card gets a status indicator and action row.
 - Actions include Add, Search (for missing files), Monitor/Unmonitor, Exclude/Include.
 - View buttons jump directly to Whisparr or Stash scenes when configured.
+- Bulk actions are available on list pages and show progress in a modal.
 
 ### Scene details pages
 
 - A fixed extension panel shows scene status and actions.
 - Update quality profile and tags directly from the panel.
+- Copy the StashDB scene ID from the panel.
+
+### Performer and studio pages
+
+- A fixed extension panel shows status and actions.
+- Add/Check, Monitor toggle, update quality profile and tags, and open in Whisparr.
 
 ## Troubleshooting
 
