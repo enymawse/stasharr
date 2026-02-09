@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/enymawse/stasharr/compare/stasharr-extension-v0.2.0...stasharr-extension-v0.2.1) (2026-02-09)
+
+
+### Bug Fixes
+
+* **release:** add firefox release note fallback ([d2ee43a](https://github.com/enymawse/stasharr/commit/d2ee43adf7e19cefa153e0e725bbdc674b71f110))
+
 ## [0.2.0](https://github.com/enymawse/stasharr/compare/stasharr-extension-v0.1.0...stasharr-extension-v0.2.0) (2026-02-09)
 
 
