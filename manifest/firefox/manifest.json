@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stasharr Add-On",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Standalone Stasharr browser add-on.",
   "action": {
     "default_title": "Stasharr",
@@ -21,11 +21,15 @@
     "128": "icons/stasharr-128.png"
   },
   "background": {
-    "scripts": ["background/background-firefox.js"]
+    "scripts": [
+      "background/background-firefox.js"
+    ]
   },
   "content_scripts": [
     {
-      "matches": ["https://stashdb.org/*"],
+      "matches": [
+        "https://stashdb.org/*"
+      ],
       "js": [
         "shared/navigation.js",
         "content/pageParser.js",
@@ -38,9 +42,16 @@
     "page": "content/options.html",
     "open_in_tab": true
   },
-  "permissions": ["storage"],
-  "host_permissions": ["https://stashdb.org/*"],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://stashdb.org/*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src http: https:; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
   },
@@ -49,7 +60,10 @@
       "id": "stasharr@example.com",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["authenticationInfo", "websiteContent"]
+        "required": [
+          "authenticationInfo",
+          "websiteContent"
+        ]
       }
     }
   }

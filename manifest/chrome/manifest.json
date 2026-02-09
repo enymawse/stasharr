@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stasharr Extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Standalone Stasharr browser extension.",
   "action": {
     "default_title": "Stasharr",
@@ -26,7 +26,9 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://stashdb.org/*"],
+      "matches": [
+        "https://stashdb.org/*"
+      ],
       "js": [
         "shared/navigation.js",
         "content/pageParser.js",
@@ -39,9 +41,16 @@
     "page": "content/options.html",
     "open_in_tab": true
   },
-  "permissions": ["storage"],
-  "host_permissions": ["https://stashdb.org/*"],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://stashdb.org/*"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src http: https:; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
   }
