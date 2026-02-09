@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-      - main
+      - extension
 
 name: release-please
 
@@ -15,16 +15,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install extension dependencies
-        run: cd extension && npm ci
+        run: npm ci
 
       - name: Build extension
-        run: cd extension && npm run build
+        run: npm run build
 
       - name: Run extension tripwire
-        run: cd extension && npm run tripwire
+        run: npm run tripwire
 
       - name: Run release-please
         uses: googleapis/release-please-action@v4
@@ -32,17 +32,37 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_PLEASE_STASHARR }}
           release-type: node
-          path: extension
+          path: .
 
-      - name: Package extension artifact
+      - name: Package extension artifacts
         if: ${{ steps.release.outputs.release_created }}
         run: |
-          cd extension/dist
-          zip -r ../stasharr-extension.zip .
+          npm run pack:chrome
+          npm run pack:firefox
 
       - name: Upload Release Artifact
         if: ${{ steps.release.outputs.release_created }}
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_STASHARR }}
         run: |
-          gh release upload ${{ steps.release.outputs.tag_name }} ./extension/stasharr-extension.zip
+          gh release upload ${{ steps.release.outputs.tag_name }} ./dist/stasharr-extension-chrome.zip
+          gh release upload ${{ steps.release.outputs.tag_name }} ./dist/stasharr-addon-firefox.zip
+
+      - name: Publish Firefox add-on
+        if: ${{ steps.release.outputs.release_created }}
+        uses: browser-actions/release-firefox-addon@latest
+        with:
+          addon-id: ${{ secrets.FIREFOX_ADDON_ID }}
+          addon-path: ./dist/stasharr-addon-firefox.zip
+          auth-api-issuer: ${{ secrets.AMO_API_KEY }}
+          auth-api-secret: ${{ secrets.AMO_API_SECRET }}
+
+      - name: Publish Chrome extension
+        if: ${{ steps.release.outputs.release_created }}
+        uses: browser-actions/release-chrome-extension@latest
+        with:
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          extension-path: ./dist/stasharr-extension-chrome.zip
+          oauth-client-id: ${{ secrets.CHROME_OAUTH_CLIENT_ID }}
+          oauth-client-secret: ${{ secrets.CHROME_OAUTH_CLIENT_SECRET }}
+          oauth-refresh-token: ${{ secrets.CHROME_OAUTH_REFRESH_TOKEN }}

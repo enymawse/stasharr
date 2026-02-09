@@ -14,6 +14,7 @@ if (!target || !['chrome', 'firefox'].includes(target)) {
 }
 
 const distDir = resolve(rootDir, 'dist', target);
-const outFile = resolve(rootDir, 'dist', `stasharr-${target}.zip`);
+const flavor = target === 'firefox' ? 'addon' : 'extension';
+const outFile = resolve(rootDir, 'dist', `stasharr-${flavor}-${target}.zip`);
 
 await execFileAsync('zip', ['-r', outFile, '.'], { cwd: distDir });
