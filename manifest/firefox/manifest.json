@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stasharr Add-On",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Standalone Stasharr browser add-on.",
   "action": {
     "default_title": "Stasharr",
