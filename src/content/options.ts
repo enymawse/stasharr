@@ -42,6 +42,7 @@ type FormState = {
   lastValidatedAt?: string;
   openExternalLinksInNewTab?: boolean;
   searchOnAdd?: boolean;
+  showDebugDetails?: boolean;
 };
 
 const elements = {
@@ -56,6 +57,9 @@ const elements = {
   whisparrSpinner: document.querySelector('[data-whisparr-spinner]') as HTMLElement,
   openExternalLinksInNewTab: document.querySelector(
     '[data-field="openExternalLinksInNewTab"]',
+  ) as HTMLInputElement,
+  showDebugDetails: document.querySelector(
+    '[data-field="showDebugDetails"]',
   ) as HTMLInputElement,
   searchOnAdd: document.querySelector('[data-field="searchOnAdd"]') as HTMLInputElement,
   stashBaseUrl: document.querySelector('[data-field="stashBaseUrl"]') as HTMLInputElement,
@@ -86,6 +90,7 @@ if (
   !elements.refresh ||
   !elements.whisparrSpinner ||
   !elements.openExternalLinksInNewTab ||
+  !elements.showDebugDetails ||
   !elements.searchOnAdd ||
   !elements.stashBaseUrl ||
   !elements.stashApiKey ||
@@ -204,6 +209,7 @@ async function loadSettings() {
   elements.stashApiKey.value = settings.stashApiKey ?? '';
   elements.openExternalLinksInNewTab.checked =
     settings.openExternalLinksInNewTab ?? true;
+  elements.showDebugDetails.checked = settings.showDebugDetails ?? false;
   elements.searchOnAdd.checked = settings.searchOnAdd ?? true;
 
   const configured =
@@ -668,6 +674,22 @@ async function saveSearchOnAddPreference() {
   setStatus('Preference saved.');
 }
 
+async function saveDebugDetailsPreference() {
+  const response = await ext.runtime.sendMessage({
+    type: MESSAGE_TYPES.saveSettings,
+    settings: {
+      showDebugDetails: elements.showDebugDetails.checked,
+    },
+  });
+
+  if (!response.ok) {
+    setStatus(response.error ?? 'Save failed.', true);
+    return;
+  }
+
+  setStatus('Preference saved.');
+}
+
 async function saveStashSettings() {
   const normalized = normalizeBaseUrl(elements.stashBaseUrl.value);
   if (!normalized.ok || !normalized.value) {
@@ -783,6 +805,10 @@ elements.openExternalLinksInNewTab.addEventListener('change', () => {
 
 elements.searchOnAdd.addEventListener('change', () => {
   void saveSearchOnAddPreference();
+});
+
+elements.showDebugDetails.addEventListener('change', () => {
+  void saveDebugDetailsPreference();
 });
 
 elements.stashSave.addEventListener('click', () => {

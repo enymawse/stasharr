@@ -542,6 +542,7 @@ export type ExtensionSettings = {
   lastValidatedAt?: string;
   openExternalLinksInNewTab?: boolean;
   searchOnAdd?: boolean;
+  showDebugDetails?: boolean;
 };
 
 export type ExtensionRequest =

@@ -182,6 +182,7 @@ type ContentRuntime = {
         stashApiKey?: string;
         lastValidatedAt?: string;
         searchOnAdd?: boolean;
+        showDebugDetails?: boolean;
       };
       catalogs?: {
         qualityProfiles?: Array<{ id: number; name: string }>;
@@ -220,6 +221,16 @@ type ContentRuntime = {
     }>;
     getURL?: (path: string) => string;
     openOptionsPage?: () => void;
+  };
+  storage?: {
+    onChanged?: {
+      addListener: (
+        callback: (
+          changes: Record<string, { oldValue?: unknown; newValue?: unknown }>,
+          areaName: 'local' | 'sync' | 'managed',
+        ) => void,
+      ) => void;
+    };
   };
 };
 
@@ -345,6 +356,7 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   let whisparrBaseUrl: string | null = null;
   let stashConfigured = false;
   let searchOnAdd = true;
+  let showDebugDetails = false;
   let sceneCopyResetTimer: number | null = null;
   let bulkInProgress = false;
   let bulkSceneItems: Array<{
@@ -389,11 +401,14 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
   heading.style.marginBottom = '6px';
   panel.appendChild(heading);
 
+  const debugSection = document.createElement('div');
+  panel.appendChild(debugSection);
+
   const diagnostics = document.createElement('div');
   let parsedPage = getParsedPage();
   diagnostics.textContent = `Diagnostics: ${parsedPage.type} • ${truncate(parsedPage.url, 140)}`;
   diagnostics.style.opacity = '0.85';
-  panel.appendChild(diagnostics);
+  debugSection.appendChild(diagnostics);
 
   const parseDetails = document.createElement('div');
   parseDetails.style.marginTop = '6px';
@@ -408,7 +423,12 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
     parseDetails.textContent = `Detected: ${parsedPage.type} | IDs: ${idsText} | Canonical: ${canonicalText}`;
   };
   updateDiagnostics();
-  panel.appendChild(parseDetails);
+  debugSection.appendChild(parseDetails);
+
+  const applyDebugVisibility = () => {
+    debugSection.style.display = showDebugDetails ? 'block' : 'none';
+  };
+  applyDebugVisibility();
 
   const bulkControls = document.createElement('div');
   bulkControls.style.display = 'none';
@@ -3002,6 +3022,8 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
         response.settings.stashApiKey?.trim(),
       );
       searchOnAdd = response.settings.searchOnAdd ?? true;
+      showDebugDetails = response.settings.showDebugDetails ?? false;
+      applyDebugVisibility();
       if (!configured) {
         statusRow.textContent = 'Config: not configured';
         readiness = 'unconfigured';
@@ -3033,11 +3055,31 @@ if (!isEditPage && !document.getElementById(PANEL_ID)) {
       applyDisabledStyles(addSceneButton, true);
       stashConfigured = false;
       whisparrBaseUrl = null;
+      showDebugDetails = false;
+      applyDebugVisibility();
       void updateViewInStashButton(getParsedPage().stashIds[0], true);
       updateViewInWhisparrButton(getParsedPage().stashIds[0]);
       updateEntityControls();
     }
   };
+
+  const SETTINGS_KEY = 'stasharrSettings';
+  if (extContent.storage?.onChanged?.addListener) {
+    extContent.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== 'local') return;
+      const change = changes[SETTINGS_KEY];
+      if (!change || typeof change.newValue !== 'object' || change.newValue === null) {
+        return;
+      }
+      const nextValue = (change.newValue as { showDebugDetails?: boolean })
+        .showDebugDetails;
+      const next = nextValue ?? false;
+      if (next !== showDebugDetails) {
+        showDebugDetails = next;
+        applyDebugVisibility();
+      }
+    });
+  }
 
   void updateConfigStatus();
   void updateSceneStatus(false);
