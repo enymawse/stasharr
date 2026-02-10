@@ -8,7 +8,7 @@ on:
     inputs:
       tag:
         description: Release tag to publish (e.g., stasharr-extension-v0.2.0)
-        required: true
+        required: false
         type: string
 
 jobs:
@@ -22,11 +22,20 @@ jobs:
 
       - name: Resolve release tag
         id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -n "${{ github.event.release.tag_name }}" ]; then
             echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
-          else
+          elif [ -n "${{ inputs.tag }}" ]; then
             echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            latest_tag="$(gh release view --json tagName -q .tagName)"
+            if [ -z "$latest_tag" ]; then
+              echo "Unable to resolve a release tag." >&2
+              exit 1
+            fi
+            echo "tag=$latest_tag" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Fetch release notes
