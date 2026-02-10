@@ -170,6 +170,13 @@
 - Commits: 1) feat(content): bulk actions dropdown + confirmations. 2) feat(content): progress modal + state management. 3) feat(background): bulk add/search/missing handlers with suppressed toasts.
 - Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: Add All / Search All / Add Missing work and show correct progress/summary.
 
+**Task 15**
+
+- Scope: add a settings toggle to show/hide debug details in the extension panel; wire storage + options UI + panel rendering (`src/shared/storage.ts`, `src/content/options.ts`, `src/content/options.html`, `src/content/content.ts`, and shared messages if required).
+- Invariants: default is off; no changes to non-debug panel content; no networking in content/options; avoid new error strings or toasts.
+- Commits: 1) feat(options): add debug-details toggle + persistence. 2) refactor(content): conditionally render debug details based on setting (and refresh on setting changes).
+- Verification: `npm run lint`; `npm run build`; `npm run tripwire`; manual: toggle hides/shows debug section without breaking panel layout.
+
 **Future Work: Firefox Background Refactor Plan**
 
 - Goal: refactor `src/background/background-firefox.ts` to reuse shared background core/services while keeping Firefox MV3 script output and identical behavior.
