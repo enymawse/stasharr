@@ -13,6 +13,8 @@
 
 **A browser extension that augments StashDB with Whisparr and Stash integrations.**
 
+<img width="1218" height="269" alt="Screenshot 2026-02-10 064630" src="https://github.com/user-attachments/assets/44694327-38c5-4221-b583-e49a3ebbafd8" />
+
 ## Repository Layout
 
 - `src/` — Extension source (content scripts + background services)
