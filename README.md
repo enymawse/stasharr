@@ -1,5 +1,8 @@
 # Stasharr
 
+> Stasharr is now available as a browser extension. Visit the `extension` branch
+> for the extension code, releases, and installation details.
+
 ![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/enymawse/stasharr?style=for-the-badge)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/enymawse/stasharr/release-please.yml?style=for-the-badge)
