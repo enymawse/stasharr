@@ -39,7 +39,7 @@
     "@types/bootstrap": "^5.2.10",
     "@types/lodash": "^4.17.23",
     "@types/react": "^18.3.27",
-    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.54.0",
     "@violentmonkey/types": "^0.3.2",
     "babel-loader": "^9.2.1",
