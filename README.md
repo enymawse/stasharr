@@ -2,14 +2,14 @@
 
 # Stasharr — StashDB Extension
 
-![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?filter=!v.*.*.*&style=for-the-badge)
-![GitHub License](https://img.shields.io/github/license/enymawse/stasharr?style=for-the-badge)
+[![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?filter=!v.*.*.*&style=for-the-badge)](https://github.com/enymawse/stasharr/releases?q=stasharr-extension)
+[![GitHub License](https://img.shields.io/github/license/enymawse/stasharr?style=for-the-badge)](https://github.com/enymawse/stasharr/blob/main/LICENSE)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/enymawse/stasharr/release-please.yml?branch=extension&style=for-the-badge)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg?style=for-the-badge)](http://commitizen.github.io/cz-cli/)
 
-![Mozilla Add-on Version](https://img.shields.io/amo/v/stasharr?style=for-the-badge&link=https%3A%2F%2Faddons.mozilla.org%2Fen-US%2Ffirefox%2Faddon%2Fstasharr%2F)
-![Static Badge](https://img.shields.io/badge/firefox_add_on-manual_install-orange?style=for-the-badge&label=mozilla%20add-on&link=https%3A%2F%2Fgithub.com%2Fenymawse%2Fstasharr%2Freleases%3Fq%3Dextension%26expanded%3Dtrue)
-![Static Badge](https://img.shields.io/badge/chrome_extension-manual_install-brightgreen?style=for-the-badge&link=https%3A%2F%2Fgithub.com%2Fenymawse%2Fstasharr%2Freleases%3Fq%3Dextension%26expanded%3Dtrue)
+[![Mozilla Add-on Version](https://img.shields.io/amo/v/stasharr?style=for-the-badge)](https://addons.mozilla.org/en-US/firefox/addon/stasharr/)
+[![Static Badge](https://img.shields.io/badge/firefox_add_on-manual_install-orange?style=for-the-badge&label=mozilla%20add-on)](https://github.com/enymawse/stasharr/releases?q=stasharr-extension)
+[![Static Badge](https://img.shields.io/badge/chrome_extension-manual_install-brightgreen?style=for-the-badge)](https://github.com/enymawse/stasharr/releases?q=stasharr-extension)
 
 **A browser extension that augments StashDB with Whisparr and Stash integrations.**
 
