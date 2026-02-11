@@ -1,5 +1,8 @@
 # Stasharr
 
+> Stasharr is now available as a browser extension. Visit the `extension` branch
+> for the extension code, releases, and installation details.
+
 ![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/enymawse/stasharr?style=for-the-badge)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/enymawse/stasharr/release-please.yml?style=for-the-badge)
@@ -65,7 +68,6 @@ Turn StashDB from a simple database into a comprehensive content management syst
 ### Quick Install
 
 1. **Install browser extension:**
-
    - [Tampermonkey](https://www.tampermonkey.net/) (recommended)
    - [Violentmonkey](https://violentmonkey.github.io/) (alternative)
 
@@ -280,7 +282,10 @@ If Stasharr has improved your content management workflow:
 ⭐ **Star this repository** to show your support  
 🐛 **Report issues** to help improve the project  
 💡 **Suggest features** for future development  
-🤝 **Contribute** to make Stasharr even better
+🤝 **Contribute** to make Stasharr even better  
+🪙 **Donate** by supporing publicly or privately
+
+bitcoin: 3MttRFnUWijmUZ1q5m3ru6gR1ANDWXkSbF
 
 ---
 

@@ -1,0 +1,51 @@
+name: Extension Issue
+description: Report a problem or request a change for the browser extension.
+title: '[extension]: '
+labels: ['extension', 'triage']
+body:
+  - type: dropdown
+    id: target
+    attributes:
+      label: Target
+      description: Which build is affected?
+      options:
+        - extension
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Version from the extension details page.
+      placeholder: '0.1.0'
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What’s the issue or request?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide steps if this is a bug.
+      placeholder: |
+        1. Go to...
+        2. Click...
+        3. See...
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What did you expect to happen?
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: What happened instead?
