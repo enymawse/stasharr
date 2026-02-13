@@ -285,7 +285,7 @@ If Stasharr has improved your content management workflow:
 🤝 **Contribute** to make Stasharr even better  
 🪙 **Donate** by supporing publicly or privately
 
-bitcoin: 3MttRFnUWijmUZ1q5m3ru6gR1ANDWXkSbF
+bitcoin: [3MttRFnUWijmUZ1q5m3ru6gR1ANDWXkSbF](https://bitcoinblockexplorers.com/address/3MttRFnUWijmUZ1q5m3ru6gR1ANDWXkSbF)
 
 ---
 
