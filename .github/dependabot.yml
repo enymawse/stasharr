@@ -12,58 +12,10 @@ updates:
       timezone: 'Etc/UTC'
     # Increase the number of open pull requests for npm to 15
     open-pull-requests-limit: 15
-    # Group dependency updates to reduce PR noise
     groups:
-      # Group all patch-level updates
-      patch-updates:
+      minor-and-patch:
         patterns:
           - '*'
-        update-types:
-          - 'patch'
-      # Group all minor updates for development dependencies
-      dev-dependencies-minor:
-        patterns:
-          - '*'
-        dependency-type: 'development'
-        update-types:
-          - 'minor'
-      # Group all TypeScript related packages
-      typescript:
-        patterns:
-          - 'typescript*'
-          - '@types/*'
-          - 'ts-*'
-        update-types:
-          - 'minor'
-          - 'patch'
-      # Group all ESLint related packages
-      eslint:
-        patterns:
-          - 'eslint*'
-          - '@typescript-eslint/*'
-        update-types:
-          - 'minor'
-          - 'patch'
-      # Group all Webpack related packages
-      webpack:
-        patterns:
-          - 'webpack*'
-          - '*-loader'
-        update-types:
-          - 'minor'
-          - 'patch'
-      # Group all SolidJS related packages
-      solidjs:
-        patterns:
-          - 'solid-*'
-          - 'babel-preset-solid'
-        update-types:
-          - 'minor'
-          - 'patch'
-      # Group all FontAwesome packages
-      fontawesome:
-        patterns:
-          - '@fortawesome/*'
         update-types:
           - 'minor'
           - 'patch'
