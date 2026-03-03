@@ -1,9 +1,9 @@
 # Stasharr
 
-> Stasharr is now available as a browser extension. Visit the `extension` branch
+> Stasharr is now available as a browser extension. Visit the [`extension`](https://github.com/enymawse/stasharr/tree/extension#stasharr--stashdb-extension) branch
 > for the extension code, releases, and installation details.
 
-![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?style=for-the-badge)
+![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?filter=v*.*.*&style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/enymawse/stasharr?style=for-the-badge)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/enymawse/stasharr/release-please.yml?style=for-the-badge)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg?style=for-the-badge)](http://commitizen.github.io/cz-cli/)
@@ -73,7 +73,7 @@ Turn StashDB from a simple database into a comprehensive content management syst
 
 2. **Install Stasharr:**
 
-   Click here → [`stasharr.user.js`](https://github.com/enymawse/stasharr/releases/latest/download/stasharr.user.js)
+   Navigate to the [Releases](https://github.com/enymawse/stasharr/releases), find the latest version of the userscript published (it won't have 'extension' in the title), click the 'Assets' dropdown, and select `stasharr.user.js`
 
    Your userscript manager will prompt for installation. Click **Install** to proceed.
 
