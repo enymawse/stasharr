@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.4](https://github.com/enymawse/stasharr/compare/v2.11.3...v2.11.4) (2026-03-09)
+
+
+### Bug Fixes
+
+* **performer:** handle missing performer stash lookup ([#189](https://github.com/enymawse/stasharr/issues/189)) ([593e07e](https://github.com/enymawse/stasharr/commit/593e07ef70c5c9056731c96aba399dbdd2ddee69)), closes [#187](https://github.com/enymawse/stasharr/issues/187)
+
 ## [2.11.3](https://github.com/enymawse/stasharr/compare/v2.11.2...v2.11.3) (2026-02-08)
 
 
