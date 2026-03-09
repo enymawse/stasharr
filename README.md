@@ -2,7 +2,7 @@
 
 # Stasharr — StashDB Extension
 
-[![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?filter=!v.*.*.*&style=for-the-badge)](https://github.com/enymawse/stasharr/releases?q=stasharr-extension)
+[![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?filter=stasharr-extension-*&style=for-the-badge)](https://github.com/enymawse/stasharr/releases?q=stasharr-extension)
 [![GitHub License](https://img.shields.io/github/license/enymawse/stasharr?style=for-the-badge)](https://github.com/enymawse/stasharr/blob/main/LICENSE)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/enymawse/stasharr/release-please.yml?branch=extension&style=for-the-badge)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg?style=for-the-badge)](http://commitizen.github.io/cz-cli/)
