@@ -23,6 +23,15 @@ export default class PerformerService extends ServiceBase {
     try {
       response = await ServiceBase.request(config, endpoint);
     } catch (error) {
+      // Whisparr returns 500 for missing performers on this endpoint.
+      // Treat this case as "not found" so normal add flows can continue.
+      if (
+        error instanceof Error &&
+        error.message.includes('HTML Response error: 500')
+      ) {
+        return null;
+      }
+
       ToastService.showToast(
         'Error occurred while looking up the performer',
         false,
