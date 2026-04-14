@@ -61,7 +61,7 @@ const CardButton = (props: { config: Config; stashId: string }) => {
             class="whisparr-card-button"
             data-bs-toggle="tooltip"
             data-bs-title="View in Whisparr"
-            href={`${props.config.whisparrUrl()}/movie/${props.stashId}`}
+            href={props.config.whisparrMovieUrl(props.stashId)}
             config={props.config}
             showIndicator={false}
           >
