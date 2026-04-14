@@ -183,17 +183,19 @@ export class UrlProcessor {
 
     try {
       // Remove any protocol if user accidentally included it
-      let cleanInput = trimmed.replace(/^https?:\/\//i, '');
+      const cleanInput = trimmed.replace(/^https?:\/\//i, '');
+      const url = new URL(`${result.protocol}://${cleanInput}`);
+      const explicitPort = cleanInput
+        .split(/[/?#]/, 1)[0]
+        .match(/:(\d+)$/)?.[1];
 
-      // Parse hostname and port
-      const portMatch = cleanInput.match(/^(.+?):(\d+)$/);
-      if (portMatch) {
-        result.hostname = portMatch[1];
-        result.port = parseInt(portMatch[2], 10);
-      } else {
-        result.hostname = cleanInput;
-        // No port specified - this might be okay for some setups
-      }
+      result.hostname = url.hostname;
+      result.port = url.port
+        ? parseInt(url.port, 10)
+        : explicitPort
+          ? parseInt(explicitPort, 10)
+          : undefined;
+      result.path = url.pathname.replace(/\/+$/, '');
 
       // Validate hostname
       if (!result.hostname) {
@@ -206,6 +208,7 @@ export class UrlProcessor {
       if (result.port) {
         result.fullBaseUrl += `:${result.port}`;
       }
+      result.fullBaseUrl += result.path;
 
       result.isValid = true;
 
@@ -267,8 +270,14 @@ export class UrlProcessor {
    * Build Whisparr movie URL
    */
   static buildWhisparrMovieUrl(baseUrl: string, stashId: string): string {
-    const cleanBase = baseUrl.replace(/\/+$/, '');
-    return `${cleanBase}/movie/${stashId}`;
+    const url = new URL(baseUrl);
+    const basePath = url.pathname.replace(/\/+$/, '');
+    url.pathname = [basePath, 'movie', stashId]
+      .filter((part) => part !== '')
+      .join('/');
+    url.search = '';
+    url.hash = '';
+    return url.toString();
   }
 
   /**

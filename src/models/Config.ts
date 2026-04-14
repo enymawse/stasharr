@@ -82,6 +82,10 @@ export class Config {
     return UrlProcessor.buildWhisparrApiUrl(baseUrl);
   }
 
+  whisparrMovieUrl(stashId: string): string {
+    return UrlProcessor.buildWhisparrMovieUrl(this.whisparrUrl(), stashId);
+  }
+
   stashSceneUrl(sceneId: string): string {
     if (!this.stashDomain) {
       return '';
