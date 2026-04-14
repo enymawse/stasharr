@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.5](https://github.com/enymawse/stasharr/compare/v2.11.4...v2.11.5) (2026-04-14)
+
+
+### Bug Fixes
+
+* **whisparr:** normalize movie UI links ([#201](https://github.com/enymawse/stasharr/issues/201)) ([9ac662a](https://github.com/enymawse/stasharr/commit/9ac662a2cd5472ca16f29f946e0535266c71cae8)), closes [#193](https://github.com/enymawse/stasharr/issues/193)
+
 ## [2.11.4](https://github.com/enymawse/stasharr/compare/v2.11.3...v2.11.4) (2026-03-09)
 
 
