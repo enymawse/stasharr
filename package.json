@@ -62,7 +62,7 @@
     "sass": "^1.99.0",
     "sass-loader": "^16.0.7",
     "solid-bootstrap": "^1.0.21",
-    "solid-fontawesome": "^0.3.0",
+    "solid-fontawesome": "^0.2.1",
     "solid-js": "^1.9.11",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.4.0",
