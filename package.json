@@ -10,8 +10,7 @@
     "lint": "eslint . --fix",
     "preversion": "",
     "version": "npm run build",
-    "postversion": "git push && git push --tags",
-    "cm": "cz"
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
@@ -40,9 +39,7 @@
     "babel-loader": "^9.2.1",
     "babel-preset-solid": "^1.9.12",
     "bootstrap": "^5.3.8",
-    "commitizen": "^4.3.1",
     "css-loader": "^7.1.4",
-    "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.39.4",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-solid": "^0.14.5",
@@ -65,17 +62,6 @@
     "webpack-dev-server": "^5.2.3",
     "webpack-userscript": "^3.2.3",
     "zod": "^3.25.76"
-  },
-  "overrides": {
-    "commitizen": {
-      "inquirer": "8.2.7",
-      "lodash": "4.18.1"
-    }
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
   },
   "babel": {
     "presets": [
