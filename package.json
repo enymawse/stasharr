@@ -66,6 +66,12 @@
     "webpack-userscript": "^3.2.3",
     "zod": "^3.25.76"
   },
+  "overrides": {
+    "commitizen": {
+      "inquirer": "8.2.7",
+      "lodash": "4.18.1"
+    }
+  },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
