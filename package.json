@@ -10,8 +10,7 @@
     "lint": "eslint . --fix",
     "preversion": "",
     "version": "npm run build",
-    "postversion": "git push && git push --tags",
-    "cm": "cz"
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
@@ -29,40 +28,30 @@
     "@babel/preset-typescript": "^7.28.5",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
-    "@commitlint/cz-commitlint": "^19.8.1",
     "@eslint/js": "^9.39.4",
-    "@fortawesome/fontawesome-svg-core": "^6.7.2",
-    "@fortawesome/free-brands-svg-icons": "^6.7.2",
-    "@fortawesome/free-regular-svg-icons": "^6.7.2",
-    "@fortawesome/free-solid-svg-icons": "^6.7.2",
-    "@fortawesome/react-fontawesome": "^0.2.6",
+    "@fortawesome/fontawesome-svg-core": "^7.2.0",
+    "@fortawesome/free-regular-svg-icons": "^7.2.0",
+    "@fortawesome/free-solid-svg-icons": "^7.2.0",
     "@types/bootstrap": "^5.2.10",
-    "@types/lodash": "^4.17.24",
-    "@types/react": "^18.3.27",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.54.0",
     "@violentmonkey/types": "^0.3.2",
     "babel-loader": "^9.2.1",
     "babel-preset-solid": "^1.9.12",
     "bootstrap": "^5.3.8",
-    "commitizen": "^4.3.1",
     "css-loader": "^7.1.4",
-    "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.39.4",
-    "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-solid": "^0.14.5",
     "filesize": "^10.1.6",
     "globals": "^15.15.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
-    "lodash": "^4.18.1",
     "prettier": "3.8.2",
-    "react": "^18.3.1",
     "sass": "^1.99.0",
     "sass-loader": "^16.0.7",
     "solid-bootstrap": "^1.0.21",
-    "solid-fontawesome": "^0.2.1",
+    "solid-fontawesome": "^0.3.0",
     "solid-js": "^1.9.11",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.4.0",
@@ -73,11 +62,6 @@
     "webpack-dev-server": "^5.2.3",
     "webpack-userscript": "^3.2.3",
     "zod": "^3.25.76"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
   },
   "babel": {
     "presets": [

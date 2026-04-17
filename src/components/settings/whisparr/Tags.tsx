@@ -3,7 +3,6 @@ import { useSettings } from '../../../contexts/useSettings';
 import { Stasharr } from '../../../enums/Stasharr';
 import { createMemo, createResource, For } from 'solid-js';
 import WhisparrService from '../../../service/WhisparrService';
-import { parseInt } from 'lodash';
 import { ReactiveStoreFactory } from '../../../factory/ReactiveStoreFactory';
 
 const Tags = () => {
@@ -26,7 +25,7 @@ const Tags = () => {
     let tags: number[] = [];
     for (let i = 0; i < selectedOptions.length; i++) {
       const option = selectedOptions.item(i);
-      if (option) tags.push(parseInt(option.value, 10));
+      if (option) tags.push(Number.parseInt(option.value, 10));
     }
     setStore('tags', tags);
   };
