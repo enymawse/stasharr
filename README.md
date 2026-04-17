@@ -1,7 +1,12 @@
-# Stasharr
+# Stasharr Userscript
 
-> Stasharr is now available as a browser extension. Visit the [`extension`](https://github.com/enymawse/stasharr/tree/extension#stasharr--stashdb-extension) branch
-> for the extension code, releases, and installation details.
+> Stasharr now has multiple editions.
+>
+> - [Stasharr Portal](https://github.com/enymawse/stasharr-portal) is the primary new development focus: a self-hosted app for StashDB/FansDB, Whisparr, and Stash.
+> - This `main` branch remains the release channel for the Stasharr userscript.
+> - The [`extension`](https://github.com/enymawse/stasharr/tree/extension#stasharr--stashdb-extension) branch remains the release channel for the Chrome/Firefox extension.
+>
+> The userscript and extension are still maintained for users who prefer browser-based integration and do not want to self-host.
 
 ![GitHub Release](https://img.shields.io/github/v/release/enymawse/stasharr?filter=v*.*.*&style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/enymawse/stasharr?style=for-the-badge)
@@ -9,7 +14,9 @@
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg?style=for-the-badge)](http://commitizen.github.io/cz-cli/)
 [![Built with SolidJS](https://img.shields.io/badge/Built%20with-SolidJS-blue?style=for-the-badge)](https://github.com/solidjs/solid)
 
-**A powerful userscript that transforms StashDB into your content management hub by seamlessly integrating with Whisparr v3+ and Stash applications.**
+**The userscript edition of Stasharr enhances StashDB in your browser and integrates with Whisparr v3+ and Stash.**
+
+For the self-hosted edition that receives most new feature development, see [Stasharr Portal](https://github.com/enymawse/stasharr-portal).
 
 Turn StashDB from a simple database into a comprehensive content management system with one-click downloads, bulk operations, and real-time monitoring—all without leaving your browser.
 
