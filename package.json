@@ -47,7 +47,7 @@
     "globals": "^15.15.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
-    "prettier": "3.8.2",
+    "prettier": "3.8.3",
     "sass": "^1.99.0",
     "sass-loader": "^16.0.7",
     "solid-bootstrap": "^1.0.21",
