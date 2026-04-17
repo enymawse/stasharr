@@ -20,7 +20,6 @@ import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
 import { SceneStatus, SceneStatusType } from '../enums/SceneStatus';
 import { Stasharr } from '../enums/Stasharr';
 import { StashDB } from '../enums/StashDB';
-import { parseInt } from 'lodash';
 
 library.add(
   faChevronDown,
@@ -118,10 +117,11 @@ const BulkActionDropdown = () => {
   const handleAddAllOnPage = async () => {
     setShowAddAllOnPageModal(false);
 
-    const pageNumber: number = parseInt(
+    const pageNumber: number = Number.parseInt(
       document
         .querySelector<HTMLElement>(StashDB.DOMSelector.DataPage)
         ?.getAttribute(StashDB.DataAttribute.DataPage) || '{Page not found}',
+      10,
     );
 
     const addableSceneCards = document.querySelectorAll<HTMLElement>(
@@ -139,7 +139,7 @@ const BulkActionDropdown = () => {
         const sceneStatusRaw = node
           .querySelector(Stasharr.DOMSelector.CardButton)
           ?.getAttribute(Stasharr.DataAttribute.SceneStatus);
-        const sceneStatusNumber = parseInt(sceneStatusRaw || '-1', 10);
+        const sceneStatusNumber = Number.parseInt(sceneStatusRaw || '-1', 10);
 
         if (sceneStatusNumber > -1) {
           stashIdtoSceneCardAndStatusMap.set(stashId, {
@@ -251,10 +251,11 @@ const BulkActionDropdown = () => {
   const handleSearchAllOnPage = async () => {
     setShowSearchAllOnPageModal(false);
 
-    const pageNumber: number = parseInt(
+    const pageNumber: number = Number.parseInt(
       document
         .querySelector<HTMLElement>(StashDB.DOMSelector.DataPage)
         ?.getAttribute(StashDB.DataAttribute.DataPage) || '{Page not found}',
+      10,
     );
 
     const searchableSceneCards = document.querySelectorAll<HTMLElement>(

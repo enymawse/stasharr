@@ -1,6 +1,5 @@
 import { Stasharr } from '../enums/Stasharr';
 import { faSearch, faDownload } from '@fortawesome/free-solid-svg-icons';
-import { parseInt } from 'lodash';
 import { StashDB } from '../enums/StashDB';
 import { StashIdToSceneCardAndStatusMap } from '../types/stasharr';
 import { extractStashIdFromSceneCard, rehydrateSceneCards } from '../util/util';
@@ -39,10 +38,11 @@ const BulkActionButton = (props: { actionType: 'search' | 'add' }) => {
 
   const clickHandler = async () => {
     const details = getButtonDetails();
-    const pageNumber: number = parseInt(
+    const pageNumber: number = Number.parseInt(
       document
         .querySelector<HTMLElement>(StashDB.DOMSelector.DataPage)
         ?.getAttribute(StashDB.DataAttribute.DataPage) || '{Page not found}',
+      10,
     );
 
     const stashIdtoSceneCardAndStatusMap: StashIdToSceneCardAndStatusMap =
@@ -57,7 +57,7 @@ const BulkActionButton = (props: { actionType: 'search' | 'add' }) => {
         const sceneStatusRaw = node
           .querySelector(Stasharr.DOMSelector.CardButton)
           ?.getAttribute(Stasharr.DataAttribute.SceneStatus);
-        const sceneStatusNumber = parseInt(sceneStatusRaw || '-1', 10);
+        const sceneStatusNumber = Number.parseInt(sceneStatusRaw || '-1', 10);
 
         if (sceneStatusNumber > -1) {
           stashIdtoSceneCardAndStatusMap.set(stashId, {
