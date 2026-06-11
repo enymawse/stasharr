@@ -33,7 +33,7 @@ const WhisparrApiKeyInput = () => {
         data-bs-title="Found in Whisparr under Settings -> General"
         type={iconString().includes('slash') ? 'password' : 'text'}
         value={store.whisparrApiKey}
-        onChange={(e) => handleApiKeyChange(e.target.value)}
+        onInput={(e) => handleApiKeyChange(e.target.value)}
       />
       <label for={Stasharr.ID.Modal.ApiKey}>Whisparr API Key</label>
       <button

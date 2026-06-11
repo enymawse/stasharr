@@ -7,7 +7,7 @@ const StashApiKey = () => {
   const { store, setStore } = useSettings();
 
   const handleChange = (value: string) => {
-    setStore('stashApiKey', value === '' ? null : value);
+    setStore('stashApiKey', value);
   };
 
   const title = 'Locally hosted StashApp ApiKey';
@@ -31,7 +31,7 @@ const StashApiKey = () => {
         data-bs-title={title}
         type={iconString().includes('slash') ? 'password' : 'text'}
         value={store.stashApiKey}
-        onChange={(e) => handleChange(e.target.value)}
+        onInput={(e) => handleChange(e.target.value)}
       />
       <label for={Stasharr.ID.Modal.StashApiKey}>
         Locally hosted StashApp ApiKey

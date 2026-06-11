@@ -14,21 +14,24 @@ export class ScenesListController extends BaseController {
   }
 
   initialize() {
-    console.log('🎯 ScenesListController: initialize() called');
-    console.log('🔍 Current URL:', window.location.href);
-    console.log('🔍 Whisparr API key present:', !!this._config.whisparrApiKey);
+    console.log('ScenesListController: initialize() called');
+    console.log('Current URL:', window.location.href);
+    console.log(
+      'Whisparr basic configuration valid:',
+      this._config.basicValidation(),
+    );
 
-    if (this._config.whisparrApiKey && this.isOnTargetPath()) {
+    if (this._config.basicValidation() && this.isOnTargetPath()) {
       const sceneListCommandRow =
         document.querySelector<HTMLDivElement>('.scenes-list');
 
       console.log(
-        '🎯 ScenesListController: sceneListCommandRow found:',
+        'ScenesListController: sceneListCommandRow found:',
         !!sceneListCommandRow,
       );
 
       if (sceneListCommandRow) {
-        console.log('🎯 ScenesListController: .scenes-list element details:');
+        console.log('ScenesListController: .scenes-list element details:');
         console.log(
           '  - innerHTML length:',
           sceneListCommandRow.innerHTML.length,
@@ -39,7 +42,6 @@ export class ScenesListController extends BaseController {
           sceneListCommandRow.firstChild?.nodeName,
         );
 
-        // Check for existing Stasharr elements
         const existingStasharrActions = document.querySelector(
           '#stasharr-actions-dropdown',
         );
@@ -47,19 +49,16 @@ export class ScenesListController extends BaseController {
           sceneListCommandRow.querySelectorAll('.stasharr-button');
 
         console.log(
-          '🎯 ScenesListController: existing actions dropdown:',
+          'ScenesListController: existing actions dropdown:',
           !!existingStasharrActions,
         );
         console.log(
-          '🎯 ScenesListController: existing stasharr buttons count:',
+          'ScenesListController: existing stasharr buttons count:',
           existingStasharrButtons.length,
         );
 
-        // Only add if no Stasharr actions exist
         if (!existingStasharrActions && existingStasharrButtons.length === 0) {
-          console.log(
-            '🎯 ScenesListController: Adding new SceneList component',
-          );
+          console.log('ScenesListController: Adding new SceneList component');
           const placeholder = document.createElement('div');
           placeholder.id = 'stasharr-scene-list-placeholder';
           sceneListCommandRow.insertBefore(
@@ -67,26 +66,24 @@ export class ScenesListController extends BaseController {
             sceneListCommandRow.firstChild,
           );
           console.log(
-            '🎯 ScenesListController: Placeholder added, rendering SceneList...',
+            'ScenesListController: Placeholder added, rendering SceneList...',
           );
           render(() => SceneList({ config: this._config }), placeholder);
-          console.log('🎯 ScenesListController: SceneList render complete');
+          console.log('ScenesListController: SceneList render complete');
         } else {
           console.log(
-            '🎯 ScenesListController: Skipped - Stasharr elements already exist',
+            'ScenesListController: Skipped - Stasharr elements already exist',
           );
         }
       } else {
-        console.log('🎯 ScenesListController: No .scenes-list container found');
-        // Let's see what scene-related elements are available
+        console.log('ScenesListController: No .scenes-list container found');
         const sceneElements = document.querySelectorAll('[class*="scene"]');
         console.log(
-          '🎯 ScenesListController: Found scene-related elements:',
+          'ScenesListController: Found scene-related elements:',
           sceneElements.length,
         );
         sceneElements.forEach((el, i) => {
           if (i < 5) {
-            // Only log first 5 to avoid spam
             console.log(
               `  - ${el.tagName}.${Array.from(el.classList).join('.')}`,
             );
@@ -95,7 +92,7 @@ export class ScenesListController extends BaseController {
       }
     } else {
       console.log(
-        '🎯 ScenesListController: Skipped - No Whisparr API key configured',
+        'ScenesListController: Skipped - Whisparr is not configured yet',
       );
     }
   }

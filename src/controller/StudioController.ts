@@ -28,7 +28,7 @@ export class StudioController extends BaseController {
     }
 
     const studioStashId = extractStashIdFromPath();
-    if (this._config.whisparrApiKey == '' || studioStashId == null) return;
+    if (!this._config.basicValidation() || studioStashId == null) return;
 
     const studioTitleH3: HTMLElement | null =
       document.querySelector<HTMLElement>(

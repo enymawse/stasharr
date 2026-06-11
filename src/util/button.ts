@@ -84,9 +84,11 @@ export const clickHandler = async (
 ) => {
   if (sceneStatus === SceneStatus.NOT_IN_WHISPARR) {
     const result = await SceneService.lookupAndAddScene(config, stashId);
+    let shouldRefetchStatus = false;
     switch (result) {
       case SceneLookupStatus.ADDED:
         ToastService.showToast('Scene added successfully!', true);
+        shouldRefetchStatus = true;
         break;
       case SceneLookupStatus.NOT_FOUND:
         ToastService.showToast('Scene not found!', false);
@@ -94,7 +96,9 @@ export const clickHandler = async (
       case SceneLookupStatus.ERROR:
         ToastService.showToast('Error adding Scene!', false);
     }
-    refetchStatus();
+    if (shouldRefetchStatus) {
+      refetchStatus();
+    }
   } else if (sceneStatus === SceneStatus.EXISTS_AND_NO_FILE) {
     const result = await SceneService.triggerWhisparrSearch(config, stashId);
     switch (result) {

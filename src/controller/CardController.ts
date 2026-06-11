@@ -14,11 +14,13 @@ export class CardController extends BaseController {
   }
 
   shouldReinit(): boolean {
-    let sceneCards = document.querySelectorAll<HTMLElement>(
-      Stasharr.DOMSelector.SceneCardWithNoStatus(),
-    );
-    if (sceneCards.length > 0) {
-      return true;
+    if (this._config.basicValidation()) {
+      const sceneCards = document.querySelectorAll<HTMLElement>(
+        Stasharr.DOMSelector.SceneCardWithNoStatus(),
+      );
+      if (sceneCards.length > 0) {
+        return true;
+      }
     }
 
     // Check if any scene cards are missing copy buttons
@@ -40,15 +42,16 @@ export class CardController extends BaseController {
   }
 
   initialize() {
+    const whisparrConfigured = this._config.basicValidation();
+
     const sceneCards = document.querySelectorAll<HTMLElement>(
       StashDB.DOMSelector.SceneCard,
     );
     sceneCards.forEach((sceneCard) => {
       const stashId = extractStashIdFromSceneCard(sceneCard);
       if (stashId) {
-        // Add the main scene button only if Whisparr is configured
         if (
-          this._config.whisparrApiKey !== '' &&
+          whisparrConfigured &&
           !sceneCard.querySelector(Stasharr.DOMSelector.CardButton)
         ) {
           render(

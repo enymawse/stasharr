@@ -3,6 +3,7 @@ import {
   createResource,
   createMemo,
   createEffect,
+  on,
   Suspense,
   Switch,
   Match,
@@ -23,10 +24,15 @@ const CardButton = (props: { config: Config; stashId: string }) => {
 
   // Subscribe to global refresh events
   const refreshSignal = SceneButtonRefreshService.getRefreshSignal();
-  createEffect(() => {
-    refreshSignal(); // Subscribe to the signal
-    refreshWhisparrSceneAndStatus(); // Refetch when signal changes
-  });
+  createEffect(
+    on(
+      refreshSignal,
+      () => {
+        refreshWhisparrSceneAndStatus();
+      },
+      { defer: true },
+    ),
+  );
 
   const buttonDetails = createMemo(() =>
     getButtonDetails(whisparrSceneAndStatus(), false),

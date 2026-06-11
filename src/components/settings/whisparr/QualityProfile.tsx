@@ -1,4 +1,4 @@
-import { createMemo, createResource, For } from 'solid-js';
+import { createEffect, createMemo, createResource, For } from 'solid-js';
 import { useSettings } from '../../../contexts/useSettings';
 import { Form } from 'solid-bootstrap';
 import { Stasharr } from '../../../enums/Stasharr';
@@ -17,6 +17,22 @@ const QualityProfileSelect = () => {
     return (await WhisparrService.qualityProfiles(s)) || [];
   });
 
+  createEffect(() => {
+    const profiles = qualityProfiles();
+
+    if (!profiles || profiles.length === 0) {
+      return;
+    }
+
+    const hasSelectedProfile = profiles.some(
+      (qualityProfile) => qualityProfile.id === store.qualityProfile,
+    );
+
+    if (!hasSelectedProfile) {
+      setStore('qualityProfile', profiles[0].id);
+    }
+  });
+
   const handleQualityProfileChange = (value: number) => {
     setStore('qualityProfile', value);
   };
@@ -30,7 +46,7 @@ const QualityProfileSelect = () => {
         value={store.qualityProfile}
         id={Stasharr.ID.Modal.QualityProfile}
       >
-        <option>Select the Quality Profile...</option>
+        <option value="">Select the Quality Profile...</option>
         <For each={qualityProfiles()}>
           {(qualityProfile) => (
             <option

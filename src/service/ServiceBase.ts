@@ -28,6 +28,16 @@ function getDefaultHeaders(config: Config, additionalHeaders = {}) {
   };
 }
 
+function sanitizeHeaders(headers: Record<string, unknown>) {
+  const sanitizedHeaders = { ...headers };
+
+  if ('X-Api-Key' in sanitizedHeaders) {
+    sanitizedHeaders['X-Api-Key'] = '[redacted]';
+  }
+
+  return sanitizedHeaders;
+}
+
 export default class ServiceBase {
   /**
    * Sends an HTTP request to the Whisparr API with the specified method, endpoint, and body (if applicable).
@@ -50,6 +60,13 @@ export default class ServiceBase {
   ): Promise<VMScriptResponseObject<any>> {
     const uri = buildApiUrl(config, endpoint);
     const headers = getDefaultHeaders(config, additionalHeaders);
+    const debugContext = {
+      method,
+      endpoint,
+      uri,
+      headers: sanitizeHeaders(headers),
+      body,
+    };
 
     let response: VMScriptResponseObject<any> = {
       status: 0,
@@ -80,13 +97,28 @@ export default class ServiceBase {
       if (responseStatusCodeOK(response.status)) {
         return response;
       } else {
-        console.error(response);
+        console.error('Whisparr request returned a non-success response', {
+          ...debugContext,
+          status: response.status,
+          statusText: response.statusText,
+          finalUrl: response.finalUrl,
+          response: response.response,
+          responseText: response.responseText,
+        });
         throw new Error(
           `HTML Response error: ${response.status}: ${response.statusText}`,
         );
       }
     } catch (error) {
-      console.error('GM.xmlHttpRequest error: ', error);
+      console.error('GM.xmlHttpRequest error', {
+        ...debugContext,
+        status: response.status,
+        statusText: response.statusText,
+        finalUrl: response.finalUrl,
+        response: response.response,
+        responseText: response.responseText,
+        error,
+      });
       throw error;
     }
   }

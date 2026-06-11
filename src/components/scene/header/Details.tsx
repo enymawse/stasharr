@@ -16,7 +16,9 @@ const Details = (props: { config: Config; stashId: string }) => {
   const [sceneDetails] = createResource(
     props,
     async (p: { config: Config; stashId: string }) => {
-      return SceneService.getSceneByStashId(p.config, p.stashId);
+      return SceneService.getSceneByStashId(p.config, p.stashId, {
+        suppressToasts: true,
+      });
     },
   );
 

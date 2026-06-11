@@ -3,6 +3,7 @@ import {
   createResource,
   createEffect,
   Match,
+  on,
   Suspense,
   Switch,
 } from 'solid-js';
@@ -33,10 +34,15 @@ function SceneButton(props: {
 
   // Subscribe to global refresh events
   const refreshSignal = SceneButtonRefreshService.getRefreshSignal();
-  createEffect(() => {
-    refreshSignal(); // Subscribe to the signal
-    refreshWhisparrSceneAndStatus(); // Refetch when signal changes
-  });
+  createEffect(
+    on(
+      refreshSignal,
+      () => {
+        refreshWhisparrSceneAndStatus();
+      },
+      { defer: true },
+    ),
+  );
 
   const buttonDetails = createMemo(() =>
     getButtonDetails(whisparrSceneAndStatus(), props.header),

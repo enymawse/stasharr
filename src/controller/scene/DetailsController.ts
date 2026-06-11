@@ -25,7 +25,8 @@ export class DetailsController extends BaseController {
     if (
       headerButton === null &&
       stashId !== null &&
-      sceneInfoCardHeader !== null
+      sceneInfoCardHeader !== null &&
+      this._config.basicValidation()
     ) {
       if (!this.headerButtonDispose) {
         this.headerButtonDispose = render(
@@ -49,7 +50,8 @@ export class DetailsController extends BaseController {
     if (
       sceneDetails === null &&
       stashId !== null &&
-      sceneInfoCardHeaderH6 !== null
+      sceneInfoCardHeaderH6 !== null &&
+      this._config.basicValidation()
     ) {
       if (!this.sceneDetailsDispose) {
         this.sceneDetailsDispose = render(
@@ -105,12 +107,12 @@ export class DetailsController extends BaseController {
       this.floatingCopyButtonDispose = undefined;
     }
 
-    if (
-      sceneInfoCardHeader &&
-      (sceneDetails === null ||
-        headerButton === null ||
-        floatingCopyButton === null)
-    ) {
+    const missingWhisparrUi =
+      this._config.basicValidation() &&
+      (sceneDetails === null || headerButton === null);
+    const missingCopyButton = floatingCopyButton === null;
+
+    if (sceneInfoCardHeader && (missingWhisparrUi || missingCopyButton)) {
       console.log('shouldReinit - DetailsController');
       return true;
     }

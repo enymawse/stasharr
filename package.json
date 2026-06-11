@@ -4,9 +4,10 @@
   "description": "Enhance your StashDB experience by integrating Whisparr with this UserScript.",
   "main": "stasharr.js",
   "scripts": {
-    "build": "NODE_ENV=production webpack --config webpack.config.js --mode production",
+    "build": "webpack --config webpack.config.js --mode production",
+    "build:local": "webpack --config webpack.config.js --mode production --env local=true",
     "prepare": "husky",
-    "dev": "NODE_ENV=development webpack serve --config webpack.config.js",
+    "dev": "webpack serve --config webpack.config.js --mode development",
     "lint": "eslint . --fix",
     "preversion": "",
     "version": "npm run build",

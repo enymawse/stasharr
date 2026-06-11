@@ -23,7 +23,7 @@ export class PerformerController extends BaseController {
     }
 
     const performerStashId = extractStashIdFromPath();
-    if (this._config.whisparrApiKey == '' || performerStashId == null) return;
+    if (!this._config.basicValidation() || performerStashId == null) return;
 
     const performerTitle = document.querySelector(
       StashDB.DOMSelector.PerformerCardHeader,

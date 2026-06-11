@@ -1,4 +1,4 @@
-import { createMemo, createResource, For } from 'solid-js';
+import { createEffect, createMemo, createResource, For } from 'solid-js';
 import { useSettings } from '../../../contexts/useSettings';
 import { Form } from 'solid-bootstrap';
 import { Stasharr } from '../../../enums/Stasharr';
@@ -15,6 +15,22 @@ const RootFolderPathSelect = () => {
   const [rootFolderPaths] = createResource(reactiveStore, async (s) => {
     if (!s.basicValidation()) return [];
     return (await WhisparrService.rootFolderPaths(s)) || [];
+  });
+
+  createEffect(() => {
+    const folders = rootFolderPaths();
+
+    if (!folders || folders.length === 0) {
+      return;
+    }
+
+    const hasSelectedFolder = folders.some(
+      (rootFolderPath) => rootFolderPath.path === store.rootFolderPath,
+    );
+
+    if (!hasSelectedFolder) {
+      setStore('rootFolderPath', folders[0].path);
+    }
   });
 
   const handleRootFolderPathChange = (value: string) => {
