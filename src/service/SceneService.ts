@@ -30,6 +30,60 @@ interface ProgressTracker {
 }
 
 export default class SceneService extends ServiceBase {
+  private static readonly UNADDED_SCENE_DATE_PREFIX = '0001-01-01';
+
+  private static async requestSceneByStashId(
+    config: Config,
+    sceneID: string,
+  ): Promise<Whisparr.WhisparrScene | null> {
+    const endpoint = `movie?stashId=${encodeURIComponent(sceneID)}`;
+    const response = await ServiceBase.request(config, endpoint);
+    const data = response.response as
+      | Whisparr.WhisparrScene[]
+      | Whisparr.WhisparrScene
+      | null;
+
+    if (Array.isArray(data)) {
+      return data[0] ?? null;
+    }
+
+    if (data && typeof data === 'object' && 'id' in data) {
+      return data as Whisparr.WhisparrScene;
+    }
+
+    return null;
+  }
+
+  private static async requestLookupSceneByStashId(
+    config: Config,
+    stashId: string,
+  ): Promise<Whisparr.WhisparrScene | null> {
+    const endpoint = `lookup/scene?term=stash:${encodeURIComponent(stashId)}`;
+    const response = await ServiceBase.request(config, endpoint);
+    const data = response.response as Whisparr.LookupSceneResponse[] | null;
+    const firstResult = Array.isArray(data) ? data[0] : null;
+
+    if (firstResult) {
+      return firstResult.movie as Whisparr.WhisparrScene;
+    }
+
+    return null;
+  }
+
+  private static isAddedScene(
+    scene: Whisparr.WhisparrScene | null,
+  ): scene is Whisparr.WhisparrScene {
+    if (!scene || typeof scene.added !== 'string') {
+      return false;
+    }
+
+    if (scene.added.startsWith(SceneService.UNADDED_SCENE_DATE_PREFIX)) {
+      return false;
+    }
+
+    return !Number.isNaN(new Date(scene.added).getTime());
+  }
+
   /**
    * Retrieves scene information from Whisparr using the Stash ID.
    *
@@ -37,15 +91,30 @@ export default class SceneService extends ServiceBase {
    * @param {string} sceneID - The unique Stash ID of the scene to fetch.
    * @returns {Promise<Whisparr.WhisparrScene | null>} - A promise that
    * resolves with the Scene or null from the Whisparr API.
-   */ static async getSceneByStashId(
+   */
+  static async getSceneByStashId(
     config: Config,
     sceneID: string,
     options?: { suppressToasts?: boolean },
   ): Promise<Whisparr.WhisparrScene | null> {
-    const endpoint = `movie?stashId=${encodeURIComponent(sceneID)}`;
-    let response;
     try {
-      response = await ServiceBase.request(config, endpoint);
+      return await SceneService.requestSceneByStashId(config, sceneID);
+    } catch (e) {
+      console.warn(
+        'Direct stashId scene lookup failed, falling back to lookup/scene',
+        e,
+      );
+    }
+
+    try {
+      const lookupScene = await SceneService.requestLookupSceneByStashId(
+        config,
+        sceneID,
+      );
+
+      if (SceneService.isAddedScene(lookupScene)) {
+        return lookupScene;
+      }
     } catch (e) {
       if (!options?.suppressToasts) {
         ToastService.showToast(
@@ -53,15 +122,11 @@ export default class SceneService extends ServiceBase {
           false,
         );
       }
-      console.error('Error in getSceneByStashId', e);
-      return null;
+
+      console.error('Error in getSceneByStashId fallback lookup', e);
     }
-    const data = await response.response;
-    if (data?.length > 0) {
-      return data[0] as Whisparr.WhisparrScene;
-    } else {
-      return null;
-    }
+
+    return null;
   }
 
   /**
@@ -74,11 +139,17 @@ export default class SceneService extends ServiceBase {
     config: Config,
     stashId: string,
   ): Promise<SceneStatusType> {
-    const exclusion = await ExclusionListService.getExclusion(config, stashId);
+    const exclusion = await ExclusionListService.getExclusion(
+      config,
+      stashId,
+      true,
+    );
     if (exclusion) {
       return SceneStatus.EXCLUDED;
     } else {
-      const scene = await SceneService.getSceneByStashId(config, stashId);
+      const scene = await SceneService.getSceneByStashId(config, stashId, {
+        suppressToasts: true,
+      });
       if (scene) {
         return scene.hasFile
           ? SceneStatus.EXISTS_AND_HAS_FILE
@@ -99,12 +170,18 @@ export default class SceneService extends ServiceBase {
     scene: Whisparr.WhisparrScene | null;
     status: SceneStatusType;
   }> {
-    const exclusion = await ExclusionListService.getExclusion(config, stashId);
+    const exclusion = await ExclusionListService.getExclusion(
+      config,
+      stashId,
+      true,
+    );
     let status;
     if (exclusion) {
       return { scene: null, status: SceneStatus.EXCLUDED };
     }
-    const scene = await SceneService.getSceneByStashId(config, stashId);
+    const scene = await SceneService.getSceneByStashId(config, stashId, {
+      suppressToasts: true,
+    });
     if (scene) {
       status = scene.hasFile
         ? SceneStatus.EXISTS_AND_HAS_FILE
@@ -128,10 +205,8 @@ export default class SceneService extends ServiceBase {
     stashId: string,
     options?: { suppressToasts?: boolean },
   ): Promise<Whisparr.WhisparrScene | null> {
-    const endpoint = `lookup/scene?term=stash:${encodeURIComponent(stashId)}`;
-    let response;
     try {
-      response = await ServiceBase.request(config, endpoint);
+      return await SceneService.requestLookupSceneByStashId(config, stashId);
     } catch (e) {
       if (!options?.suppressToasts) {
         ToastService.showToast(
@@ -142,13 +217,8 @@ export default class SceneService extends ServiceBase {
       console.error('Error in lookupSceneByStashId', e);
       return null;
     }
-    const data = (await response.response) as Whisparr.LookupSceneResponse[];
-    if (data?.length > 0) {
-      return data[0].movie as Whisparr.WhisparrScene;
-    } else {
-      return null;
-    }
   }
+
   /**
    * Trigger Whisparr to search for a scene.
    *
@@ -267,18 +337,31 @@ export default class SceneService extends ServiceBase {
     stashId: string,
     options?: { suppressToasts?: boolean },
   ): Promise<SceneLookupStatus> {
-    let scene = await SceneService.lookupSceneByStashId(config, stashId, {
-      suppressToasts: options?.suppressToasts,
-    }).then(async (s) => {
-      if (s) {
-        return await SceneService.addScene(config, s, {
-          suppressToasts: options?.suppressToasts,
-        });
-      } else {
-        return SceneLookupStatus.NOT_FOUND;
+    let scene: Whisparr.WhisparrScene | null = null;
+
+    try {
+      scene = await SceneService.requestLookupSceneByStashId(config, stashId);
+    } catch (e) {
+      if (!options?.suppressToasts) {
+        ToastService.showToast(
+          'Error occurred while looking up the scene',
+          false,
+        );
       }
+
+      console.error('Error in lookupAndAddScene', e);
+      return SceneLookupStatus.ERROR;
+    }
+
+    if (!scene) {
+      return SceneLookupStatus.NOT_FOUND;
+    }
+
+    const addedScene = await SceneService.addScene(config, scene, {
+      suppressToasts: options?.suppressToasts,
     });
-    return scene ? SceneLookupStatus.ADDED : SceneLookupStatus.ERROR;
+
+    return addedScene ? SceneLookupStatus.ADDED : SceneLookupStatus.ERROR;
   }
 
   /**
