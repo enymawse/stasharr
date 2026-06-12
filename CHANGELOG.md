@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.6](https://github.com/enymawse/stasharr/compare/v2.11.5...v2.11.6) (2026-06-12)
+
+
+### Bug Fixes
+
+* **scene:** avoid lookup error after add ([#224](https://github.com/enymawse/stasharr/issues/224)) ([9a1bb25](https://github.com/enymawse/stasharr/commit/9a1bb25d93d61cc557b02f6f830cefd82405f341))
+
 ## [2.11.5](https://github.com/enymawse/stasharr/compare/v2.11.4...v2.11.5) (2026-04-14)
 
 
